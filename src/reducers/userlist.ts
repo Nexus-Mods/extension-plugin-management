@@ -39,7 +39,11 @@ const userlistReducer: types.IReducerSpec = {
       }
       const list = listForType(payload.type);
       if (existing !== -1) {
-        return util.pushSafe(state, ['plugins', existing, list], payload.reference);
+        const statePath = ['plugins', existing, list];
+        if (util.getSafe(state, statePath, []).indexOf(payload.reference) !== -1) {
+          return state;
+        }
+        return util.pushSafe(state, statePath, payload.reference);
       } else {
         const res = util.pushSafe(state, ['plugins'], {
           name: payload.pluginId,
