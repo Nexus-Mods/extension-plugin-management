@@ -152,6 +152,10 @@ function collectDrop(dropConnect: __ReactDnd.DropTargetConnector,
   };
 }
 
+// a regular expression to check if a string is a regular expression. How cool is that?
+// also: not really, but it's what LOOT uses
+const RE_MATCH = /[:\*?|]/;
+
 class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   private mIsMounted: boolean;
   private mRef: JSX.Element;
@@ -242,6 +246,14 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     );
   }
 
+  private nameMatch(pattern: string, name: string): boolean {
+    if (pattern.search(RE_MATCH) !== -1) {
+      return new RegExp(pattern).test(name);
+    } else {
+      return pattern === name;
+    }
+  }
+
   private renderConnector(): JSX.Element {
     const { t, connectDragSource, connectDropTarget, masterlist, plugin, userlist } = this.props;
 
@@ -249,9 +261,9 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     const lootRules: { name: string, ro: ILOOTPlugin, rw: ILOOTPlugin } = {
       name: plugin.name,
       ro: (masterlist || []).find(rule =>
-        new RegExp(rule.name).test(plugin.name)) || { name: plugin.name },
+        this.nameMatch(rule.name, plugin.name)) || { name: plugin.name },
       rw: (userlist || []).find(rule =>
-        new RegExp(rule.name).test(plugin.name)) || { name: plugin.name },
+        this.nameMatch(rule.name, plugin.name)) || { name: plugin.name },
     };
 
     const popoverBlocks = [];
