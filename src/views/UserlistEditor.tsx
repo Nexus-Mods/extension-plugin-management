@@ -97,7 +97,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
 
   public componentWillReceiveProps(nextProps: IProps) {
     if (nextProps.dialog !== this.props.dialog) {
-      this.nextState.dialog = nextProps.dialog;
+      this.nextState.dialog = nextProps.dialog !== undefined ? { ...nextProps.dialog } : undefined;
     }
   }
 

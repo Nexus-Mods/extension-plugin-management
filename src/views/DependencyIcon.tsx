@@ -321,18 +321,20 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       popoverBlocks.push(t('Drag to another connector to define load order rules.'));
     }
 
-    popoverBlocks.push((
-      <div key='edit'>
-        <Advanced>
-          <Button onClick={this.startQuickEdit}>{t('Edit')}</Button>
-        </Advanced>
-      </div>
-    ));
-
     const popover = (
-      <Popover id={`popover-${plugin.name}`} style={{ maxWidth: 500 }}>
-      {popoverBlocks}
-    </Popover>
+      <Popover
+        id={`popover-${plugin.name}`}
+        style={{ maxWidth: 500 }}
+      >
+        <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+          {popoverBlocks}
+        </div>
+        <div key='edit'>
+          <Advanced>
+            <Button onClick={this.startQuickEdit}>{t('Edit')}</Button>
+          </Advanced>
+        </div>
+      </Popover>
     );
 
     const connectorIcon = connectDragSource(
