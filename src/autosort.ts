@@ -112,7 +112,12 @@ class LootInterface {
       return;
     }
     const store = context.api.store;
-    const gamePath: string = selectors.currentGameDiscovery(store.getState()).path;
+    const discovery = selectors.currentGameDiscovery(store.getState());
+    if (discovery === undefined) {
+      // no game selected
+      return;
+    }
+    const gamePath: string = discovery.path;
     if (gameSupported(gameMode)) {
       try {
         this.mInitPromise = this.init(gameMode, gamePath);
