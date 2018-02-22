@@ -213,8 +213,9 @@ class LootInterface {
           'v0.10');
       log('info', 'updated loot masterlist', updated);
     } catch (err) {
-      this.mExtensionApi.showErrorNotification(
-        'failed to update masterlist', err);
+      this.mExtensionApi.showErrorNotification('Failed to update masterlist', err, {
+          allowReport: false,
+        });
     }
 
     return { game: gameMode, loot };

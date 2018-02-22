@@ -185,6 +185,8 @@ function register(context: IExtensionContextExt) {
 
   context.registerTest('plugins-locked', 'gamemode-activated',
     () => testPluginsLocked(selectors.activeGameId(context.api.store.getState())));
+  context.registerTest('master-missing', 'gamemode-activated',
+    () => testMissingMasters(context.api.translate, context.api.store.getState()));
   context.registerTest('master-missing', 'plugins-changed',
     () => testMissingMasters(context.api.translate, context.api.store.getState()));
   context.registerDialog('plugin-dependencies-connector', Connector);
