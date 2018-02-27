@@ -196,7 +196,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       calc: plugin => util.getSafe(plugin, ['globalPriority', 'value'], 0),
       edit: {
         validate: input => {
-          const prio = Number.parseInt(input, 10);
+          const prio = Number(input);
           return (isNaN(prio) || (prio < -127) || (prio > 127))
             ? 'error' : 'success';
         },
@@ -219,7 +219,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       calc: plugin => util.getSafe(plugin, ['localPriority', 'value'], 0),
       edit: {
         validate: input => {
-          const prio = Number.parseInt(input, 10);
+          const prio = Number(input);
           return (isNaN(prio) || (prio < -127) || (prio > 127))
             ? 'error' : 'success';
         },
