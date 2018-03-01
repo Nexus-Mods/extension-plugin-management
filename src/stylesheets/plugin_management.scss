@@ -28,16 +28,24 @@
 #dropdown-gamebryo-plugins-enabled {
   padding: 2px 5px;
   border: 0px;
-  border-left: 1px solid $gray-light;
+  border-left: $border-width solid $white;
   min-width: 0px;
 }
 
 .btn-gamebryo-plugins-enabled-enabled, .toggle-gamebryo-plugins-enabled-enabled {
   background-color: $brand-success;
+
+  &:hover, &:focus {
+    background: darken($brand-success, 10%);
+  }
 }
 
 .btn-gamebryo-plugins-enabled-disabled, .toggle-gamebryo-plugins-enabled-disabled {
   background-color: $gray;
+
+  &:hover, &:focus {
+    background: darken($gray, 10%);
+  }
 }
 
 .rule-readonly {
