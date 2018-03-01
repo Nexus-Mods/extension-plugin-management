@@ -202,8 +202,17 @@ class LootInterface {
     const localPath = pluginPath(gameMode);
     await fs.ensureDirAsync(localPath);
 
-    const loot: any = Bluebird.promisifyAll(
+    let loot: any;
+
+    try {
+      loot = Bluebird.promisifyAll(
         await LootProm.createAsync(this.convertGameId(gameMode, false), gamePath, localPath, 'en'));
+    } catch (err) {
+      this.mExtensionApi.showErrorNotification('Failed to initialize loot', err, {
+        allowReport: false,
+      });
+      return { game: gameMode, loot: undefined };
+    }
     const masterlistPath = path.join(lootAppPath(gameMode), 'masterlist.yaml');
     try {
       await fs.ensureDirAsync(path.dirname(masterlistPath));
