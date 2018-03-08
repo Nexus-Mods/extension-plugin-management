@@ -594,7 +594,10 @@ function init(context: IExtensionContextExt) {
                   });
                 }
               })
-              .catch(util.ProcessCanceled, () => undefined);
+              .catch(util.ProcessCanceled, () => undefined)
+              .catch(err => {
+                context.api.showErrorNotification('Failed to read mod', err);
+              });
         }
       });
     }));
