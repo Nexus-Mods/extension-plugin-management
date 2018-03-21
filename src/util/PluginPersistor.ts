@@ -190,7 +190,10 @@ class PluginPersistor implements types.IPersistor {
         return null;
       })
       .catch(err => {
-        this.reportError('failed to write plugin list', err);
+        if (err.code !== 'EBUSY') {
+          this.reportError('failed to write plugin list', err);
+        } // no point reporting an error if the file is locked by another
+          // process (could be the game itself)
       })
       .finally(() => {
         this.mSerializing = false;
