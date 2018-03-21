@@ -12,6 +12,7 @@ interface ICoord {
 interface IConnectorProps {
   source?: { id: string, pos: ICoord };
   target?: { id: string, pos: ICoord };
+  mode?: string;
 }
 
 class ConnectorImpl extends ComponentEx<IConnectorProps, {}> {
@@ -21,6 +22,11 @@ class ConnectorImpl extends ComponentEx<IConnectorProps, {}> {
 
   public render(): JSX.Element {
     const { source, target } = this.props;
+
+    let mode;
+    if ((this.context as any).getModifiers().ctrl) {
+      mode = 'after';
+    }
 
     if ((source === undefined) || (target === undefined)) {
       return null;
@@ -34,6 +40,7 @@ class ConnectorImpl extends ComponentEx<IConnectorProps, {}> {
         target={target.pos}
         className={lineClass}
         curved={target.id !== null}
+        text={mode}
       />
     );
   }

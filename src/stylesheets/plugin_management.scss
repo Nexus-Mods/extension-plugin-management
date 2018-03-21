@@ -69,3 +69,12 @@
 .loot-message-list .alert {
   max-width: 300px;
 }
+
+.plugin-dependency-connector {
+  text {
+    fill: $text-color;
+  }
+  textPath {
+    fill: $text-color;
+  }
+}

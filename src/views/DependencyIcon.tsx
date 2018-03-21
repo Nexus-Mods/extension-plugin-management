@@ -5,6 +5,7 @@ import { ILOOTPlugin, ILootReference } from '../types/ILOOTList';
 import { IPluginCombined } from '../types/IPlugins';
 
 import * as I18next from 'i18next';
+import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Button, Checkbox, Overlay, Popover } from 'react-bootstrap';
 import { DragSource, DropTarget } from 'react-dnd';
@@ -107,7 +108,7 @@ const dependencySource: __ReactDnd.DragSourceSpec<IProps> = {
       id: props.plugin.name,
     };
   },
-  endDrag(props: IProps, monitor: __ReactDnd.DragSourceMonitor) {
+  endDrag(props: IProps, monitor: __ReactDnd.DragSourceMonitor, component: React.Component<IProps, {}>) {
     clearTimeout(cursorPosUpdater);
     cursorPosUpdater = undefined;
 
@@ -121,7 +122,11 @@ const dependencySource: __ReactDnd.DragSourceSpec<IProps> = {
     const dest: string = (monitor.getDropResult() as any).id;
 
     if (source !== dest) {
-      props.onEditDialog(source, dest, 'after');
+      if ((component.context as any).getModifiers().ctrl) {
+        props.onAddRule(source, dest, 'after');
+      } else {
+        props.onEditDialog(source, dest, 'after');
+      }
     }
   },
 };
@@ -157,6 +162,10 @@ function collectDrop(dropConnect: __ReactDnd.DropTargetConnector,
 const RE_MATCH = /[:\*?|]/;
 
 class DependencyIcon extends ComponentEx<IProps, IComponentState> {
+  public static contextTypes: React.ValidationMap<any> = {
+    getModifiers: PropTypes.func,
+  };
+
   private mIsMounted: boolean;
   private mRef: JSX.Element;
 

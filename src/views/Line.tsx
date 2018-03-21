@@ -10,10 +10,11 @@ interface ILineProps {
   source: ICoord;
   target: ICoord;
   curved: boolean;
+  text?: string;
 }
 
 const Line = (props: ILineProps) => {
-  const { className, curved, source, target } = props;
+  const { className, curved, source, target, text } = props;
 
   const top = Math.min(target.y, source.y) - 2;
   const left = Math.min(target.x, source.x);
@@ -28,11 +29,19 @@ const Line = (props: ILineProps) => {
 
   return (
     <svg
+      className='plugin-dependency-connector'
       width={boxWidth}
       height={boxHeight}
       style={{ position: 'fixed', top, left, pointerEvents: 'none' }}
     >
-      <path className={className} d={path} fill='none' />
+      <path id='connector-line' className={className} d={path} fill='none' />
+      {text !== undefined ? (
+        <text x='50%'>
+          <textPath xlinkHref='#connector-line'>
+            {text}
+          </textPath>
+        </text>
+       ) : null}
     </svg>
   );
 };

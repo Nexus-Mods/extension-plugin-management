@@ -46,6 +46,7 @@
     "immutability-helper": "^2.2.2",
     "json-loader": "^0.5.4",
     "loot": "Nexus-Mods/node-loot",
+    "prop-types": "^15.6.1",
     "vortex-api": "Nexus-Mods/vortex-api",
     "webpack": "^3.5.5",
     "js-yaml": "^3.8.2",
