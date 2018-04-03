@@ -40,6 +40,18 @@ const gameSupport = {
       'ccEEJSSE001-Hstead.esl',
     ],
   },
+  skyrimvr: {
+    appDataPath: 'Skyrim VR',
+    pluginTXTFormat: 'fallout4',
+    nativePlugins: [
+      'skyrim.esm',
+      'skyrimvr.esm',
+      'update.esm',
+      'dawnguard.esm',
+      'hearthfires.esm',
+      'dragonborn.esm',
+    ],
+  },
   fallout3: {
     appDataPath: 'Fallout3',
     pluginTXTFormat: 'original',

@@ -59,7 +59,7 @@ class LootInterface {
 
       const state = store.getState();
       const gameMode = selectors.activeGameId(state);
-      if ((gameMode !== game) || !gameSupported(gameMode)) {
+      if ((gameMode !== game) || !gameSupported(gameMode) || (loot === undefined)) {
         return;
       }
 
@@ -191,7 +191,11 @@ class LootInterface {
 
   private convertGameId(gameMode: string, masterlist: boolean) {
     if (masterlist && (gameMode === 'fallout4vr')) {
+      // use the masterlist from fallout 4
       return 'fallout4';
+    } else if (gameMode === 'skyrimvr') {
+      // no specific support from skyrim vr yet
+      return 'skyrimse';
     }
     return gameMode;
   }
