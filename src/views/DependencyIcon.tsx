@@ -108,7 +108,8 @@ const dependencySource: __ReactDnd.DragSourceSpec<IProps> = {
       id: props.plugin.name,
     };
   },
-  endDrag(props: IProps, monitor: __ReactDnd.DragSourceMonitor, component: React.Component<IProps, {}>) {
+  endDrag(props: IProps, monitor: __ReactDnd.DragSourceMonitor,
+          component: React.Component<IProps, {}>) {
     clearTimeout(cursorPosUpdater);
     cursorPosUpdater = undefined;
 
@@ -122,7 +123,7 @@ const dependencySource: __ReactDnd.DragSourceSpec<IProps> = {
     const dest: string = (monitor.getDropResult() as any).id;
 
     if (source !== dest) {
-      if ((component.context as any).getModifiers().ctrl) {
+      if ((component !== null) && (component.context as any).getModifiers().ctrl) {
         props.onAddRule(source, dest, 'after');
       } else {
         props.onEditDialog(source, dest, 'after');
