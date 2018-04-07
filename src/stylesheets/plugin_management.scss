@@ -28,7 +28,7 @@
 #dropdown-gamebryo-plugins-enabled {
   padding: 2px 5px;
   border: 0px;
-  border-left: $border-width solid $white;
+  border-left: $border-width solid transparentize($white, 0.5);
   min-width: 0px;
 }
 
