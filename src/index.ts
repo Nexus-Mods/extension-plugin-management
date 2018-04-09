@@ -307,7 +307,7 @@ function startSyncRemote(api: types.IExtensionApi): Promise<void> {
         log('warn', 'failed to watch mod directory', { modPath, error });
       });
     } catch (err) {
-      api.showErrorNotification('failed to watch mod directory', err,
+      api.showErrorNotification('Failed to watch mod directory', err,
                                 {allowReport: err.code !== 'ENOENT'});
     }
   });
