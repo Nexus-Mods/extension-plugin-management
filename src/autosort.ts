@@ -212,7 +212,7 @@ class LootInterface {
       loot = Bluebird.promisifyAll(
         await LootProm.createAsync(this.convertGameId(gameMode, false), gamePath, localPath, 'en'));
     } catch (err) {
-      this.mExtensionApi.showErrorNotification('Failed to initialize loot', err, {
+      this.mExtensionApi.showErrorNotification('Failed to initialize LOOT', err, {
         allowReport: false,
       });
       return { game: gameMode, loot: undefined };
