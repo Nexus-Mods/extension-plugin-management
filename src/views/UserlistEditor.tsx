@@ -111,7 +111,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     return (
       <Modal show={dialog !== undefined} onHide={this.close}>
         <ModalHeader>
-          <h3>{t('Set Dependencies')}</h3>
+          <h3>{t('Set Rules')}</h3>
         </ModalHeader>
         {dialog !== undefined
           ? (

@@ -165,7 +165,7 @@ function register(context: IExtensionContextExt) {
   context.registerReducer(['settings', 'plugins'], settingsReducer);
   context.registerReducer(['session', 'pluginDependencies'], userlistEditReducer);
 
-  context.registerAction('gamebryo-plugin-icons', 100, 'connection', {}, 'Manage Dependencies',
+  context.registerAction('gamebryo-plugin-icons', 100, 'connection', {}, 'Manage Rules',
     () => {
       context.api.store.dispatch(setCreateRule());
     });
