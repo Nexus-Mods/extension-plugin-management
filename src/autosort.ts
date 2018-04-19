@@ -1,6 +1,6 @@
 import {setPluginOrder} from './actions/loadOrder';
 import {IPluginsLoot} from './types/IPlugins';
-import {gameSupported, lootAppPath, pluginPath} from './util/gameSupport';
+import {gameSupported, pluginPath} from './util/gameSupport';
 
 import * as Bluebird from 'bluebird';
 import { remote } from 'electron';
@@ -10,6 +10,8 @@ import * as Redux from 'redux';
 import {} from 'redux-thunk';
 import {actions, fs, log, selectors, types, util} from 'vortex-api';
 import userlist from './reducers/userlist';
+
+const LOOT_LIST_REVISION = 'v0.10';
 
 const LootProm: any = Bluebird.promisifyAll(LootAsync);
 
@@ -162,7 +164,8 @@ class LootInterface {
   // tslint:disable-next-line:member-ordering
   private readLists = Bluebird.method(async (gameMode: string, loot: typeof LootProm) => {
     const t = this.mExtensionApi.translate;
-    const masterlistPath = path.join(lootAppPath(gameMode), 'masterlist.yaml');
+    const masterlistPath = path.join(remote.app.getPath('userData'), gameMode,
+                                     'masterlist', 'masterlist.yaml');
     const userlistPath = path.join(remote.app.getPath('userData'), gameMode, 'userlist.yaml');
 
     let mtime: Date;
@@ -217,13 +220,14 @@ class LootInterface {
       });
       return { game: gameMode, loot: undefined };
     }
-    const masterlistPath = path.join(lootAppPath(gameMode), 'masterlist.yaml');
+    const masterlistPath = path.join(remote.app.getPath('userData'), gameMode,
+                                     'masterlist', 'masterlist.yaml');
     try {
       await fs.ensureDirAsync(path.dirname(masterlistPath));
       const updated = await loot.updateMasterlistAsync(
           masterlistPath,
           `https://github.com/loot/${this.convertGameId(gameMode, true)}.git`,
-          'v0.10');
+          LOOT_LIST_REVISION);
       log('info', 'updated loot masterlist', updated);
     } catch (err) {
       this.mExtensionApi.showErrorNotification('Failed to update masterlist', err, {

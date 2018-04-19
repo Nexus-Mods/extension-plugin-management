@@ -1,6 +1,6 @@
 import { ILOOTList } from '../types/ILOOTList';
 
-import {gameSupported, lootAppPath} from './gameSupport';
+import {gameSupported} from './gameSupport';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
@@ -58,7 +58,7 @@ class UserlistPersistor implements types.IPersistor {
     }
     this.mUserlistPath = (this.mMode === 'userlist')
       ? path.join(app.getPath('userData'), gameMode, 'userlist.yaml')
-      : path.resolve(lootAppPath(gameMode), 'masterlist.yaml');
+      : path.join(app.getPath('userData'), gameMode, 'masterlist', 'masterlist.yaml');
 
     // read the files now and update the store
     return this.deserialize();
