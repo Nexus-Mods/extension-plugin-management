@@ -38,8 +38,7 @@ export interface ILootReference {
 export interface ILOOTPlugin {
   name: string;
   enabled?: boolean;
-  priority?: number;
-  global_priority?: number;
+  group?: string;
   after?: Array<string | ILootReference>;
   req?: Array<string | ILootReference>;
   inc?: Array<string | ILootReference>;
@@ -49,7 +48,13 @@ export interface ILOOTPlugin {
   dirty?: IDirtyInfo[];
 }
 
+export interface ILOOTGroup {
+  name: string;
+  after?: string[];
+}
+
 export interface ILOOTList {
   globals: IMessage[];
   plugins: ILOOTPlugin[];
+  groups: ILOOTGroup[];
 }

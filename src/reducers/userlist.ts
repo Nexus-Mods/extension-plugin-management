@@ -12,14 +12,6 @@ function listForType(type: string) {
   }
 }
 
-function isValidPriority(input): boolean {
-  return !(
-    (input === null)
-    || isNaN(input)
-    || (input < -127)
-    || (input > 127));
-}
-
 /**
  * reducer for changes to settings regarding mods
  */
@@ -64,41 +56,24 @@ const userlistReducer: types.IReducerSpec = {
         return state;
       }
     },
-    [actions.setLocalPriority as any]: (state, payload) => {
-      if (!isValidPriority(payload.priority)) {
-        return state;
-      }
-
+    [actions.addGroup as any]: (state, payload) =>
+      (state.groups.find(group => group.name === payload.group) === undefined)
+        ? util.pushSafe(state, ['groups'], {
+          name: payload.group,
+          after: [ 'default' ],
+        })
+        : state,
+    [actions.setGroup as any]: (state, payload) => {
       let existing: number = -1;
       if (state.plugins !== undefined) {
         existing = state.plugins.findIndex(plug => plug.name === payload.pluginId);
       }
-      if (existing !== -1) {
-        return util.setSafe(state, ['plugins', existing, 'priority'],  payload.priority);
-      } else {
-        return util.pushSafe(state, ['plugins'], {
+      return (existing !== -1)
+        ? util.setSafe(state, ['plugins', existing, 'group'],  payload.group)
+        : util.pushSafe(state, ['plugins'], {
           name: payload.pluginId,
-          priority: payload.priority,
+          group: payload.group,
         });
-      }
-    },
-    [actions.setGlobalPriority as any]: (state, payload) => {
-      if (!isValidPriority(payload.priority)) {
-        return state;
-      }
-
-      let existing: number = -1;
-      if ((state.plugins !== undefined) && !!payload.pluginId) {
-        existing = state.plugins.findIndex(plug => plug.name === payload.pluginId);
-      }
-      if (existing !== -1) {
-        return util.setSafe(state, ['plugins', existing, 'global_priority'], payload.priority);
-      } else if (payload.pluginId) {
-        return util.pushSafe(state, ['plugins'], {
-          name: payload.pluginId,
-          global_priority: payload.priority,
-        });
-      }
     },
   },
   defaults: {

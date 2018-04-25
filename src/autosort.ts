@@ -11,7 +11,7 @@ import {} from 'redux-thunk';
 import {actions, fs, log, selectors, types, util} from 'vortex-api';
 import userlist from './reducers/userlist';
 
-const LOOT_LIST_REVISION = 'v0.10';
+const LOOT_LIST_REVISION = 'v0.13';
 
 const LootProm: any = Bluebird.promisifyAll(LootAsync);
 
@@ -152,8 +152,7 @@ class LootInterface {
           tags: meta.tags,
           cleanliness: meta.cleanInfo,
           dirtyness: meta.dirtyInfo,
-          localPriority: meta.localPriority,
-          globalPriority: meta.globalPriority,
+          group: meta.group,
         };
       }))
     .then(() => {
@@ -213,7 +212,8 @@ class LootInterface {
 
     try {
       loot = Bluebird.promisifyAll(
-        await LootProm.createAsync(this.convertGameId(gameMode, false), gamePath, localPath, 'en'));
+        await LootProm.createAsync(this.convertGameId(gameMode, false), gamePath,
+                                   localPath, 'en', this.log));
     } catch (err) {
       this.mExtensionApi.showErrorNotification('Failed to initialize LOOT', err, {
         allowReport: false,
@@ -229,6 +229,18 @@ class LootInterface {
           `https://github.com/loot/${this.convertGameId(gameMode, true)}.git`,
           LOOT_LIST_REVISION);
       log('info', 'updated loot masterlist', updated);
+      // we need to ensure lists get loaded at least once. before sorting there
+      // will always be a check if the userlist was changed
+      const userlistPath = path.join(remote.app.getPath('userData'), gameMode, 'userlist.yaml');
+
+      let mtime: Date;
+      try {
+        mtime = (await fs.statAsync(userlistPath)).mtime;
+      } catch (err) {
+        mtime = null;
+      }
+      await loot.loadListsAsync(masterlistPath, mtime !== null ? userlistPath : '');
+      this.mUserlistTime = mtime;
     } catch (err) {
       this.mExtensionApi.showErrorNotification('Failed to update masterlist', err, {
           allowReport: false,
@@ -237,6 +249,21 @@ class LootInterface {
 
     return { game: gameMode, loot };
   });
+
+  private log = (level: number, message: string) => {
+    log(this.logLevel(level) as any, message);
+  }
+
+  private logLevel(level: number): string {
+    switch (level) {
+      case 0: return 'debug'; // actually trace
+      case 1: return 'debug';
+      case 2: return 'info';
+      case 3: return 'warn';
+      case 4: return 'error';
+      case 5: return 'error'; // actually fatal
+    }
+  }
 
   private reportCycle(err: Error) {
     this.mExtensionApi.sendNotification({

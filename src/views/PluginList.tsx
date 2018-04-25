@@ -1,6 +1,6 @@
 import {setPluginEnabled} from '../actions/loadOrder';
 import {setAutoSortEnabled} from '../actions/settings';
-import { setGlobalPriority, setLocalPriority } from '../actions/userlist';
+import {addGroup, setGroup} from '../actions/userlist';
 import {ILoadOrder} from '../types/ILoadOrder';
 import { ILOOTList, ILOOTPlugin } from '../types/ILOOTList';
 import {
@@ -25,6 +25,7 @@ import * as React from 'react';
 import {Alert, ListGroup, ListGroupItem, Panel} from 'react-bootstrap';
 import {translate} from 'react-i18next';
 import {connect} from 'react-redux';
+import {Creatable} from 'react-select';
 import {ComponentEx, FlexLayout, IconBar, ITableRowAction, log, MainPage,
         selectors, Table, TableTextFilter, ToolbarIcon,
         types, util} from 'vortex-api';
@@ -44,14 +45,15 @@ interface IConnectedProps {
   autoSort: boolean;
   activity: string[];
   userlist: ILOOTList;
+  masterlist: ILOOTList;
   mods: { [id: string]: types.IMod };
 }
 
 interface IActionProps {
   onSetPluginEnabled: (pluginName: string, enabled: boolean) => void;
   onSetAutoSortEnabled: (enabled: boolean) => void;
-  onSetLocalPriority: (pluginName: string, priority: number) => void;
-  onSetGlobalPriority: (pluginName: string, priority: number) => void;
+  onAddGroup: (group: string) => void;
+  onSetGroup: (pluginName: string, group: string) => void;
 }
 
 interface IComponentState {
@@ -76,6 +78,49 @@ function toHex(input: number) {
 
 function num(input: number) {
   return input !== undefined && input !== null ? input : -1;
+}
+
+interface IGroupSelectProps {
+  t: I18next.TranslationFunction;
+  plugins: IPluginCombined[];
+  userlist: ILOOTList;
+  masterlist: ILOOTList;
+  onSetGroup: (pluginId: string, group: string) => void;
+}
+
+class GroupSelect extends React.PureComponent<IGroupSelectProps, {}> {
+  public render(): JSX.Element {
+    const { t, plugins, masterlist, userlist } = this.props;
+
+    const group = util.getSafe(plugins, [0, 'group'], '');
+    if (plugins.find(plugin => plugin.group !== group) !== undefined) {
+      return <div>{t('Multiple Values')}</div>;
+    }
+
+    const options = [].concat(
+      masterlist.groups.map(iter => ({ label: iter.name, value: iter.name })),
+      userlist.groups.map(iter => ({ label: iter.name, value: iter.name })),
+    );
+
+    return (
+      <Creatable
+        value={group}
+        onChange={this.changeGroup}
+        options={options}
+        promptTextCreator={this.createPrompt}
+      />
+    );
+  }
+
+  private createPrompt = (label: string): string => {
+    const { t } = this.props;
+    return t('Create Group: {{group}}', { replace: { group: label } });
+  }
+
+  private changeGroup = (selection: { name: string, value: string }) => {
+    const { plugins, onSetGroup } = this.props;
+    plugins.forEach(plugin => onSetGroup(plugin.name, selection.value));
+  }
 }
 
 class PluginList extends ComponentEx<IProps, IComponentState> {
@@ -103,7 +148,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     },
     {
       id: 'category',
-      name: 'Category',
+      name: 'Mod Category',
       edit: {},
       calc: plugin => util.resolveCategoryName(
         util.getSafe(this.props.mods, [plugin.modName, 'attributes', 'category'], undefined),
@@ -173,63 +218,39 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       placement: 'table',
     },
     {
-      id: 'priority',
-      name: 'Priority',
-      description: 'Loot priority',
+      id: 'group',
+      name: 'Group',
+      description: 'Group',
       icon: 'sort-down',
       placement: 'table',
-      calc: plugin => {
-        const global = util.getSafe(plugin, ['globalPriority', 'value'], 0);
-        const local = util.getSafe(plugin, ['localPriority', 'value'], 0);
-        return `${global} / ${local}`;
-      },
+      calc: plugin => util.getSafe(plugin, ['group'], ''),
       edit: {},
       isToggleable: true,
-      isDefaultVisible: false,
+      isDefaultVisible: true,
       isSortable: true,
     },
     {
-      id: 'global_priority',
-      name: 'Global Priority',
-      description: 'Priority used to sort unrelated plugins (no record conflict, no rules).',
+      id: 'groupdetail',
+      name: 'Group',
+      description: 'Group',
       placement: 'detail',
-      calc: plugin => util.getSafe(plugin, ['globalPriority', 'value'], 0),
-      edit: {
-        validate: input => {
-          const prio = Number(input);
-          return (isNaN(prio) || (prio < -127) || (prio > 127))
-            ? 'error' : 'success';
-        },
-        onChangeValue: (plugins: IPluginCombined[], input: string) => {
-          const prio = parseInt(input, 10);
-          plugins.forEach(plugin => {
-            this.props.onSetGlobalPriority(plugin.name, prio);
-          });
-        },
+      calc: plugin => util.getSafe(plugin, ['group'], ''),
+      customRenderer: plugins => {
+        const { t, masterlist, userlist } = this.props;
+        if (!Array.isArray(plugins)) {
+          plugins = [ plugins ];
+        }
+        return (
+          <GroupSelect
+            t={this.props.t}
+            plugins={plugins}
+            masterlist={masterlist}
+            userlist={userlist}
+            onSetGroup={this.setGroup}
+          />
+        );
       },
-      isVolatile: true,
-      supportsMultiple: true,
-    },
-    {
-      id: 'local_priority',
-      name: 'Local Priority',
-      description: 'Priority used to sort plugins that conflict on records but neither '
-                 + 'specifies the other as master and neither has a rule.',
-      placement: 'detail',
-      calc: plugin => util.getSafe(plugin, ['localPriority', 'value'], 0),
-      edit: {
-        validate: input => {
-          const prio = Number(input);
-          return (isNaN(prio) || (prio < -127) || (prio > 127))
-            ? 'error' : 'success';
-        },
-        onChangeValue: (plugins: IPluginCombined[], input: string) => {
-          const prio = parseInt(input, 10);
-          plugins.forEach(plugin => {
-            this.props.onSetLocalPriority(plugin.name, prio);
-          });
-        },
-      },
+      edit: {},
       supportsMultiple: true,
     },
     {
@@ -373,7 +394,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         messages: [],
         cleanliness: [],
         dirtyness: [],
-        globalPriority: { value: 0 },
+        group: '',
         tags: [],
       };
       return prev;
@@ -573,7 +594,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
                           pluginsLoot: { [pluginId: string]: IPluginLoot },
                           pluginsParsed: { [pluginId: string]: IPluginParsed },
                           ): { [id: string]: IPluginCombined } {
-    const { loadOrder, userlist } = this.props;
+    const { loadOrder, masterlist, userlist } = this.props;
 
     const pluginNames = Object.keys(plugins);
 
@@ -590,11 +611,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       };
 
       if ((userlistEntry !== undefined)
-          && (userlistEntry.global_priority !== undefined)) {
-        res['globalPriority'] = {
-          IsExplicit: true,
-          value: userlistEntry.global_priority,
-        };
+          && (userlistEntry.group !== undefined)) {
+        res.group = userlistEntry.group;
       }
 
       return res;
@@ -650,17 +668,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
       updateSet[plugin.name] = {};
 
-      if (plugin.global_priority !== undefined) {
-        updateSet[plugin.name]['globalPriority'] = { $set: {
-          IsExplicit: true,
-          value: plugin.global_priority,
-        } };
-      }
-      if (plugin.priority !== undefined) {
-        updateSet[plugin.name]['localPriority'] = { $set: {
-          IsExplicit: true,
-          value: plugin.priority,
-        } };
+      if (plugin.group !== undefined) {
+        updateSet[plugin.name]['group'] = { $set: plugin.group };
       }
     });
 
@@ -694,6 +703,15 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       </ListGroup>
     );
   }
+
+  private setGroup = (plugin: string, group: string) => {
+    const { onAddGroup, onSetGroup, masterlist, userlist } = this.props;
+    if ((masterlist.groups.find(iter => iter.name === group) === undefined)
+        && (userlist.groups.find(iter => iter.name === group) === undefined)) {
+      onAddGroup(group);
+    }
+    onSetGroup(plugin, group);
+  }
 }
 
 function mapStateToProps(state: any): IConnectedProps {
@@ -704,6 +722,7 @@ function mapStateToProps(state: any): IConnectedProps {
     plugins: state.session.plugins.pluginList,
     loadOrder: state.loadOrder,
     userlist: state.userlist,
+    masterlist: state.masterlist,
     autoSort: state.settings.plugins.autoSort,
     activity: state.session.base.activity['plugins'],
     mods: profile !== undefined ? (state as types.IState).persistent.mods[gameMode] : {},
@@ -716,10 +735,9 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
       dispatch(setPluginEnabled(pluginName, enabled)),
     onSetAutoSortEnabled: (enabled: boolean) =>
       dispatch(setAutoSortEnabled(enabled)),
-    onSetLocalPriority: (pluginName: string, priority: number) =>
-      dispatch(setLocalPriority(pluginName, priority)),
-    onSetGlobalPriority: (pluginName: string, priority: number) =>
-      dispatch(setGlobalPriority(pluginName, priority)),
+    onAddGroup: (group: string) => dispatch(addGroup(group)),
+    onSetGroup: (pluginName: string, group: string) =>
+      dispatch(setGroup(pluginName, group)),
   };
 }
 

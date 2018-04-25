@@ -32,6 +32,7 @@ class UserlistPersistor implements types.IPersistor {
     this.mUserlist = {
       globals: [],
       plugins: [],
+      groups: [],
     };
     this.mOnError = onError;
     this.mMode = mode;
@@ -42,6 +43,7 @@ class UserlistPersistor implements types.IPersistor {
       this.mUserlist = {
         globals: [],
         plugins: [],
+        groups: [],
       };
       this.mUserlistPath = undefined;
       this.mLoaded = false;
@@ -149,6 +151,7 @@ class UserlistPersistor implements types.IPersistor {
         this.mUserlist = {
           globals: [],
           plugins: [],
+          groups: [],
         };
         this.mLoaded = true;
       } else {
