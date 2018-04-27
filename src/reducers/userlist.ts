@@ -60,9 +60,23 @@ const userlistReducer: types.IReducerSpec = {
       (state.groups.find(group => group.name === payload.group) === undefined)
         ? util.pushSafe(state, ['groups'], {
           name: payload.group,
-          after: [ 'default' ],
+          after: [],
         })
         : state,
+    [actions.removeGroup as any]: (state, payload) => {
+      // need to remove the group from all rules
+      state.groups.forEach((group, idx) => {
+        state = util.removeValue(state, ['groups', idx, 'after'], payload.group);
+      });
+
+      state.plugins.forEach((plugin, idx) => {
+        if (plugin.group === payload.group) {
+          state = util.setSafe(state, ['plugins', idx, 'group'], 'default');
+        }
+      });
+
+      return util.removeValueIf(state, ['groups'], group => group.name === payload.group);
+    },
     [actions.setGroup as any]: (state, payload) => {
       let existing: number = -1;
       if (state.plugins !== undefined) {
@@ -74,6 +88,22 @@ const userlistReducer: types.IReducerSpec = {
           name: payload.pluginId,
           group: payload.group,
         });
+    },
+    [actions.addGroupRule as any]: (state, payload) => {
+      const idx = state.groups.findIndex(group => group.name === payload.groupId);
+      return (idx === -1)
+        ? util.pushSafe(state, ['groups'], {
+          name: payload.groupId,
+          after: [ payload.reference ],
+        })
+        : util.pushSafe(state, ['groups', idx, 'after'], payload.reference);
+    },
+    [actions.removeGroupRule as any]: (state, payload) => {
+      const idx = state.groups.findIndex(group => group.name === payload.groupId);
+      if (idx === -1) {
+        return state;
+      }
+      return util.removeValue(state, ['groups', idx, 'after'], payload.reference);
     },
   },
   defaults: {

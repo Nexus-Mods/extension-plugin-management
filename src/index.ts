@@ -1,5 +1,6 @@
 import { setPluginEnabled, setPluginOrder } from './actions/loadOrder';
 import { setPluginList } from './actions/plugins';
+import { openGroupEditor, setCreateRule } from './actions/userlistEdit';
 import { loadOrderReducer } from './reducers/loadOrder';
 import { pluginsReducer } from './reducers/plugins';
 import { settingsReducer } from './reducers/settings';
@@ -8,6 +9,7 @@ import userlistEditReducer from './reducers/userlistEdit';
 import { ILoadOrder } from './types/ILoadOrder';
 import { IPlugins } from './types/IPlugins';
 import Connector from './views/Connector';
+import GroupEditor from './views/GroupEditor';
 import PluginList from './views/PluginList';
 import UserlistEditor from './views/UserlistEditor';
 
@@ -32,7 +34,6 @@ import * as I18next from 'i18next';
 import * as path from 'path';
 import * as nodeUtil from 'util';
 import { actions, fs, log, selectors, types, util } from 'vortex-api';
-import { setCreateRule } from './actions/userlistEdit';
 
 interface IModState {
   enabled: boolean;
@@ -170,6 +171,11 @@ function register(context: IExtensionContextExt) {
       context.api.store.dispatch(setCreateRule());
     });
 
+  context.registerAction('gamebryo-plugin-icons', 105, 'groups', {}, 'Manage Groups',
+    () => {
+      context.api.store.dispatch(openGroupEditor(true));
+    });
+
   context.registerActionCheck('ADD_USERLIST_RULE', (state: any, action: any) => {
     const {pluginId, reference, type} = action.payload;
 
@@ -191,6 +197,7 @@ function register(context: IExtensionContextExt) {
     () => testMissingMasters(context.api.translate, context.api.store.getState()));
   context.registerDialog('plugin-dependencies-connector', Connector);
   context.registerDialog('userlist-editor', UserlistEditor);
+  context.registerDialog('group-editor', GroupEditor);
 }
 
 /**

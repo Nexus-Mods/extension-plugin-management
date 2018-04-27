@@ -12,5 +12,8 @@ export const setCreateRule = createAction('SET_PLUGIN_CREATE_RULE',
 
 export const closeDialog = createAction('CLOSE_PLUGIN_RULE_DIALOG');
 
+export const openGroupEditor = createAction('CLOSE_GROUP_EDITOR',
+  (open: boolean) => open);
+
 export const setQuickEdit = createAction('SET_USERLIST_QUICK_EDIT',
   (pluginId: string, mode: string) => ({ pluginId, mode }));
