@@ -32,10 +32,7 @@ const userlistReducer: types.IReducerSpec = {
       const list = listForType(payload.type);
       if (existing !== -1) {
         const statePath = ['plugins', existing, list];
-        if (util.getSafe(state, statePath, []).indexOf(payload.reference) !== -1) {
-          return state;
-        }
-        return util.pushSafe(state, statePath, payload.reference);
+        return (util as any).addUniqueSafe(state, statePath, payload.reference);
       } else {
         const res = util.pushSafe(state, ['plugins'], {
           name: payload.pluginId,
@@ -91,12 +88,14 @@ const userlistReducer: types.IReducerSpec = {
     },
     [actions.addGroupRule as any]: (state, payload) => {
       const idx = state.groups.findIndex(group => group.name === payload.groupId);
-      return (idx === -1)
-        ? util.pushSafe(state, ['groups'], {
+      if (idx === -1) {
+        return util.pushSafe(state, ['groups'], {
           name: payload.groupId,
           after: [ payload.reference ],
-        })
-        : util.pushSafe(state, ['groups', idx, 'after'], payload.reference);
+        });
+      } else {
+        return (util as any).addUniqueSafe(state, ['groups', idx, 'after'], payload.reference);
+      }
     },
     [actions.removeGroupRule as any]: (state, payload) => {
       const idx = state.groups.findIndex(group => group.name === payload.groupId);
