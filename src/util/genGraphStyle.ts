@@ -17,14 +17,28 @@ export default function(rules: CSSStyleRule[]) {
       style: {
         'background-color': variables['brand-bg'],
         label: 'data(title)',
-        'text-background-color': variables['white'],
+        color: variables['text-color'],
+        'text-background-color': variables['brand-bg'],
+        'text-border-opacity': 1,
+        'text-border-width': 1,
+        'text-border-color': variables['border-color'],
+        'text-border-style': 'solid',
         'text-background-opacity': 1,
+        'text-background-padding': '4px',
+        'text-margin-y': '-20px',
+        'overlay-color': variables['link-hover-color'],
       },
     },
     {
       selector: 'node.masterlist',
       style: {
         'background-blacken': -0.5,
+      },
+    },
+    {
+      selector: 'node.group-default',
+      style: {
+        'background-color': variables['brand-info'],
       },
     },
     {
@@ -47,6 +61,7 @@ export default function(rules: CSSStyleRule[]) {
         'mid-target-arrow-shape': 'triangle',
         'arrow-scale': 1.25,
         'target-endpoint': 'inside-to-node',
+        'text-rotation': 'autorotate',
       },
     },
     {
@@ -59,8 +74,8 @@ export default function(rules: CSSStyleRule[]) {
     {
       selector: 'edge.userlist',
       style: {
-        'line-color': variables['text-color'],
-        'mid-target-arrow-color': variables['text-color'],
+        'line-color': variables['link-color'],
+        'mid-target-arrow-color': variables['link-color'],
       },
     },
     {
@@ -68,8 +83,8 @@ export default function(rules: CSSStyleRule[]) {
       style: {
         label: '',
         'background-color': variables['brand-primary'],
-        height: 10,
-        width: 10,
+        height: 15,
+        width: 15,
       },
     },
   ];

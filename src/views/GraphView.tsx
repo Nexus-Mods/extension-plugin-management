@@ -12,12 +12,14 @@ export interface IGraphElement {
   title: string;
   class: string;
   connections: string[];
+  readonly?: boolean;
 }
 
 export interface IGraphSelection {
   source?: string;
   target?: string;
   id?: string;
+  readonly?: boolean;
 }
 
 export interface IGraphViewProps {
@@ -63,7 +65,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
                 target: from,
                 targetOrig: id.slice(1),
               },
-              classes: 'new',
+              classes: newProps.elements[id].class,
             });
           });
         } else if (id[0] === '-') {
@@ -86,7 +88,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
                   target: from,
                   targetOrig: id,
                 },
-                classes: 'new',
+                classes: newProps.elements[id].class,
               });
             }
           });
@@ -94,6 +96,10 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
       });
       this.mLayout.run();
     }
+  }
+
+  public layout() {
+    this.mLayout.run();
   }
 
   public render(): JSX.Element {
@@ -122,7 +128,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
     this.mLayout = this.mGraph.layout({
       name: 'cose-bilkent',
       nodeDimensionsIncludeLabels: true,
-      gravityRange: 1,
+      randomize: false,
     } as any);
     this.mLayout.run();
     (this.mGraph as any).edgehandles({
@@ -139,27 +145,28 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
   }
 
   private handleContext = (evt: cytoscape.EventObject) => {
-      let selection;
-      if (evt.target.data !== undefined) {
-        const data = evt.target.data();
-        if ((data.title === undefined) && (data.source === undefined)) {
-          // an item was hit, but neither a node nor an edge. Probably the edge handle
-          return;
-        }
-        selection = (data.source !== undefined)
-          ? { source: data.sourceOrig, target: data.targetOrig }
-          : { id: data.title };
+    let selection;
+    if (evt.target.data !== undefined) {
+      const data = evt.target.data();
+      if ((data.title === undefined) && (data.source === undefined)) {
+        // an item was hit, but neither a node nor an edge. Probably the edge handle
+        return;
       }
-      this.props.onContext(evt.renderedPosition.x, evt.renderedPosition.y, selection);
+      selection = (data.source !== undefined)
+        ? { source: data.sourceOrig, target: data.targetOrig, readonly: data.readonly }
+        : { id: data.title, readonly: data.readonly };
+    }
+    this.props.onContext(evt.renderedPosition.x, evt.renderedPosition.y, selection);
   }
 
   private addElements(elements: { [id: string]: IGraphElement }) {
     this.mGraph
-      .add(Object.keys(elements).reduce((prev, id: string) => {
+      .add(Object.keys(elements).reduce((prev, id: string, idx: number) => {
         const ele = elements[id];
         prev.push({
-          data: { id: san(id), title: ele.title },
+          data: { id: san(id), title: ele.title, readonly: ele.readonly },
           classes: ele.class,
+          position: { x: idx * 2, y: idx },
         });
         (ele.connections || []).forEach(conn => {
           prev.push({
@@ -169,6 +176,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
               source: san(conn),
               targetOrig: id,
               sourceOrig: conn,
+              readonly: ele.readonly,
             },
             classes: ele.class,
           });

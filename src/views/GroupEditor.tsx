@@ -46,6 +46,7 @@ interface IComponentState {
 class GroupEditor extends ComponentEx<IProps, IComponentState> {
   private mHighlighted: { source: string, target: string };
   private mContextTime: number;
+  private mGraphRef: GraphView;
 
   private contextNodeActions = [
     {
@@ -62,6 +63,12 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
       title: 'Add Group',
       show: true,
       action: () => this.addGroup(),
+    },
+    {
+      icon: '',
+      title: 'Layout',
+      show: true,
+      action: () => this.mGraphRef.layout(),
     },
   ];
 
@@ -103,6 +110,7 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
             <div>{t('Right click a line/node to remove the corresponding rule/group.')}</div>
             <div>{t('Right click empty area to create new Group.')}</div>
             <div>{t('Masterlist groups and rules can\'t be removed.')}</div>
+            <div>{t('Use the mouse wheel to zoom, drag on an empty area to pan the view')}</div>
           </div>
           <GraphView
             className='group-graph'
@@ -112,6 +120,7 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
             onDisconnect={this.disconnect}
             onRemove={this.props.onRemoveGroup}
             onContext={this.openContext}
+            ref={this.setGraphRef}
           />
           <ContextMenu
             position={this.state.context}
@@ -126,6 +135,10 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
         </Modal.Footer>
       </Modal>
     );
+  }
+
+  private setGraphRef = (ref: GraphView) => {
+    this.mGraphRef = ref;
   }
 
   private connect = (source: string, target: string) => {
@@ -174,6 +187,9 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
   }
 
   private openContext = (x: number, y: number, selection: IGraphSelection) => {
+    if ((selection !== undefined) && selection.readonly) {
+      return;
+    }
     this.nextState.context = { x, y, selection };
     this.mContextTime = Date.now();
   }
@@ -207,9 +223,10 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
 
     return [].concat(
       masterlist.groups.map(group =>
-        ({ title: group.name, connections: group.after, class: 'masterlist', readonly: true })),
+        ({ title: group.name, connections: group.after,
+           class: `masterlist group-${group.name}`, readonly: true })),
       userlist.groups.map(group =>
-        ({ title: group.name, connections: group.after, class: 'userlist' })),
+        ({ title: group.name, connections: group.after, class: `userlist group-${group.name}` })),
     ).reduce((prev, ele) => {
       prev[ele.title] = ele;
       return prev;
