@@ -114,8 +114,7 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
           pluginStates[fileName] = {
             modName: modName || '',
             filePath: path.join(modPath, fileName),
-            isNative:
-                modName === undefined && isNativePlugin(gameMode, fileName),
+            isNative: isNativePlugin(gameMode, fileName),
           };
         });
         store.dispatch(setPluginList(pluginStates));
