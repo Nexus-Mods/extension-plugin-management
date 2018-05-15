@@ -140,7 +140,9 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
     (this.mGraph as any).on('ehcomplete', (evt, source, target, added) => {
       this.props.onConnect(source.data().title, target.data().title);
       // remove the automatically created edge so we can add our own, in sync with the backend data
-      this.mGraph.remove('#' + added.data().id);
+      if (added.data() !== undefined) {
+        this.mGraph.remove('#' + added.data().id);
+      }
     });
   }
 
