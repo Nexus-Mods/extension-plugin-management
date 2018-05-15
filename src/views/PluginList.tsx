@@ -1,6 +1,6 @@
 import {setPluginEnabled} from '../actions/loadOrder';
 import {setAutoSortEnabled} from '../actions/settings';
-import {addGroup, setGroup} from '../actions/userlist';
+import {addGroup, addGroupRule, setGroup} from '../actions/userlist';
 import {ILoadOrder} from '../types/ILoadOrder';
 import { ILOOTList, ILOOTPlugin } from '../types/ILOOTList';
 import {
@@ -53,6 +53,7 @@ interface IActionProps {
   onSetPluginEnabled: (pluginName: string, enabled: boolean) => void;
   onSetAutoSortEnabled: (enabled: boolean) => void;
   onAddGroup: (group: string) => void;
+  onAddGroupRule: (group: string, reference: string) => void;
   onSetGroup: (pluginName: string, group: string) => void;
 }
 
@@ -705,10 +706,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private setGroup = (plugin: string, group: string) => {
-    const { onAddGroup, onSetGroup, masterlist, userlist } = this.props;
+    const { onAddGroup, onAddGroupRule, onSetGroup, masterlist, userlist } = this.props;
     if ((masterlist.groups.find(iter => iter.name === group) === undefined)
         && (userlist.groups.find(iter => iter.name === group) === undefined)) {
       onAddGroup(group);
+      onAddGroupRule(group, 'default');
     }
     onSetGroup(plugin, group);
   }
@@ -736,6 +738,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onSetAutoSortEnabled: (enabled: boolean) =>
       dispatch(setAutoSortEnabled(enabled)),
     onAddGroup: (group: string) => dispatch(addGroup(group)),
+    onAddGroupRule: (group: string, reference: string) =>
+      dispatch(addGroupRule(group, reference)),
     onSetGroup: (pluginName: string, group: string) =>
       dispatch(setGroup(pluginName, group)),
   };
