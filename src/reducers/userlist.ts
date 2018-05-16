@@ -79,6 +79,13 @@ const userlistReducer: types.IReducerSpec = {
       if (state.plugins !== undefined) {
         existing = state.plugins.findIndex(plug => plug.name === payload.pluginId);
       }
+
+      if (payload.group === undefined) {
+        return (existing !== -1)
+          ? util.deleteOrNop(state, ['plugins', existing, 'group'])
+          : null;
+      }
+
       return (existing !== -1)
         ? util.setSafe(state, ['plugins', existing, 'group'],  payload.group)
         : util.pushSafe(state, ['plugins'], {

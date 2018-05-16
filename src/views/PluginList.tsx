@@ -120,7 +120,8 @@ class GroupSelect extends React.PureComponent<IGroupSelectProps, {}> {
 
   private changeGroup = (selection: { name: string, value: string }) => {
     const { plugins, onSetGroup } = this.props;
-    plugins.forEach(plugin => onSetGroup(plugin.name, selection.value));
+    plugins.forEach(plugin => onSetGroup(plugin.name,
+      selection ? selection.value : undefined));
   }
 }
 
@@ -128,6 +129,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   private staticButtons: types.IActionDefinition[];
   private pluginEnabledAttribute: types.ITableAttribute;
   private actions: ITableRowAction[];
+
+  private installedNative: { [name: string]: number };
 
   private pluginAttributes: Array<types.ITableAttribute<IPluginCombined>> = [
     {
@@ -196,7 +199,17 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       edit: {},
       isSortable: true,
       calc: (plugin: IPluginCombined) => plugin.loadOrder,
-      sortFunc: (lhs: number, rhs: number) => num(lhs) - num(rhs),
+      sortFuncRaw: (lhs: IPluginCombined, rhs: IPluginCombined) => {
+        if (this.installedNative !== undefined) {
+          const lhsLO = lhs.isNative
+            ? this.installedNative[lhs.name.toLowerCase()] : lhs.loadOrder + 1000;
+          const rhsLO = rhs.isNative
+            ? this.installedNative[rhs.name.toLowerCase()] : rhs.loadOrder + 1000;
+          return lhsLO - rhsLO;
+        } else {
+          return lhs.loadOrder - rhs.loadOrder;
+        }
+      },
       placement: 'table',
     },
     {
@@ -518,6 +531,17 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           pluginsLoot: { $set: pluginsLoot },
           pluginsCombined: { $set: pluginsCombined },
         }));
+
+        const pluginsFlat = Object.keys(pluginsCombined).map(pluginId => pluginsCombined[pluginId]);
+
+        const { nativePlugins } = this.props;
+        this.installedNative = nativePlugins.filter(name =>
+          pluginsFlat.find(
+            (plugin: IPluginCombined) => name === plugin.name.toLowerCase()) !== undefined)
+          .reduce((prev, name, idx) => {
+            prev[name] = idx;
+            return prev;
+          }, {});
       });
   }
 
@@ -554,21 +578,16 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     // native plugins at the top in their hard-coded order. Then it assigns
     // the ascending mod index to all enabled plugins.
 
-    const { nativePlugins } = this.props;
-    const installedNative = nativePlugins.filter((name: string) => {
-      return pluginObjects.find(
-        (plugin: IPluginCombined) => name === plugin.name.toLowerCase()) !== undefined;
-    });
-
-    function nativeIdx(name: string): number {
-      const idx = installedNative.indexOf(name.toLowerCase());
-      return idx !== -1 ? idx : undefined;
-    }
-
     const byLO = pluginObjects.sort((lhs: IPluginCombined, rhs: IPluginCombined) => {
-      const lhsLO = lhs.isNative ? nativeIdx(lhs.name) : lhs.loadOrder + 1000;
-      const rhsLO = rhs.isNative ? nativeIdx(rhs.name) : rhs.loadOrder + 1000;
-      return lhsLO - rhsLO;
+      if (this.installedNative !== undefined) {
+        const lhsLO = lhs.isNative
+          ? this.installedNative[lhs.name.toLowerCase()] : lhs.loadOrder + 1000;
+        const rhsLO = rhs.isNative
+          ? this.installedNative[rhs.name.toLowerCase()] : rhs.loadOrder + 1000;
+        return lhsLO - rhsLO;
+      } else {
+        return lhs.loadOrder - rhs.loadOrder;
+      }
     });
 
     let modIndex = 0;
@@ -658,7 +677,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private applyUserlist(userlist: ILOOTPlugin[]) {
-    const { pluginsCombined } = this.state;
+    const { pluginsCombined, pluginsLoot } = this.state;
 
     const updateSet = {};
     const pluginsFlat = Object.keys(pluginsCombined).map(pluginId => pluginsCombined[pluginId]);
@@ -671,6 +690,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
       if (plugin.group !== undefined) {
         updateSet[plugin.name]['group'] = { $set: plugin.group };
+      } else {
+        const loot = pluginsLoot[plugin.name];
+        if (loot !== undefined) {
+          updateSet[plugin.name]['group'] = { $set: loot.group };
+        }
       }
     });
 
@@ -707,7 +731,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
   private setGroup = (plugin: string, group: string) => {
     const { onAddGroup, onAddGroupRule, onSetGroup, masterlist, userlist } = this.props;
-    if ((masterlist.groups.find(iter => iter.name === group) === undefined)
+    if ((group !== undefined)
+        && (masterlist.groups.find(iter => iter.name === group) === undefined)
         && (userlist.groups.find(iter => iter.name === group) === undefined)) {
       onAddGroup(group);
       onAddGroupRule(group, 'default');
