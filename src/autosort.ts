@@ -178,8 +178,9 @@ class LootInterface {
     // load & evaluate lists first time we need them and whenever
     // the userlist has changed
     if ((mtime !== null) &&
-        ((this.mUserlistTime === undefined) ||
-          (this.mUserlistTime.getTime() !== mtime.getTime()))) {
+        // this.mUserlistTime could be undefined or null
+        (!this.mUserlistTime ||
+         (this.mUserlistTime.getTime() !== mtime.getTime()))) {
       log('info', '(re-)loading loot lists', {
         mtime,
         masterlistPath,
