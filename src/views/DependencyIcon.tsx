@@ -258,9 +258,9 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
 
   private nameMatch(pattern: string, name: string): boolean {
     if (pattern.search(RE_MATCH) !== -1) {
-      return new RegExp(pattern).test(name);
+      return new RegExp(pattern, 'i').test(name);
     } else {
-      return pattern === name;
+      return pattern.toUpperCase() === name.toUpperCase();
     }
   }
 

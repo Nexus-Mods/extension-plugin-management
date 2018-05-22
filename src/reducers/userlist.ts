@@ -35,7 +35,8 @@ const userlistReducer: types.IReducerSpec = {
     [actions.addRule as any]: (state, payload) => {
       let existing: number = -1;
       if (state.plugins !== undefined) {
-        existing = state.plugins.findIndex(plug => plug.name === payload.pluginId);
+        existing = state.plugins.findIndex(plug =>
+          plug.name.toUpperCase() === payload.pluginId.toUpperCase());
       }
       const list = listForType(payload.type);
       if (existing !== -1) {
