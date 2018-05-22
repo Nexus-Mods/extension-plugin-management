@@ -33,6 +33,7 @@ import * as path from 'path';
 import * as nodeUtil from 'util';
 import { actions, fs, log, selectors, types, util } from 'vortex-api';
 import { setCreateRule } from './actions/userlistEdit';
+import { ILOOTList, ILOOTPlugin, ILootReference } from './types/ILOOTList';
 
 interface IModState {
   enabled: boolean;
@@ -188,6 +189,8 @@ function register(context: IExtensionContextExt) {
     () => testMissingMasters(context.api.translate, context.api.store.getState()));
   context.registerTest('master-missing', 'plugins-changed',
     () => testMissingMasters(context.api.translate, context.api.store.getState()));
+  context.registerTest('invalid-userlist', 'gamemode-activated',
+    () => testUserlistInvalid(context.api.translate, context.api.store.getState()));
   context.registerDialog('plugin-dependencies-connector', Connector);
   context.registerDialog('userlist-editor', UserlistEditor);
 }
@@ -364,6 +367,78 @@ function testPluginsLocked(gameMode: string): Promise<types.ITestResult> {
       }
     });
   });
+}
+
+function testUserlistInvalid(t: I18next.TranslationFunction,
+                             state: any): Promise<types.ITestResult> {
+  const gameMode = selectors.activeGameId(state);
+  if (!gameSupported(gameMode)) {
+    return Promise.resolve(undefined);
+  }
+
+  const userlist: ILOOTList = state.userlist;
+  const names = new Set<string>();
+
+  if (userlist.plugins === undefined) {
+    return Promise.resolve(undefined);
+  }
+
+  // search for duplicate plugin entries
+  const duplicate = userlist.plugins.find(iter => {
+    const name = iter.name.toUpperCase();
+    if (names.has(name)) {
+      return true;
+    }
+    names.add(name);
+    return false;
+  });
+  if (duplicate !== undefined) {
+    const userlistPath = path.join(remote.app.getPath('userData'), gameMode, 'userlist.yaml');
+    return Promise.resolve({
+      description: {
+        short: 'Duplicate entries',
+        long: t('Your userlist contains multiple entries for "{{name}}". '
+          + 'This is not allowed and Vortex shouldn\'t create entries like that, '
+          + 'although earlier versions may have.\n'
+          + 'Please close vortex and remove duplicate entries from "{{userlistPath}}".', {
+            replace: {
+              name: duplicate.name,
+              userlistPath,
+            },
+          }),
+      },
+      severity: 'warning' as types.ProblemSeverity,
+    });
+  }
+
+  // search for duplicate after rules
+  let duplicateAfter: string | ILootReference;
+  const plugin = userlist.plugins.find(iter => {
+    duplicateAfter = (iter.after || []).find((val, idx) =>
+            iter.after.indexOf(val, idx + 1) !== -1);
+    return duplicateAfter !== undefined;
+  });
+  if (plugin !== undefined) {
+    const userlistPath = path.join(remote.app.getPath('userData'), gameMode, 'userlist.yaml');
+    return Promise.resolve({
+      description: {
+        short: 'Duplicate dependencies',
+        long: t('Your userlist contains multiple identical "{{plugin}} after {{reference}}"'
+          + 'rules. LOOT will not be able to sort plugins with this userlist.\n'
+          + 'To fix this, please close vortex and remove duplicate entries from '
+          + '"{{userlistPath}}".', {
+            replace: {
+              plugin: plugin.name,
+              reference: (typeof duplicateAfter === 'string')
+                ? duplicateAfter : duplicateAfter.name,
+              userlistPath,
+            },
+          }),
+      },
+      severity: 'warning' as types.ProblemSeverity,
+    });
+  }
+  return Promise.resolve(undefined);
 }
 
 function testMissingMasters(t: I18next.TranslationFunction,
