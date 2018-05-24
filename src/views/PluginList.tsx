@@ -435,13 +435,6 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             </PanelX.Body>
           </Panel>
         </MainPage.Body>
-        <MainPage.Overlay>
-          <IconBar
-            group='gamebryo-plugin-icons'
-            staticElements={this.staticButtons}
-            orientation='vertical'
-          />
-        </MainPage.Overlay>
       </MainPage>
     );
   }
