@@ -157,7 +157,7 @@ class UserlistPersistor implements types.IPersistor {
         util.terminate({
           message: 'Failed to read userlist file for this game',
           details: err.message,
-        });
+        }, undefined);
       }
     });
   }
