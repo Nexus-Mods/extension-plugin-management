@@ -2958,9 +2958,9 @@ vm-browserify@0.0.4:
   dependencies:
     indexof "0.0.1"
 
-vortex-api@Nexus-Mods/vortex-api:
-  version "0.14.3"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/99759fd0f92b537ede73dfcec91acee49d453313"
+vortex-api@Nexus-Mods/vortex-api#0.15.0:
+  version "0.15.1"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/cf14d3b8eefd74f2f9a526bfd65fd016d35b013a"
 
 watchpack@^1.4.0:
   version "1.4.0"

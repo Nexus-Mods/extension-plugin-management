@@ -56,7 +56,7 @@
     "prop-types": "^15.6.1",
     "react-select": "^1.2.1",
     "ts-loader": "2.3.4",
-    "vortex-api": "Nexus-Mods/vortex-api",
+    "vortex-api": "Nexus-Mods/vortex-api#0.15.0",
     "webpack": "^3.5.5"
   }
 }
