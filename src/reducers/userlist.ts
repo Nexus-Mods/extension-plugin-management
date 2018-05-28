@@ -12,14 +12,6 @@ function listForType(type: string) {
   }
 }
 
-function isValidPriority(input): boolean {
-  return !(
-    (input === null)
-    || isNaN(input)
-    || (input < -127)
-    || (input > 127));
-}
-
 /**
  * reducer for changes to settings regarding mods
  */
@@ -41,10 +33,7 @@ const userlistReducer: types.IReducerSpec = {
       const list = listForType(payload.type);
       if (existing !== -1) {
         const statePath = ['plugins', existing, list];
-        if (util.getSafe(state, statePath, []).indexOf(payload.reference) !== -1) {
-          return state;
-        }
-        return util.pushSafe(state, statePath, payload.reference);
+        return (util as any).addUniqueSafe(state, statePath, payload.reference);
       } else {
         const res = util.pushSafe(state, ['plugins'], {
           name: payload.pluginId,
@@ -65,41 +54,63 @@ const userlistReducer: types.IReducerSpec = {
         return state;
       }
     },
-    [actions.setLocalPriority as any]: (state, payload) => {
-      if (!isValidPriority(payload.priority)) {
-        return state;
-      }
+    [actions.addGroup as any]: (state, payload) =>
+      (state.groups.find(group => group.name === payload.group) === undefined)
+        ? util.pushSafe(state, ['groups'], {
+          name: payload.group,
+          after: [],
+        })
+        : state,
+    [actions.removeGroup as any]: (state, payload) => {
+      // need to remove the group from all rules
+      state.groups.forEach((group, idx) => {
+        state = util.removeValue(state, ['groups', idx, 'after'], payload.group);
+      });
 
+      state.plugins.forEach((plugin, idx) => {
+        if (plugin.group === payload.group) {
+          state = util.setSafe(state, ['plugins', idx, 'group'], 'default');
+        }
+      });
+
+      return util.removeValueIf(state, ['groups'], group => group.name === payload.group);
+    },
+    [actions.setGroup as any]: (state, payload) => {
       let existing: number = -1;
       if (state.plugins !== undefined) {
         existing = state.plugins.findIndex(plug => plug.name === payload.pluginId);
       }
-      if (existing !== -1) {
-        return util.setSafe(state, ['plugins', existing, 'priority'],  payload.priority);
-      } else {
-        return util.pushSafe(state, ['plugins'], {
-          name: payload.pluginId,
-          priority: payload.priority,
-        });
-      }
-    },
-    [actions.setGlobalPriority as any]: (state, payload) => {
-      if (!isValidPriority(payload.priority)) {
-        return state;
+
+      if (payload.group === undefined) {
+        return (existing !== -1)
+          ? util.deleteOrNop(state, ['plugins', existing, 'group'])
+          : null;
       }
 
-      let existing: number = -1;
-      if ((state.plugins !== undefined) && !!payload.pluginId) {
-        existing = state.plugins.findIndex(plug => plug.name === payload.pluginId);
-      }
-      if (existing !== -1) {
-        return util.setSafe(state, ['plugins', existing, 'global_priority'], payload.priority);
-      } else if (payload.pluginId) {
-        return util.pushSafe(state, ['plugins'], {
+      return (existing !== -1)
+        ? util.setSafe(state, ['plugins', existing, 'group'],  payload.group)
+        : util.pushSafe(state, ['plugins'], {
           name: payload.pluginId,
-          global_priority: payload.priority,
+          group: payload.group,
         });
+    },
+    [actions.addGroupRule as any]: (state, payload) => {
+      const idx = state.groups.findIndex(group => group.name === payload.groupId);
+      if (idx === -1) {
+        return util.pushSafe(state, ['groups'], {
+          name: payload.groupId,
+          after: [ payload.reference ],
+        });
+      } else {
+        return (util as any).addUniqueSafe(state, ['groups', idx, 'after'], payload.reference);
       }
+    },
+    [actions.removeGroupRule as any]: (state, payload) => {
+      const idx = state.groups.findIndex(group => group.name === payload.groupId);
+      if (idx === -1) {
+        return state;
+      }
+      return util.removeValue(state, ['groups', idx, 'after'], payload.reference);
     },
   },
   defaults: {

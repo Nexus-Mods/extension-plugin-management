@@ -239,7 +239,9 @@ class Editor extends ComponentEx<IProps, IComponentState> {
   }
 
   private selectReference = (newValue: { label: string, value: string }) => {
-    this.nextState.dialog.reference = newValue.value;
+    if (newValue) {
+      this.nextState.dialog.reference = newValue.value;
+    }
   }
 
   private swapPlugins = () => {

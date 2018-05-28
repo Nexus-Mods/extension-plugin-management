@@ -36,6 +36,8 @@ const userlistReducer: types.IReducerSpec = {
         plugin: payload.pluginId,
         mode: payload.mode,
       }),
+    [actions.openGroupEditor as any]: (state, payload) =>
+      util.setSafe(state, ['groupEditorOpen'], payload),
   },
   defaults: {
     connection: undefined,
@@ -44,6 +46,7 @@ const userlistReducer: types.IReducerSpec = {
       plugin: undefined,
       mode: 'after',
     },
+    groupEditorOpen: false,
   },
 };
 

@@ -2,6 +2,10 @@
 # yarn lockfile v1
 
 
+"@types/cytoscape@3.1.8":
+  version "3.1.8"
+  resolved "https://registry.yarnpkg.com/@types/cytoscape/-/cytoscape-3.1.8.tgz#8660f70793d6ce5427990efd66c9ad895283b82c"
+
 "@types/history@^2":
   version "2.0.49"
   resolved "https://registry.yarnpkg.com/@types/history/-/history-2.0.49.tgz#5f626148a0de1e4eb334e66076d15c1a53aa45e2"
@@ -47,6 +51,12 @@
     "@types/node" "*"
     "@types/react" "*"
 
+"@types/react-faux-dom@^4.1.0":
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/@types/react-faux-dom/-/react-faux-dom-4.1.0.tgz#7a7647904b31348dc9f02f8879f68dc8d0b91bef"
+  dependencies:
+    "@types/react" "*"
+
 "@types/react-i18next@^1.7.5":
   version "1.7.10"
   resolved "https://registry.yarnpkg.com/@types/react-i18next/-/react-i18next-1.7.10.tgz#da644db3b8ebbf91ba5b103a17a012986c69d6a2"
@@ -66,6 +76,12 @@
   resolved "https://registry.yarnpkg.com/@types/react-router/-/react-router-2.0.53.tgz#c8beb3ad955e7e44bf2c12c24a58fd8cba845b6d"
   dependencies:
     "@types/history" "^2"
+    "@types/react" "*"
+
+"@types/react-select@^1.2.6":
+  version "1.2.6"
+  resolved "https://registry.yarnpkg.com/@types/react-select/-/react-select-1.2.6.tgz#8a9579705e04b2c15ce529379402980d80e9d243"
+  dependencies:
     "@types/react" "*"
 
 "@types/react@*", "@types/react@16.0.34":
@@ -606,6 +622,10 @@ cipher-base@^1.0.0, cipher-base@^1.0.1, cipher-base@^1.0.3:
     inherits "^2.0.1"
     safe-buffer "^5.0.1"
 
+classnames@^2.2.4:
+  version "2.2.5"
+  resolved "https://registry.yarnpkg.com/classnames/-/classnames-2.2.5.tgz#fb3801d453467649ef3603c7d61a02bd129bde6d"
+
 cli-cursor@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/cli-cursor/-/cli-cursor-2.1.0.tgz#b35dac376479facc3e94747d41d0d0f5238ffcb5"
@@ -777,6 +797,21 @@ crypto-browserify@^3.11.0:
     public-encrypt "^4.0.0"
     randombytes "^2.0.0"
     randomfill "^1.0.3"
+
+cytoscape-cose-bilkent@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/cytoscape-cose-bilkent/-/cytoscape-cose-bilkent-4.0.0.tgz#5f0afbe5c55a7a026442b756ca388ce77c262967"
+
+cytoscape-edgehandles@^3.2.3:
+  version "3.2.4"
+  resolved "https://registry.yarnpkg.com/cytoscape-edgehandles/-/cytoscape-edgehandles-3.2.4.tgz#ec36eb03c57555a074dea5854c5221706aba5419"
+
+cytoscape@^3.2.11:
+  version "3.2.11"
+  resolved "https://registry.yarnpkg.com/cytoscape/-/cytoscape-3.2.11.tgz#583070535ac638cdc4d10c5b758cbc3a739201e8"
+  dependencies:
+    heap "^0.2.6"
+    lodash.debounce "^4.0.8"
 
 d@1:
   version "1.0.0"
@@ -1327,6 +1362,10 @@ hawk@~6.0.2:
     hoek "4.x.x"
     sntp "2.x.x"
 
+heap@^0.2.6:
+  version "0.2.6"
+  resolved "https://registry.yarnpkg.com/heap/-/heap-0.2.6.tgz#087e1f10b046932fc8594dd9e6d378afc9d1e5ac"
+
 hmac-drbg@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/hmac-drbg/-/hmac-drbg-1.0.1.tgz#d2745701025a6c775a6c545793ed502fc0c649a1"
@@ -1681,6 +1720,10 @@ lodash-es@^4.2.1:
 lodash.assign@^4.2.0:
   version "4.2.0"
   resolved "https://registry.yarnpkg.com/lodash.assign/-/lodash.assign-4.2.0.tgz#0d99f3ccd7a6d261d19bdaeb9245005d285808e7"
+
+lodash.debounce@^4.0.8:
+  version "4.0.8"
+  resolved "https://registry.yarnpkg.com/lodash.debounce/-/lodash.debounce-4.0.8.tgz#82d79bff30a67c4005ffd5e2515300ad9ca4d7af"
 
 lodash@^4.14.0, lodash@^4.17.4, lodash@^4.2.1:
   version "4.17.4"
@@ -2202,7 +2245,7 @@ promise@^7.1.1:
   dependencies:
     asap "~2.0.3"
 
-prop-types@^15.6.1:
+prop-types@^15.5.8, prop-types@^15.6.1:
   version "15.6.1"
   resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.6.1.tgz#36644453564255ddda391191fb3a125cbdf654ca"
   dependencies:
@@ -2280,6 +2323,20 @@ rc@^1.1.7:
     ini "~1.3.0"
     minimist "^1.2.0"
     strip-json-comments "~2.0.1"
+
+react-input-autosize@^2.1.2:
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/react-input-autosize/-/react-input-autosize-2.2.1.tgz#ec428fa15b1592994fb5f9aa15bb1eb6baf420f8"
+  dependencies:
+    prop-types "^15.5.8"
+
+react-select@^1.2.1:
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/react-select/-/react-select-1.2.1.tgz#a2fe58a569eb14dcaa6543816260b97e538120d1"
+  dependencies:
+    classnames "^2.2.4"
+    prop-types "^15.5.8"
+    react-input-autosize "^2.1.2"
 
 read-pkg-up@^1.0.1:
   version "1.0.1"
