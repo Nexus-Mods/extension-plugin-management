@@ -42,9 +42,9 @@ class PluginPersistor implements types.IPersistor {
   private mRetryCounter: number = retryCount;
   private mLoaded: boolean = false;
   private mFailed: boolean = false;
-  private mOnError: (message: string, details: Error) =>  void;
+  private mOnError: (message: string, details: Error, options?: types.IErrorOptions) => void;
 
-  constructor(onError: (message: string, details: Error) => void) {
+  constructor(onError: (message: string, details: Error, options?: types.IErrorOptions) => void) {
     this.mPlugins = {};
     this.mOnError = onError;
   }
@@ -112,9 +112,9 @@ class PluginPersistor implements types.IPersistor {
     return Promise.resolve(Object.keys(this.mPlugins).map(key => [key]));
   }
 
-  private reportError(message: string, detail: Error) {
+  private reportError(message: string, detail: Error, options?: types.IErrorOptions) {
     if (!this.mFailed) {
-      this.mOnError(message, detail);
+      this.mOnError(message, detail, options);
       this.mFailed = true;
     }
   }
@@ -190,6 +190,7 @@ class PluginPersistor implements types.IPersistor {
         this.mLastWriteTime = stats.mtime;
         return null;
       })
+      .catch(util.UserCanceled, err => null)
       .catch(err => {
         if (err.code !== 'EBUSY') {
           this.reportError('failed to write plugin list', err);

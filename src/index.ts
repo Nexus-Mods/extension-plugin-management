@@ -208,8 +208,8 @@ function register(context: IExtensionContextExt) {
  * the store
  */
 function initPersistor(context: IExtensionContextExt) {
-  const onError = (message: string, detail: Error) => {
-    context.api.showErrorNotification(message, detail);
+  const onError = (message: string, detail: Error, options?: types.IErrorOptions) => {
+    context.api.showErrorNotification(message, detail, options);
   };
   // TODO: Currently need to stop this from being called in the render process.
   //   This is mega-ugly and needs to go
