@@ -276,7 +276,7 @@ class PluginPersistor implements types.IPersistor {
       return Promise.resolve();
     })
     .catch((err: any) => {
-      if (err.code && (err.code === 'ENOENT')) {
+      if (err.code === 'ENOENT') {
         this.mLoaded = true;
         return;
       }
@@ -320,7 +320,10 @@ class PluginPersistor implements types.IPersistor {
             if (stats.mtime > this.mLastWriteTime) {
               this.scheduleRefresh(500);
             }
-          });
+          })
+          .catch(err => (err.code === 'ENOENT')
+            ? Promise.resolve()
+            : this.mOnError('failed to read fileName', err));
         }
       });
       this.mWatch.on('error', error => {
