@@ -238,6 +238,15 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       (util.getSafe(refMasterPlugin, [quickEdit.mode], []).indexOf(plugin.name) !== -1);
     const thisEnabled = masterEnabled
       || (util.getSafe(refPlugin, [quickEdit.mode], []).indexOf(plugin.name) !== -1);
+
+    const tooltipText = t('load {{ reference }} after {{ name }}',
+      {
+        replace: {
+          name: plugin.name,
+          reference: quickEdit.plugin,
+        },
+        ns: 'gamebryo-plugin',
+      });
     return (
       <div style={{ textAlign: 'center', width: '100%' }}>
         <tooltip.ToggleButton
@@ -247,10 +256,8 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
           state={thisEnabled}
           disabled={masterEnabled}
           onClick={this.toggleQuick}
-          tooltip={t('load after {{ reference }}',
-                     { replace: { reference: quickEdit.plugin }, ns: 'gamebryo-plugin' })}
-          offTooltip={t('load after {{ reference }}',
-                        { replace: { reference: quickEdit.plugin }, ns: 'gamebryo-plugin' })}
+          tooltip={tooltipText}
+          offTooltip={tooltipText}
         />
       </div>
     );
