@@ -129,6 +129,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   private staticButtons: types.IActionDefinition[];
   private pluginEnabledAttribute: types.ITableAttribute;
   private actions: ITableRowAction[];
+  private mLang: string;
+  private mCollator: Intl.Collator;
 
   private installedNative: { [name: string]: number };
 
@@ -142,6 +144,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       calc: (plugin: IPluginCombined) => plugin.name,
       placement: 'both',
       filter: new TableTextFilter(true),
+      sortFunc: (lhs: string, rhs: string, locale: string) =>
+        this.getCollator(locale).compare(lhs, rhs),
     },
     {
       id: 'mod_name',
@@ -242,6 +246,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       isToggleable: true,
       isDefaultVisible: true,
       isSortable: true,
+      sortFunc: (lhs: string, rhs: string, locale: string) =>
+        this.getCollator(locale).compare(lhs, rhs),
     },
     {
       id: 'groupdetail',
@@ -731,6 +737,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       onAddGroupRule(group, 'default');
     }
     onSetGroup(plugin, group);
+  }
+
+  private getCollator(locale: string) {
+    if ((this.mCollator === undefined) || (locale !== this.mLang)) {
+      this.mLang = locale;
+      this.mCollator = new Intl.Collator(locale, { sensitivity: 'base' });
+    }
+    return this.mCollator;
   }
 }
 
