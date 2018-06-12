@@ -734,6 +734,13 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 }
 
+const emptyObj = {};
+const emptyList: ILOOTList = {
+  globals: [],
+  groups: [],
+  plugins: [],
+};
+
 function mapStateToProps(state: any): IConnectedProps {
   const profile = selectors.activeProfile(state);
   const gameMode = profile !== undefined ? profile.gameId : undefined;
@@ -741,11 +748,11 @@ function mapStateToProps(state: any): IConnectedProps {
     gameMode,
     plugins: state.session.plugins.pluginList,
     loadOrder: state.loadOrder,
-    userlist: state.userlist,
-    masterlist: state.masterlist,
+    userlist: state.userlist || emptyList,
+    masterlist: state.masterlist || emptyList,
     autoSort: state.settings.plugins.autoSort,
     activity: state.session.base.activity['plugins'],
-    mods: profile !== undefined ? (state as types.IState).persistent.mods[gameMode] : {},
+    mods: profile !== undefined ? (state as types.IState).persistent.mods[gameMode] : emptyObj,
   };
 }
 
