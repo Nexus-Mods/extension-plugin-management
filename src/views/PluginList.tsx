@@ -451,7 +451,6 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t } = this.props;
     const { pluginsCombined } = this.state;
 
     const PanelX: any = Panel;
