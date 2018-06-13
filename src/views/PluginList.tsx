@@ -26,13 +26,9 @@ import {Alert, ListGroup, ListGroupItem, Panel} from 'react-bootstrap';
 import {translate} from 'react-i18next';
 import {connect} from 'react-redux';
 import {Creatable} from 'react-select';
-import {ComponentEx, FlexLayout, IconBar, ITableRowAction, log, MainPage,
+import {ComponentEx, IconBar, ITableRowAction, log, MainPage,
         selectors, Table, TableTextFilter, ToolbarIcon,
         types, util} from 'vortex-api';
-
-interface IAttributeStateMap {
-  [ attributeId: string ]: types.IAttributeState;
-}
 
 interface IBaseProps {
   nativePlugins: string[];
@@ -75,10 +71,6 @@ function toHex(input: number) {
     res = '0' + res;
   }
   return res;
-}
-
-function num(input: number) {
-  return input !== undefined && input !== null ? input : -1;
 }
 
 interface IGroupSelectProps {
@@ -612,7 +604,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
                           pluginsLoot: { [pluginId: string]: IPluginLoot },
                           pluginsParsed: { [pluginId: string]: IPluginParsed },
                           ): { [id: string]: IPluginCombined } {
-    const { loadOrder, masterlist, userlist } = this.props;
+    const { loadOrder, userlist } = this.props;
 
     const pluginNames = Object.keys(plugins);
 
@@ -678,7 +670,6 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const { pluginsCombined, pluginsLoot } = this.state;
 
     const updateSet = {};
-    const pluginsFlat = Object.keys(pluginsCombined).map(pluginId => pluginsCombined[pluginId]);
     userlist.forEach(plugin => {
       if (pluginsCombined[plugin.name] === undefined) {
         return;
