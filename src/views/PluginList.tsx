@@ -248,9 +248,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       placement: 'detail',
       calc: plugin => util.getSafe(plugin, ['group'], ''),
       customRenderer: plugins => {
-        const { t, masterlist, userlist } = this.props;
+        const { masterlist, userlist } = this.props;
         if (!Array.isArray(plugins)) {
-          plugins = [ plugins ];
+          plugins = (plugins === undefined)
+            ? []
+            : [ plugins ];
         }
         return (
           <GroupSelect

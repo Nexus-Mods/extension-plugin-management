@@ -7,15 +7,9 @@ import { settingsReducer } from './reducers/settings';
 import userlistReducer from './reducers/userlist';
 import userlistEditReducer from './reducers/userlistEdit';
 import { ILoadOrder } from './types/ILoadOrder';
-import { ILOOTList, ILOOTPlugin, ILootReference } from './types/ILOOTList';
+import { ILOOTList, ILootReference } from './types/ILOOTList';
 import { IPlugins } from './types/IPlugins';
-import Connector from './views/Connector';
-import GroupEditor from './views/GroupEditor';
-import PluginList from './views/PluginList';
-import UserlistEditor from './views/UserlistEditor';
-
-import LootInterface from './autosort';
-
+import { IStateEx } from './types/IStateEx';
 import {
   gameSupported,
   initGameSupport,
@@ -26,6 +20,12 @@ import {
 } from './util/gameSupport';
 import PluginPersistor from './util/PluginPersistor';
 import UserlistPersistor from './util/UserlistPersistor';
+import Connector from './views/Connector';
+import GroupEditor from './views/GroupEditor';
+import PluginList from './views/PluginList';
+import UserlistEditor from './views/UserlistEditor';
+
+import LootInterface from './autosort';
 
 import * as Promise from 'bluebird';
 import { ipcMain, ipcRenderer, remote } from 'electron';
@@ -35,6 +35,7 @@ import * as I18next from 'i18next';
 import * as path from 'path';
 import * as nodeUtil from 'util';
 import { actions, fs, log, selectors, types, util } from 'vortex-api';
+import { removeGroupRule, setGroup } from './actions/userlist';
 
 interface IModState {
   enabled: boolean;
@@ -198,6 +199,8 @@ function register(context: IExtensionContextExt) {
     () => testMissingMasters(context.api.translate, context.api.store.getState()));
   context.registerTest('invalid-userlist', 'gamemode-activated',
     () => testUserlistInvalid(context.api.translate, context.api.store.getState()));
+  context.registerTest('missing-groups', 'gamemode-activated',
+    () => testMissingGroups(context.api.translate, context.api.store));
   context.registerDialog('plugin-dependencies-connector', Connector);
   context.registerDialog('userlist-editor', UserlistEditor);
   context.registerDialog('group-editor', GroupEditor);
@@ -377,8 +380,65 @@ function testPluginsLocked(gameMode: string): Promise<types.ITestResult> {
   });
 }
 
+function testMissingGroups(t: I18next.TranslationFunction,
+                           store: Redux.Store<IStateEx>): Promise<types.ITestResult> {
+  const state = store.getState();
+  const gameMode = selectors.activeGameId(state);
+  if (!gameSupported(gameMode)) {
+    return Promise.resolve(undefined);
+  }
+
+  // all known groups
+  const groups = new Set<string>([].concat(
+    state.masterlist.groups.map(group => group.name),
+    state.userlist.groups.map(group => group.name),
+  ));
+
+  // all used groups
+  const usedGroups = [].concat(
+    ...state.userlist.groups.map(group => group.after || []));
+
+  const missing = usedGroups.filter(group => !groups.has(group));
+
+  // nothing found => everything good
+  if (missing.length === 0) {
+    return Promise.resolve(undefined);
+  }
+
+  const res: types.ITestResult = {
+    description: {
+      short: 'Invalid group rules',
+      long: t('Your userlist refers to groups that don\'t exist: {{missing}}[br][/br]'
+        + 'The most likely reason is that the masterlist has changed and dropped '
+        + 'the group.[br][/br]'
+        + 'This can be fixed automatically by removing all references to these groups.', {
+          replace: {
+            missing,
+          },
+        }),
+    },
+    severity: 'error',
+    automaticFix: () => {
+      const missingSet = new Set<string>(missing);
+      state.userlist.plugins
+        .filter(plugin => (plugin.group !== undefined) && missingSet.has(plugin.group))
+        .forEach(plugin => { store.dispatch(setGroup(plugin.name, undefined)); });
+      state.userlist.groups
+        .forEach(group => {
+          (group.after || [])
+            .filter(after => missingSet.has(after))
+            .forEach(after => {
+              store.dispatch(removeGroupRule(group.name, after));
+            });
+        });
+      return Promise.resolve();
+    },
+  };
+  return Promise.resolve(res);
+}
+
 function testUserlistInvalid(t: I18next.TranslationFunction,
-                             state: any): Promise<types.ITestResult> {
+                             state: IStateEx): Promise<types.ITestResult> {
   const gameMode = selectors.activeGameId(state);
   if (!gameSupported(gameMode)) {
     return Promise.resolve(undefined);
