@@ -13,8 +13,12 @@ interface ILoadOrderMap {
 export const loadOrderReducer: types.IReducerSpec = {
   reducers: {
     [actions.setPluginEnabled as any]:
-        (state, payload) => util.setSafe(state, [payload.pluginName, 'enabled'],
-                                         payload.enabled),
+        (state, payload) => state[payload.pluginName] !== undefined
+          ? util.setSafe(state, [payload.pluginName, 'enabled'], payload.enabled)
+          : util.merge(state, [payload.pluginName], {
+            enabled: true,
+            loadOrder: -1,
+          }),
     [actions.setPluginOrder as any]: (state, payload) => {
       const result = {};
       payload.forEach((pluginName: string, idx: number) => {

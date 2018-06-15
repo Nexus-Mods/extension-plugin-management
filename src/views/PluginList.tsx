@@ -275,7 +275,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       placement: 'table',
       customRenderer: (plugin: IPluginCombined, detail: boolean, t: I18next.TranslationFunction) =>
         <DependencyIcon plugin={plugin} t={t} />,
-      calc: plugin => null,
+      calc: () => null,
       isToggleable: true,
       edit: {},
       isSortable: false,

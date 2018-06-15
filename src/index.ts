@@ -337,7 +337,13 @@ function startSync(api: types.IExtensionApi): Promise<void> {
   let prom: Promise<void> = Promise.resolve();
 
   if (pluginPersistor !== undefined) {
-    prom = pluginPersistor.loadFiles(gameId);
+    const gameDiscovery = selectors.currentGameDiscovery(store.getState());
+    let dataPath: string;
+    if ((gameDiscovery !== undefined) || (gameDiscovery.path !== undefined)) {
+      dataPath = path.join(gameDiscovery.path, 'data');
+    }
+
+    prom = pluginPersistor.loadFiles(gameId, dataPath);
   }
 
   if (userlistPersistor !== undefined) {

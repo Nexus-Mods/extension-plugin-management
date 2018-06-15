@@ -8,7 +8,6 @@ import {
 
 import * as Promise from 'bluebird';
 import {decode, encode} from 'iconv-lite';
-import * as _ from 'lodash';
 import * as path from 'path';
 import {fs, log, types, util} from 'vortex-api';
 
@@ -27,9 +26,10 @@ const retryCount = 3;
  * @implements {types.IPersistor}
  */
 class PluginPersistor implements types.IPersistor {
+  private mDataPath: string;
   private mPluginPath: string;
   private mPluginFormat: PluginFormat;
-  private mNativePlugins: Set<string>;
+  private mNativePlugins: string[];
   private mResetCallback: () => void;
 
   private mWatch: fs.FSWatcher;
@@ -65,14 +65,16 @@ class PluginPersistor implements types.IPersistor {
     }));
   }
 
-  public loadFiles(gameMode: string): Promise<void> {
+  public loadFiles(gameMode: string, dataPath: string): Promise<void> {
     return this.enqueue(() => {
       if (!gameSupported(gameMode)) {
         return Promise.resolve();
       }
+      this.mDataPath = dataPath;
       this.mPluginPath = pluginPath(gameMode);
       this.mPluginFormat = pluginFormat(gameMode);
-      this.mNativePlugins = new Set(nativePlugins(gameMode));
+      this.mNativePlugins = nativePlugins(gameMode);
+      // ensure that the native plugins are always included
       log('debug', 'synching plugins', {pluginsPath: this.mPluginPath});
       // read the files now and update the store
       return this.deserialize()
@@ -128,18 +130,23 @@ class PluginPersistor implements types.IPersistor {
   }
 
   private toPluginListOriginal(input: string[]) {
-    return input.filter(
-        (pluginName: string) => util.getSafe(this.mPlugins, [pluginName, 'enabled'], false));
+    // enabled defaults to true for native plugins because they are always
+    // enabled
+    const nativePluginSet = new Set(this.mNativePlugins);
+    return input.filter(name =>
+      util.getSafe(this.mPlugins, [name, 'enabled'],
+                   nativePluginSet.has(name.toLowerCase())));
   }
 
   private toPluginListFallout4(input: string[]) {
-    return input.map((name: string) => {
-      if (util.getSafe(this.mPlugins, [name, 'enabled'], false)) {
-        return '*' + name;
-      } else {
-        return name;
-      }
-    });
+    // LOOT and previous versions of Vortex don't store native plugins so
+    // this has been handled this way for a while
+    const nativePluginSet = new Set(this.mNativePlugins);
+    return input
+      .filter(name => !nativePluginSet.has(name.toLowerCase()))
+      .map(name => util.getSafe(this.mPlugins, [name, 'enabled'], false)
+          ? '*' + name
+          : name);
   }
 
   private enqueue(fn: () => Promise<void>): Promise<void> {
@@ -167,8 +174,6 @@ class PluginPersistor implements types.IPersistor {
 
     const sorted: string[] =
         Object.keys(this.mPlugins)
-            .filter((pluginName: string) =>
-                        !this.mNativePlugins.has(pluginName.toLowerCase()))
             .sort((lhs: string, rhs: string) => this.mPlugins[lhs].loadOrder -
                                                 this.mPlugins[rhs].loadOrder);
     const loadOrderFile = path.join(destPath, 'loadorder.txt');
@@ -190,7 +195,7 @@ class PluginPersistor implements types.IPersistor {
         this.mLastWriteTime = stats.mtime;
         return null;
       })
-      .catch(util.UserCanceled, err => null)
+      .catch(util.UserCanceled, () => null)
       .catch(err => {
         if (err.code !== 'EBUSY') {
           this.reportError('failed to write plugin list', err);
@@ -211,26 +216,33 @@ class PluginPersistor implements types.IPersistor {
     return res;
   }
 
-  private initFromKeyList(plugins: IPluginMap, keys: string[], enabled: boolean) {
-    let loadOrderPos = Object.keys(plugins).length;
+  private initFromKeyList(plugins: IPluginMap, keys: string[], enable: boolean, offset: number) {
+    let loadOrderPos = offset;
+    const nativePluginSet = new Set<string>(this.mNativePlugins);
     keys.forEach((key: string) => {
-      const keyEnabled = enabled && ((this.mPluginFormat === 'original') || (key[0] === '*'));
+      const keyEnabled = enable && ((this.mPluginFormat === 'original') || (key[0] === '*'));
       if ((this.mPluginFormat === 'fallout4') && (key[0] === '*')) {
         key = key.slice(1);
       }
-      // ignore "native" plugins
-      if (this.mNativePlugins.has(key.toLowerCase())) {
+      // ignore native plugins in newer games
+      if ((this.mPluginFormat === 'fallout4') && nativePluginSet.has(key.toLowerCase())) {
         return;
       }
-      if (plugins[key] !== undefined) {
-        plugins[key].enabled = keyEnabled;
-      } else {
-        plugins[key] = {
-          enabled: keyEnabled,
-          loadOrder: loadOrderPos++,
-        };
+      // ignore files that don't exist on disk
+      if (plugins[key] === undefined) {
+        return;
+      }
+
+      plugins[key].enabled = keyEnabled || nativePluginSet.has(key.toLowerCase());
+      if (plugins[key].loadOrder === -1) {
+        plugins[key].loadOrder = loadOrderPos++;
       }
     });
+    return loadOrderPos;
+  }
+
+  private isPlugin = (name: string) => {
+    return ['.esm', '.esp', '.esl'].indexOf(path.extname(name).toLowerCase()) !== -1;
   }
 
   private deserialize(retry: boolean = false): Promise<void> {
@@ -238,59 +250,81 @@ class PluginPersistor implements types.IPersistor {
       return Promise.resolve();
     }
 
-    const newPlugins: IPluginMap = {};
+    const nativePluginSet = new Set<string>(this.mNativePlugins);
 
-    const pluginsFile = path.join(this.mPluginPath, 'plugins.txt');
+    let offset = 0;
 
-    let phaseOne: Promise<NodeBuffer>;
-    if (this.mPluginFormat === 'original') {
-      const loadOrderFile = path.join(this.mPluginPath, 'loadorder.txt');
-      log('debug', 'deserialize', { format: this.mPluginFormat, pluginsFile, loadOrderFile });
-      phaseOne = fs.readFileAsync(loadOrderFile)
-        .then((data: NodeBuffer) => {
-          const keys: string[] =
-            this.filterFileData(decode(data, 'utf-8'), false);
-          this.initFromKeyList(newPlugins, keys, false);
-          return fs.readFileAsync(pluginsFile);
-        });
-    } else {
-      // log('debug', 'deserialize', { format: this.mPluginFormat, pluginsFile });
-      phaseOne = fs.readFileAsync(pluginsFile);
-    }
-    return phaseOne
-    .then((data: NodeBuffer) => {
-      if ((data.length === 0) && !retry) {
-        // not even a header? I don't trust this
-        // TODO: This is just a workaround
-        return this.deserialize(true);
-      }
-      const keys: string[] = this.filterFileData(decode(data, 'latin-1'), true);
-      this.initFromKeyList(newPlugins, keys, true);
-      this.mPlugins = newPlugins;
-      this.mLoaded = true;
-      if (this.mResetCallback) {
-        this.mResetCallback();
-        this.mRetryCounter = retryCount;
-      }
-      this.mFailed = false;
-      return Promise.resolve();
-    })
-    .catch((err: any) => {
-      if (err.code === 'ENOENT') {
-        this.mLoaded = true;
-        return;
-      }
-      log('warn', 'failed to read plugin file',
-        { pluginPath: this.mPluginPath, error: require('util').inspect(err) });
-      if (this.mRetryCounter > 0) {
-        --this.mRetryCounter;
-        this.scheduleRefresh(100);
-      } else {
-        // giving up...
-        this.mLoaded = true;
-        this.reportError('failed to read plugin list', err);
-      }
-    });
+    return ((this.mDataPath !== undefined)
+            ? fs.readdirAsync(this.mDataPath) : Promise.resolve([]))
+      .filter(this.isPlugin)
+      .then(plugins => plugins
+        .sort((lhs, rhs) => this.mNativePlugins.indexOf(lhs.toLowerCase())
+                          - this.mNativePlugins.indexOf(rhs.toLowerCase()))
+        .reduce((prev: IPluginMap, name: string) => {
+        const isNative = nativePluginSet.has(name.toLowerCase());
+        prev[name] = {
+          enabled: isNative,
+          loadOrder: isNative ? offset++ : -1,
+        };
+        return prev;
+      }, {}))
+      .then((newPlugins: IPluginMap) => {
+        const pluginsFile = path.join(this.mPluginPath, 'plugins.txt');
+
+        let phaseOne: Promise<NodeBuffer>;
+        // for games with the old format we use the loadorder.txt file as reference for the
+        // load order and only use the plugins.txt as "backup".
+        // for newer games, since all plugins are listed, we don't really need the loadorder.txt
+        // at all
+        if (this.mPluginFormat === 'original') {
+          const loadOrderFile = path.join(this.mPluginPath, 'loadorder.txt');
+          log('debug', 'deserialize', { format: this.mPluginFormat, pluginsFile, loadOrderFile });
+          phaseOne = fs.readFileAsync(loadOrderFile)
+            .then((data: NodeBuffer) => {
+              const keys: string[] =
+                this.filterFileData(decode(data, 'utf-8'), false);
+              offset = this.initFromKeyList(newPlugins, keys, false, offset);
+              return fs.readFileAsync(pluginsFile);
+            });
+        } else {
+          // log('debug', 'deserialize', { format: this.mPluginFormat, pluginsFile });
+          phaseOne = fs.readFileAsync(pluginsFile);
+        }
+        return phaseOne
+          .then((data: NodeBuffer) => {
+            if ((data.length === 0) && !retry) {
+              // not even a header? I don't trust this
+              // TODO: This is just a workaround
+              return this.deserialize(true);
+            }
+            const keys: string[] = this.filterFileData(decode(data, 'latin-1'), true);
+            this.initFromKeyList(newPlugins, keys, true, offset);
+            this.mPlugins = newPlugins;
+            this.mLoaded = true;
+            if (this.mResetCallback) {
+              this.mResetCallback();
+              this.mRetryCounter = retryCount;
+            }
+            this.mFailed = false;
+            return Promise.resolve();
+          })
+          .catch((err: any) => {
+            if (err.code === 'ENOENT') {
+              this.mLoaded = true;
+              return;
+            }
+            log('warn', 'failed to read plugin file',
+              { pluginPath: this.mPluginPath, error: require('util').inspect(err) });
+            if (this.mRetryCounter > 0) {
+              --this.mRetryCounter;
+              this.scheduleRefresh(100);
+            } else {
+              // giving up...
+              this.mLoaded = true;
+              this.reportError('failed to read plugin list', err);
+            }
+          });
+      });
   }
 
   private scheduleRefresh(timeout: number) {

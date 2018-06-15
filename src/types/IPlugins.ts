@@ -17,7 +17,7 @@ export interface IPlugin {
    * @memberOf IPlugin
    */
   modName?: string;
-  filePath?: string;
+  filePath: string;
   /**
    * specifies whether this is a "native" plugin, that is: One
    * where the load order is hard-coded into the game engine so
@@ -29,7 +29,7 @@ export interface IPlugin {
   isNative: boolean;
 }
 
-export interface IPlugins { [fileName: string]: IPlugin; }
+export interface IPlugins { [key: string]: IPlugin; }
 
 /**
  * details retrieved from the content of a plugin through esptk
