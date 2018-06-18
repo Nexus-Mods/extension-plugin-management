@@ -1,17 +1,16 @@
 import { addGroup, addGroupRule, removeGroup, removeGroupRule } from '../actions/userlist';
 import { openGroupEditor } from '../actions/userlistEdit';
-import { ILOOTGroup, ILOOTList } from '../types/ILOOTList';
+import { ILOOTList } from '../types/ILOOTList';
 
 import genGraphStyle from '../util/genGraphStyle';
 import GraphView, { IGraphElement, IGraphSelection } from './GraphView';
 
-import * as path from 'path';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import {} from 'redux-thunk';
-import { actions, ComponentEx, Modal, selectors, types, util } from 'vortex-api';
+import { actions, ComponentEx, Modal, types } from 'vortex-api';
 
 // tslint:disable-next-line:no-var-requires
 const { ContextMenu } = require('vortex-api');
@@ -44,7 +43,6 @@ interface IComponentState {
 }
 
 class GroupEditor extends ComponentEx<IProps, IComponentState> {
-  private mHighlighted: { source: string, target: string };
   private mContextTime: number;
   private mGraphRef: GraphView;
 
@@ -234,14 +232,17 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
   }
 }
 
-const emptyObj = {};
-const emptyArr = [];
+const emptyList: ILOOTList = {
+  globals: [],
+  groups: [],
+  plugins: [],
+};
 
 function mapStateToProps(state): IConnectedProps {
   return {
     open: state.session.pluginDependencies.groupEditorOpen,
-    masterlist: state.masterlist,
-    userlist: state.userlist,
+    masterlist: state.masterlist || emptyList,
+    userlist: state.userlist || emptyList,
   };
 }
 
