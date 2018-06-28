@@ -4,12 +4,11 @@ import { ILOOTPlugin } from '../types/ILOOTList';
 
 import * as I18next from 'i18next';
 import * as React from 'react';
-import { Button, FormControl, ListGroup, ListGroupItem, Modal, ModalHeader } from 'react-bootstrap';
+import { Button, ListGroup, ListGroupItem, Modal, ModalHeader } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import Select from 'react-select';
-import { actions, ComponentEx, Icon, tooltip, types } from 'vortex-api';
-import { ILoadOrder } from '../types/ILoadOrder';
+import { ComponentEx, Icon, tooltip } from 'vortex-api';
 import { IPlugins } from '../types/IPlugins';
 
 type RuleType = 'after' | 'requires' | 'incompatible';
@@ -250,10 +249,6 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     this.nextState.dialog.reference = temp;
   }
 
-  private changeType = (event) => {
-    this.nextState.dialog.type = event.currentTarget.value;
-  }
-
   private add = () => {
     const { onAddRule, userlist } = this.props;
     const { dialog } = this.state;
@@ -270,16 +265,6 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     this.props.onCloseDialog();
   }
 }
-
-type IState = types.IState & {
-  session: {
-    pluginDependencies: any,
-  },
-  loadOrder: {
-    [pluginId: string]: ILoadOrder,
-  },
-  userlist: any;
-};
 
 function mapStateToProps(state: any): IConnectedProps {
   const dialog: IDialog = state.session.pluginDependencies.dialog;

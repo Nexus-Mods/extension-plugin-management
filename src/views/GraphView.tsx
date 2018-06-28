@@ -1,7 +1,6 @@
 import * as cytoscape from 'cytoscape';
 import * as coseBilkent from 'cytoscape-cose-bilkent';
 import * as edgehandles from 'cytoscape-edgehandles';
-import * as _ from 'lodash';
 import * as React from 'react';
 import { util } from 'vortex-api';
 
@@ -38,7 +37,6 @@ function san(input: string): string {
 }
 
 class GraphView extends React.Component<IGraphViewProps, {}> {
-  private mRef: HTMLDivElement;
   private mGraph: cytoscape.Core;
   private mLayout: cytoscape.LayoutManipulation;
 
@@ -110,7 +108,6 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
 
   private setRef = (ref: HTMLDivElement) => {
     const { className, elements, visualStyle } = this.props;
-    this.mRef = ref;
     if (ref === null) {
       this.mGraph = undefined;
       return;

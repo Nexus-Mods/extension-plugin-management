@@ -7,7 +7,7 @@ import { IPluginCombined } from '../types/IPlugins';
 import * as I18next from 'i18next';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { Button, Checkbox, Overlay, Popover } from 'react-bootstrap';
+import { Button, Overlay, Popover } from 'react-bootstrap';
 import { DragSource, DropTarget } from 'react-dnd';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 import { findDOMNode } from 'react-dom';
@@ -59,10 +59,6 @@ interface IDropProps {
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps & IDragProps & IDropProps;
-
-interface IDragInfo {
-  onUpdateLine: (targetX: number, targetY: number, isConnect: boolean) => void;
-}
 
 function componentCenter(component: React.Component<any, any>) {
   try {
@@ -167,23 +163,16 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     getModifiers: PropTypes.func,
   };
 
-  private mIsMounted: boolean;
   private mRef: JSX.Element;
 
   constructor(props: IProps) {
     super(props);
 
     this.initState({ reference: undefined, showOverlay: false });
-    this.mIsMounted = false;
   }
 
   public componentDidMount() {
-    this.mIsMounted = true;
     this.props.connectDragPreview(getEmptyImage());
-  }
-
-  public componentWillUnmount() {
-    this.mIsMounted = false;
   }
 
   public componentWillReceiveProps(nextProps: IProps) {

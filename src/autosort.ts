@@ -6,10 +6,8 @@ import * as Bluebird from 'bluebird';
 import { remote } from 'electron';
 import { LootAsync } from 'loot';
 import * as path from 'path';
-import * as Redux from 'redux';
 import {} from 'redux-thunk';
 import {actions, fs, log, selectors, types, util} from 'vortex-api';
-import userlist from './reducers/userlist';
 
 const LOOT_LIST_REVISION = 'v0.13';
 
@@ -52,10 +50,8 @@ class LootInterface {
   }
 
   private onSort = async (manual: boolean) => {
-    const { translate, store } = this.mExtensionApi;
+    const { store } = this.mExtensionApi;
     if (manual || store.getState().settings.plugins.autoSort) {
-      const t = translate;
-
       // ensure initialisation is done
       const { game, loot } = await this.mInitPromise;
 
@@ -64,8 +60,6 @@ class LootInterface {
       if ((gameMode !== game) || !gameSupported(gameMode) || (loot === undefined)) {
         return;
       }
-
-      const id = require('shortid').generate();
 
       const pluginNames: string[] = Object
         .keys(state.loadOrder)

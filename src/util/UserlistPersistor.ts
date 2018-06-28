@@ -6,7 +6,7 @@ import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import { safeDump, safeLoad } from 'js-yaml';
 import * as path from 'path';
-import { fs, log, types, util } from 'vortex-api';
+import { fs, types, util } from 'vortex-api';
 
 const app = appIn || remote.app;
 
@@ -20,7 +20,6 @@ class UserlistPersistor implements types.IPersistor {
   private mResetCallback: () => void;
   private mUserlistPath: string;
   private mUserlist: ILOOTList;
-  private mSerializing: boolean = false;
   private mSerializeQueue: Promise<void> = Promise.resolve();
   private mLoaded: boolean = false;
   private mFailed: boolean = false;
@@ -118,18 +117,13 @@ class UserlistPersistor implements types.IPersistor {
       return;
     }
 
-    const id = require('shortid').generate();
     const userlistPath = this.mUserlistPath;
 
-    this.mSerializing = true;
     return fs.writeFileAsync(userlistPath + '.tmp', safeDump(this.mUserlist))
       .then(() => fs.renameAsync(userlistPath + '.tmp', userlistPath))
       .then(() => { this.mFailed = false; })
       .catch(err => {
         this.reportError('failed to write userlist', err);
-      })
-      .finally(() => {
-        this.mSerializing = false;
       });
   }
 
