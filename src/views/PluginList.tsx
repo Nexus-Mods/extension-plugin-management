@@ -273,8 +273,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       description: 'Relations to other plugins',
       icon: 'plug',
       placement: 'table',
-      customRenderer: (plugin: IPluginCombined, detail: boolean, t: I18next.TranslationFunction) =>
-        <DependencyIcon plugin={plugin} t={t} />,
+      customRenderer: (plugin: IPluginCombined, detail: boolean,
+                       t: I18next.TranslationFunction, props: types.ICustomProps) =>
+        <DependencyIcon plugin={plugin} t={t} onHighlight={props.onHighlight} />,
       calc: () => null,
       isToggleable: true,
       edit: {},

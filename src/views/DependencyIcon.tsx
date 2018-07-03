@@ -22,6 +22,7 @@ function splitOnce(input: string, separator: string): string[] {
 export interface IBaseProps {
   plugin: IPluginCombined;
   t: I18next.TranslationFunction;
+  onHighlight: (highlight: boolean) => void;
 }
 
 interface IConnectedProps {
@@ -187,6 +188,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       if (nextProps.isOver) {
         pos = componentCenter(this);
       }
+      nextProps.onHighlight(nextProps.isOver);
       nextProps.onSetTarget(nextProps.plugin.name, pos);
     }
   }
