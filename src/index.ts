@@ -74,7 +74,7 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
 
   return Promise.map(enabledModIds, (modId: string) => {
              const mod = gameMods[modId];
-             if (mod === undefined) {
+             if ((mod === undefined) || (mod.installationPath === undefined)) {
                log('error', 'mod not found', { gameMode, modId });
                return;
              }
@@ -598,12 +598,12 @@ function init(context: IExtensionContextExt) {
       promise
         .then(() => {
           if (!event.sender.isDestroyed()) {
-          event.sender.send('plugin-sync-ret', null);
+            event.sender.send('plugin-sync-ret', null);
           }
         })
         .catch(err => {
           if (!event.sender.isDestroyed()) {
-          event.sender.send('plugin-sync-ret', err);
+            event.sender.send('plugin-sync-ret', err);
           }
         });
     });
