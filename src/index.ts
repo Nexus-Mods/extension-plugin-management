@@ -339,7 +339,7 @@ function startSync(api: types.IExtensionApi): Promise<void> {
   if (pluginPersistor !== undefined) {
     const gameDiscovery = selectors.currentGameDiscovery(store.getState());
     let dataPath: string;
-    if ((gameDiscovery !== undefined) || (gameDiscovery.path !== undefined)) {
+    if ((gameDiscovery !== undefined) && (gameDiscovery.path !== undefined)) {
       dataPath = path.join(gameDiscovery.path, 'data');
     }
 
