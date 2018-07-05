@@ -276,8 +276,8 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
 
     const popoverBlocks = [];
 
-    if (((lootRules.ro.after !== undefined) && (lootRules.ro.after.length > 0))
-        || ((lootRules.rw.after !== undefined) && (lootRules.rw.after.length > 0))) {
+    if ((lootRules.ro.after && (lootRules.ro.after.length > 0))
+        || (lootRules.rw.after && (lootRules.rw.after.length > 0))) {
       popoverBlocks.push((
         <div key='after'>
           {t('Loads after:', { ns: 'gamebryo-plugin' })}
@@ -291,8 +291,8 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       ));
     }
 
-    if (((lootRules.ro.req !== undefined) && (lootRules.ro.req.length > 0))
-        || ((lootRules.rw.req !== undefined) && (lootRules.rw.req.length > 0))) {
+    if ((lootRules.ro.req && (lootRules.ro.req.length > 0))
+        || (lootRules.rw.req && (lootRules.rw.req.length > 0))) {
       popoverBlocks.push((
         <div key='requires'>
         {t('Requires:', { ns: 'gamebryo-plugin' })}
@@ -306,8 +306,8 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       ));
     }
 
-    if (((lootRules.ro.inc !== undefined) && (lootRules.ro.inc.length > 0))
-      || ((lootRules.rw.inc !== undefined) && (lootRules.rw.inc.length > 0))) {
+    if ((lootRules.ro.inc && (lootRules.ro.inc.length > 0))
+      || (lootRules.rw.inc && (lootRules.rw.inc.length > 0))) {
       popoverBlocks.push((
         <div key='incompatible'>
         {t('Incompatible:', { ns: 'gamebryo-plugin' })}
