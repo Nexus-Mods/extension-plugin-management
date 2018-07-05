@@ -597,10 +597,14 @@ function init(context: IExtensionContextExt) {
       const promise = enabled ? startSync(context.api) : stopSync();
       promise
         .then(() => {
+          if (!event.sender.isDestroyed()) {
           event.sender.send('plugin-sync-ret', null);
+          }
         })
         .catch(err => {
+          if (!event.sender.isDestroyed()) {
           event.sender.send('plugin-sync-ret', err);
+          }
         });
     });
   });
