@@ -1,7 +1,7 @@
 import { addRule, removeRule } from '../actions/userlist';
 import { setCreateRule, setQuickEdit, setSource, setTarget } from '../actions/userlistEdit';
 
-import { ILOOTPlugin, ILootReference } from '../types/ILOOTList';
+import { ILOOTList, ILOOTPlugin, ILootReference } from '../types/ILOOTList';
 import { IPluginCombined } from '../types/IPlugins';
 
 import * as I18next from 'i18next';
@@ -452,11 +452,17 @@ const DependencyIconDrag =
     DragSource(type, dependencySource, collectDrag)(
       DependencyIcon));
 
+const emptyList: ILOOTList = {
+  globals: [],
+  groups: [],
+  plugins: [],
+};
+
 function mapStateToProps(state): IConnectedProps {
   return {
     gameId: selectors.activeGameId(state),
-    userlist: state.userlist.plugins,
-    masterlist: state.masterlist.plugins,
+    userlist: (state.userlist || emptyList).plugins,
+    masterlist: (state.masterlist || emptyList).plugins,
     quickEdit: state.session.pluginDependencies.quickEdit,
   };
 }
