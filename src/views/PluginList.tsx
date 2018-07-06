@@ -446,16 +446,19 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
+    const { t } = this.props;
     const { pluginsCombined } = this.state;
 
     const PanelX: any = Panel;
+    const IconBarX: any = IconBar;
     return (
       <MainPage>
         <MainPage.Header>
-          <IconBar
+          <IconBarX
             group='gamebryo-plugin-icons'
             staticElements={this.staticButtons}
             className='menubar'
+            t={t}
           />
         </MainPage.Header>
         <MainPage.Body>
