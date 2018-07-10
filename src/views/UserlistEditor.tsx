@@ -137,8 +137,8 @@ class Editor extends ComponentEx<IProps, IComponentState> {
                   <Select
                     options={[
                       { value: 'after', label: t('Must Load After') },
-                      { value: 'req', label: t('Requires') },
-                      { value: 'inc', label: t('Is Incompatible With') },
+                      { value: 'requires', label: t('Requires') },
+                      { value: 'incompatible', label: t('Is Incompatible With') },
                     ]}
                     value={dialog.type}
                     clearable={false}
