@@ -140,11 +140,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         this.getCollator(locale).compare(lhs, rhs),
     },
     {
-      id: 'mod_name',
+      id: 'modName',
       name: 'Mod',
       edit: {},
       calc: plugin => plugin.modName,
-      placement: 'detail',
+      placement: 'both',
+      isDefaultVisible: false,
+      isSortable: true,
+      isToggleable: true,
     },
     {
       id: 'category',
@@ -181,7 +184,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       placement: 'table',
     },
     {
-      id: 'flags-detail',
+      id: 'flagsDetail',
       name: 'Flags',
       edit: {},
       calc: (plugin: IPluginCombined, t) => getPluginFlags(plugin, t),

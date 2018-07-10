@@ -53,7 +53,7 @@ function isPlugin(fileName: string): boolean {
  * updates the list of known plugins for the managed game
  */
 function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Promise<void> {
-  const state = store.getState();
+  const state: types.IState = store.getState();
 
   const gameMode = selectors.activeGameId(state);
   const pluginSources: { [pluginName: string]: string } = {};
@@ -85,7 +85,7 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
                                         ['.esp', '.esm', '.esl'].indexOf(
                                             path.extname(fileName)) !== -1)
                        .forEach((fileName: string) => {
-                         pluginSources[fileName] = mod.name || mod.id;
+                         pluginSources[fileName] = mod.id;
                        });
                  })
                  .catch((err: Error) => {
@@ -114,9 +114,11 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
         const pluginNames: string[] = fileNames.filter(isPlugin);
         const pluginStates: IPlugins = {};
         pluginNames.forEach(fileName => {
-          const modName = pluginSources[fileName];
+          const modName = pluginSources[fileName] !== undefined
+            ? util.renderModName(gameMods[pluginSources[fileName]], { version: false })
+            : '';
           pluginStates[fileName] = {
-            modName: modName || '',
+            modName,
             filePath: path.join(modPath, fileName),
             isNative: isNativePlugin(gameMode, fileName),
           };
@@ -726,10 +728,10 @@ function init(context: IExtensionContextExt) {
                   const t = context.api.translate;
                   context.api.sendNotification({
                     type: 'info',
-                    message: t('The mod {{ modName }} contains multiple plugins',
+                    message: t('The mod "{{ modName }}" contains multiple plugins',
                               {
                                 replace: {
-                                  modName: util.renderModName(mod),
+                                  modName: util.renderModName(mod, { version: false }),
                                 },
                                 ns: 'gamebryo-plugin',
                               }),

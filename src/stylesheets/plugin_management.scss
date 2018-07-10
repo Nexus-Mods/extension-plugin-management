@@ -10,10 +10,6 @@
   min-width: 150px;;
 }
 
-.cell-category {
-  white-space: nowrap;
-}
-
 #table-gamebryo-plugins {
   // prevent word wrap
   .table-header-cell {
@@ -27,6 +23,14 @@
   .header-name {
     // use up remaining space
     width: 100%;
+  }
+
+  .cell-category {
+    white-space: nowrap;
+  }
+
+  .cell-modName {
+    white-space: nowrap;
   }
 }
 
