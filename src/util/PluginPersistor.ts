@@ -255,7 +255,7 @@ class PluginPersistor implements types.IPersistor {
     let offset = 0;
 
     return ((this.mDataPath !== undefined)
-            ? fs.readdirAsync(this.mDataPath) : Promise.resolve([]))
+            ? fs.readdirAsync(this.mDataPath).catch(() => []) : Promise.resolve([]))
       .filter(this.isPlugin)
       .then(plugins => plugins
         .sort((lhs, rhs) => this.mNativePlugins.indexOf(lhs.toLowerCase())
@@ -333,7 +333,11 @@ class PluginPersistor implements types.IPersistor {
     }
     this.mRefreshTimer = setTimeout(() => {
       this.mRefreshTimer = null;
-      this.deserialize().then(() => null);
+      this.deserialize()
+        .then(() => null)
+        .catch(err => {
+          this.mOnError('Failed to synchronise plugin list', err);
+        });
     }, timeout);
   }
 
