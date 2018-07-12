@@ -84,7 +84,7 @@ const userlistReducer: types.IReducerSpec = {
       if (payload.group === undefined) {
         return (existing !== -1)
           ? util.deleteOrNop(state, ['plugins', existing, 'group'])
-          : null;
+          : state;
       }
 
       return (existing !== -1)
