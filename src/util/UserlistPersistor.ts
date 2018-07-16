@@ -161,12 +161,12 @@ class UserlistPersistor implements types.IPersistor {
       } else {
         // if we can't read the file but the file is there,
         // we would be destroying its content if we don't quit right now.
-        util.terminate({
-          message: 'Failed to read userlist file for this game',
+        (util.terminate as any)({
+          message: 'Failed to read userlist file for this game. '
+                 + 'Repair or delete this file and then try to start Vortex again',
           path: this.mUserlistPath,
-          details: err.message,
-          stack: err.stack,
-        } as any, undefined);
+          details: `Error: ${err.message}`,
+        }, undefined, false);
       }
     });
   }
