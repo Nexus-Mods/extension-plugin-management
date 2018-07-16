@@ -132,8 +132,17 @@ class UserlistPersistor implements types.IPersistor {
       return Promise.resolve();
     }
 
+    let empty: boolean = false;
+
     return fs.readFileAsync(this.mUserlistPath)
     .then((data: NodeBuffer) => {
+      if (data.byteLength <= 5) {
+        // the smallest non-empty file is actually around 20 bytes long and
+        // the smallest useful file probably 30. This is really to catch
+        // cases where the file is not parseable because it's completely empty
+        // or contains only "null" or something silly like that
+        empty = true;
+      }
       this.mUserlist = safeLoad(data.toString(), { json: true } as any);
       if (this.mResetCallback) {
         this.mResetCallback();
@@ -141,20 +150,23 @@ class UserlistPersistor implements types.IPersistor {
       }
     })
     .catch(err => {
-      if (err.code === 'ENOENT') {
+      if ((err.code === 'ENOENT') || empty) {
         this.mUserlist = {
           globals: [],
           plugins: [],
           groups: [],
         };
         this.mLoaded = true;
+        return this.serialize();
       } else {
         // if we can't read the file but the file is there,
         // we would be destroying its content if we don't quit right now.
         util.terminate({
           message: 'Failed to read userlist file for this game',
+          path: this.mUserlistPath,
           details: err.message,
-        }, undefined);
+          stack: err.stack,
+        } as any, undefined);
       }
     });
   }

@@ -224,6 +224,13 @@ class LootInterface {
           `https://github.com/loot/${this.convertGameId(gameMode, true)}.git`,
           LOOT_LIST_REVISION);
       log('info', 'updated loot masterlist', updated);
+    } catch (err) {
+      this.mExtensionApi.showErrorNotification('Failed to update masterlist', err, {
+          allowReport: false,
+        });
+    }
+
+    try {
       // we need to ensure lists get loaded at least once. before sorting there
       // will always be a check if the userlist was changed
       const userlistPath = path.join(remote.app.getPath('userData'), gameMode, 'userlist.yaml');
@@ -237,7 +244,7 @@ class LootInterface {
       await loot.loadListsAsync(masterlistPath, mtime !== null ? userlistPath : '');
       this.mUserlistTime = mtime;
     } catch (err) {
-      this.mExtensionApi.showErrorNotification('Failed to update masterlist', err, {
+      this.mExtensionApi.showErrorNotification('Failed to load master-/userlist', err, {
           allowReport: false,
         });
     }
