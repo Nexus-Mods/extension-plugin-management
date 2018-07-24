@@ -455,7 +455,7 @@ function testUserlistInvalid(t: I18next.TranslationFunction,
   const userlist: ILOOTList = state.userlist;
   const names = new Set<string>();
 
-  if (userlist.plugins === undefined) {
+  if ((userlist === undefined) || (userlist.plugins === undefined)) {
     return Promise.resolve(undefined);
   }
 
