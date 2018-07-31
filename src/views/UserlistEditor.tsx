@@ -230,10 +230,16 @@ class Editor extends ComponentEx<IProps, IComponentState> {
   }
 
   private selectPlugin = (newValue: { label: string, value: string }) => {
+    if (newValue === null) {
+      return;
+    }
     this.nextState.dialog.pluginId = newValue.value;
   }
 
   private selectType = (newValue: { label: string, value: string }) => {
+    if (newValue === null) {
+      return;
+    }
     this.nextState.dialog.type = newValue.value as RuleType;
   }
 
