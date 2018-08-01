@@ -565,13 +565,11 @@ function testMissingMasters(t: I18next.TranslationFunction,
       description: {
         short: 'Missing Masters',
         long:
-        'Some of the enabled plugins depend on others that are not enabled:\n[list]' +
+        'Some of the enabled plugins depend on others that are not enabled:[table][tbody]' +
         Object.keys(broken).map(plugin => {
-          return '[*] ' + t('[b]{{plugin}}[/b] depends on [b]{{missing}}[/b]', {replace: {
-            plugin,
-            missing: broken[plugin].join(', '),
-          }});
-        }).join('\n') + '[/list]',
+          const missing = broken[plugin].join('[br][/br]')
+          return `[tr][td]${plugin}[/td][td]${t('depends on')}[/td][td]${missing}[/td][/tr][tr][/tr]`;
+        }).join('\n') + '[/tbody][/table]',
       },
       severity: 'warning' as types.ProblemSeverity,
     });
