@@ -396,15 +396,17 @@ function testMissingGroups(t: I18next.TranslationFunction,
     return Promise.resolve(undefined);
   }
 
+  const userlistGroups = (state.userlist.groups || []);
+
   // all known groups
   const groups = new Set<string>([].concat(
-    state.masterlist.groups.map(group => group.name),
-    state.userlist.groups.map(group => group.name),
+    (state.masterlist.groups || []).map(group => group.name),
+    userlistGroups.map(group => group.name),
   ));
 
   // all used groups
   const usedGroups = [].concat(
-    ...state.userlist.groups.map(group => group.after || []));
+    ...userlistGroups.map(group => group.after || []));
 
   const missing = usedGroups.filter(group => !groups.has(group));
 
@@ -428,10 +430,10 @@ function testMissingGroups(t: I18next.TranslationFunction,
     severity: 'error',
     automaticFix: () => {
       const missingSet = new Set<string>(missing);
-      state.userlist.plugins
+      (state.userlist.plugins || [])
         .filter(plugin => (plugin.group !== undefined) && missingSet.has(plugin.group))
         .forEach(plugin => { store.dispatch(setGroup(plugin.name, undefined)); });
-      state.userlist.groups
+      userlistGroups
         .forEach(group => {
           (group.after || [])
             .filter(after => missingSet.has(after))
