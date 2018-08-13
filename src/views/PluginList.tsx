@@ -148,6 +148,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       isDefaultVisible: false,
       isSortable: true,
       isToggleable: true,
+      sortFunc: (lhs: string, rhs: string, locale: string) =>
+        this.getCollator(locale).compare(lhs, rhs),
     },
     {
       id: 'category',
