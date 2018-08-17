@@ -198,7 +198,7 @@ function register(context: IExtensionContextExt) {
     () => testPluginsLocked(selectors.activeGameId(context.api.store.getState())));
   context.registerTest('master-missing', 'gamemode-activated',
     () => testMissingMasters(context.api.translate, context.api.store.getState()));
-  context.registerTest('master-missing', 'plugins-changed',
+  context.registerTest('master-missing', 'plugins-changed' as any,
     () => testMissingMasters(context.api.translate, context.api.store.getState()));
   context.registerTest('invalid-userlist', 'gamemode-activated',
     () => testUserlistInvalid(context.api.translate, context.api.store.getState()));
