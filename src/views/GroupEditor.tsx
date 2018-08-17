@@ -9,7 +9,8 @@ import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
-import {} from 'redux-thunk';
+import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 import { actions, ComponentEx, Modal, types } from 'vortex-api';
 
 // tslint:disable-next-line:no-var-requires
@@ -246,7 +247,7 @@ function mapStateToProps(state): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<types.IState, null, Redux.Action>): IActionProps {
   return {
     onOpen: (open: boolean) => dispatch(openGroupEditor(open)),
     onAddGroup: (groupId: string) =>

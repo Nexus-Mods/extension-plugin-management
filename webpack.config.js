@@ -1,3 +1,3 @@
-let webpack = require('vortex-api').webpack.default;
+let webpack = require('vortex-api/bin/webpack').default;
 
-module.exports = webpack('gamebryo-plugin-management', __dirname);
+module.exports = webpack('gamebryo-plugin-management', __dirname, 4);

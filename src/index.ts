@@ -1,5 +1,6 @@
 import { setPluginEnabled, setPluginOrder } from './actions/loadOrder';
 import { setPluginList } from './actions/plugins';
+import { removeGroupRule, setGroup } from './actions/userlist';
 import { openGroupEditor, setCreateRule } from './actions/userlistEdit';
 import { loadOrderReducer } from './reducers/loadOrder';
 import { pluginsReducer } from './reducers/plugins';
@@ -33,9 +34,9 @@ import ESPFile from 'esptk';
 import { access, constants } from 'fs';
 import * as I18next from 'i18next';
 import * as path from 'path';
+import * as Redux from 'redux';
 import * as nodeUtil from 'util';
 import { actions, fs, log, selectors, types, util } from 'vortex-api';
-import { removeGroupRule, setGroup } from './actions/userlist';
 
 interface IModState {
   enabled: boolean;

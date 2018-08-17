@@ -18,7 +18,7 @@ import PluginFlagsFilter from './PluginFlagsFilter';
 import * as Promise from 'bluebird';
 import ESPFile from 'esptk';
 import * as I18next from 'i18next';
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 import { Message } from 'loot';
 import * as path from 'path';
 import * as React from 'react';
@@ -26,6 +26,8 @@ import {Alert, ListGroup, ListGroupItem, Panel} from 'react-bootstrap';
 import {translate} from 'react-i18next';
 import {connect} from 'react-redux';
 import {Creatable} from 'react-select';
+import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 import {ComponentEx, IconBar, ITableRowAction, log, MainPage,
         selectors, Table, TableTextFilter, ToolbarIcon,
         types, util} from 'vortex-api';
@@ -771,7 +773,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetPluginEnabled: (pluginName: string, enabled: boolean) =>
       dispatch(setPluginEnabled(pluginName, enabled)),
@@ -787,5 +789,5 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 export default
   translate(['common', 'gamebryo-plugin'], {wait: false})(
-    connect(mapStateToProps, mapDispatchToProps)(
+    connect<IConnectedProps, IActionProps, IBaseProps>(mapStateToProps, mapDispatchToProps)(
       PluginList)) as React.ComponentClass<IBaseProps>;

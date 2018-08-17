@@ -24,7 +24,7 @@ export interface IGraphSelection {
 export interface IGraphViewProps {
   elements: { [id: string]: IGraphElement };
   className: string;
-  style?: React.CSSProperties;
+  style?: any;
   visualStyle: cytoscape.Stylesheet[];
   onConnect: (source: string, target: string) => void;
   onDisconnect: (source: string, target: string) => void;

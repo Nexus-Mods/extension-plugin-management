@@ -283,7 +283,7 @@ class LootInterface {
               + 'This conflict involves at least one custom rule.<br />'
               + 'Please read the LOOT message and change your custom rules to resolve the cycle: '
               + '[quote]' + err.message + '[/quote]', { ns: 'gamebryo-plugin' });
-            this.mExtensionApi.store.dispatch(
+            (this.mExtensionApi.store as any).dispatch(
                 actions.showDialog('info', 'Cyclic interaction', {bbcode}, [
                   {
                     label: 'Close',

@@ -1,6 +1,7 @@
 import { addRule, removeRule } from '../actions/userlist';
 import { closeDialog } from '../actions/userlistEdit';
 import { ILOOTPlugin } from '../types/ILOOTList';
+import { IPlugins } from '../types/IPlugins';
 
 import * as I18next from 'i18next';
 import * as React from 'react';
@@ -8,8 +9,9 @@ import { Button, ListGroup, ListGroupItem, Modal, ModalHeader } from 'react-boot
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import Select from 'react-select';
-import { ComponentEx, Icon, tooltip } from 'vortex-api';
-import { IPlugins } from '../types/IPlugins';
+import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
+import { ComponentEx, Icon, tooltip, types } from 'vortex-api';
 
 type RuleType = 'after' | 'requires' | 'incompatible';
 
@@ -281,7 +283,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<types.IState, null, Redux.Action>): IActionProps {
   return {
     onCloseDialog: () => dispatch(closeDialog()),
     onAddRule: (pluginId, referenceId, type) =>
