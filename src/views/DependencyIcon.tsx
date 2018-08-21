@@ -439,7 +439,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   }
 
   private onRemove = (evt) => {
-    const { gameId, plugin, onRemoveRule } = this.props;
+    const { plugin, onRemoveRule } = this.props;
     const [ ruleType, pluginId ] = splitOnce(evt.currentTarget.value, ':');
     onRemoveRule(plugin.name, pluginId, ruleType);
   }
