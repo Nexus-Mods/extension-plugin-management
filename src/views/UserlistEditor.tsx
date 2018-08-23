@@ -119,7 +119,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
             <Modal.Body>
               <Select
                 options={pluginOptions}
-                placeholder={<div><Icon name='filter' /> {t('Filter by plugin')}</div>}
+                placeholder={<div><Icon name='filter' />{t('Filter by plugin')}</div>}
                 value={filter}
                 onChange={this.setFilter}
                 style={{ maxWidth: '50%' }}

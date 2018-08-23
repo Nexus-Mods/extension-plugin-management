@@ -14,6 +14,7 @@ import DependencyIcon from './DependencyIcon';
 import MasterList from './MasterList';
 import PluginFlags, {getPluginFlags} from './PluginFlags';
 import PluginFlagsFilter from './PluginFlagsFilter';
+import PluginStatusFilter from './PluginStatusFilter';
 
 import * as Promise from 'bluebird';
 import ESPFile from 'esptk';
@@ -362,6 +363,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         },
       },
       isSortable: false,
+      filter: new PluginStatusFilter(),
     };
 
     this.staticButtons = [
