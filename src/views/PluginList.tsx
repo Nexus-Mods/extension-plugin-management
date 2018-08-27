@@ -65,12 +65,12 @@ interface IComponentState {
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
-function toHex(input: number) {
+function toHex(input: number, pad: number) {
   if (input === undefined) {
     return 'FF';
   }
   let res = input.toString(16).toUpperCase();
-  if (res.length < 2) {
+  while (res.length < pad) {
     res = '0' + res;
   }
   return res;
@@ -228,9 +228,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           return undefined;
         }
         if (plugin.eslIndex === undefined) {
-          return toHex(plugin.modIndex);
+          return toHex(plugin.modIndex, 2);
         } else {
-          return `${toHex(plugin.modIndex)} (${plugin.eslIndex})`;
+          return `${toHex(plugin.modIndex, 2)} (${toHex(plugin.eslIndex, 3)})`;
         }
       },
       placement: 'table',
@@ -403,6 +403,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     return Object.keys(this.props.plugins).reduce((prev, key) => {
       prev[key] = {
         isMaster: false,
+        isLight: false,
         parseFailed: false,
         masterList: [],
         author: '',
@@ -486,6 +487,17 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     );
   }
 
+  private isMaster(filePath: string, flag: boolean) {
+    return flag
+        || ((['fallout4', 'skyrimse'].indexOf(this.props.gameMode) !== -1)
+            && ['.esm', '.esl'].indexOf(path.extname(filePath).toLowerCase()) !== -1);
+  }
+
+  private isLight(filePath: string, flag: boolean) {
+    return (['fallout4', 'skyrimse'].indexOf(this.props.gameMode) !== -1)
+        && (flag || (path.extname(filePath).toLowerCase() === '.esl'));
+  }
+
   private updatePlugins(plugins: IPlugins) {
     const pluginNames: string[] = Object.keys(plugins);
 
@@ -497,7 +509,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         try {
           const esp = new ESPFile(plugins[pluginName].filePath);
           pluginsParsed[pluginName] = {
-            isMaster: esp.isMaster,
+            isMaster: this.isMaster(plugins[pluginName].filePath, esp.isMaster),
+            isLight: this.isLight(plugins[pluginName].filePath, esp.isLight),
             parseFailed: false,
             description: esp.description,
             author: esp.author,
@@ -512,6 +525,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             { path: plugins[pluginName].filePath, error: err.message });
           pluginsParsed[pluginName] = {
             isMaster: false,
+            isLight: false,
             parseFailed: true,
             description: '',
             author: '',
@@ -601,7 +615,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     byLO.forEach((plugin: IPluginCombined) => {
       if (!plugin.enabled && !plugin.isNative) {
         res[plugin.name] = { modIndex: -1 };
-      } else if (path.extname(plugin.name) === '.esl') {
+      } else if (plugin.isLight) {
         res[plugin.name] = {
           modIndex: 0xFE,
           eslIndex: eslIndex++,

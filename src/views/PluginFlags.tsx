@@ -19,6 +19,10 @@ export function getPluginFlags(plugin: IPluginCombined, t: I18next.TranslationFu
   if (plugin.isMaster) {
     result.push(t('Master'));
   }
+  
+  if (plugin.isLight) {
+    result.push(t('Light'));
+  }
 
   if (plugin.parseFailed) {
     result.push(t('Couldn\'t parse'));
@@ -47,6 +51,17 @@ const PluginFlags = (props: IProps): JSX.Element => {
         key={key}
         name='plugin-master'
         tooltip={t('Master')}
+      />);
+  }
+ 
+  if (plugin.isLight) {
+    const key = `ico-light-${plugin.name}`;
+    flags.push(
+      <tooltip.Icon
+        id={key}
+        key={key}
+        name='plugin-light'
+        tooltip={t('Light')}
       />);
   }
 

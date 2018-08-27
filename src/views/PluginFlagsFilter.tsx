@@ -7,7 +7,7 @@ export class PluginFlagFilterComponent extends React.Component<types.IFilterProp
   public render(): JSX.Element {
     const { filter } = this.props;
 
-    const selectionFilters = [ 'Master', 'Native', 'Dirty', 'Don\'t clean'];
+    const selectionFilters = [ 'Master', 'Light', 'Native', 'Dirty', 'Don\'t clean'];
 
     const currentFilters = selectionFilters.map(current => ({
       label: current,
