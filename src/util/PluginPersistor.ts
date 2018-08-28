@@ -272,10 +272,10 @@ class PluginPersistor implements types.IPersistor {
     return ((this.mDataPath !== undefined)
             ? fs.readdirAsync(this.mDataPath).catch(() => []) : Promise.resolve([]))
       .filter(this.isPlugin)
-      .then(plugins => plugins
-        .sort((lhs, rhs) => this.mNativePlugins.indexOf(lhs.toLowerCase())
-                          - this.mNativePlugins.indexOf(rhs.toLowerCase()))
-        .reduce((prev: IPluginMap, name: string) => {
+      .then((plugins: string[]) => plugins
+          .sort((lhs, rhs) => this.mNativePlugins.indexOf(lhs.toLowerCase())
+                            - this.mNativePlugins.indexOf(rhs.toLowerCase()))
+          .reduce((prev: IPluginMap, name: string) => {
         const isNative = nativePluginSet.has(name.toLowerCase());
         prev[name] = {
           enabled: isNative,

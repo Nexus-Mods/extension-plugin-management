@@ -110,7 +110,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     const pluginOptions = pluginNames.map(input => ({ value: input, label: input }));
 
     return (
-      <Modal show={dialog !== undefined} onHide={this.close}>
+      <Modal id='manage-plugin-rules-dialog' show={dialog !== undefined} onHide={this.close}>
         <ModalHeader>
           <h3>{t('Set Rules')}</h3>
         </ModalHeader>
@@ -130,6 +130,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
               <hr />
                 <div className='userlist-add-controls'>
                   <Select
+                    className='userlist-select-plugin'
                     options={pluginOptions}
                     clearable={false}
                     placeholder={t('Select Plugin...')}
@@ -147,6 +148,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
                     onChange={this.selectType}
                   />
                   <Select
+                    className='userlist-select-plugin select-pull-right'
                     options={pluginOptions}
                     clearable={false}
                     placeholder={t('Select Plugin...')}

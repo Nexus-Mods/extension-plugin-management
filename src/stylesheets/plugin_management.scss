@@ -60,21 +60,41 @@
   }
 }
 
+
 .rule-readonly {
   font-style: italic;
 }
 
-.userlist-existing-rules {
-  overflow-y: auto;
-  max-height: 300px;
-}
+#manage-plugin-rules-dialog {
+  .modal-dialog {
+    width: 60%;
+  }
 
-.userlist-add-controls {
-  display: flex;
-  justify-content: space-between;
+  .userlist-existing-rules {
+    overflow-y: auto;
+    max-height: 300px;
+  }
 
-  > .Select {
-    width: 150px;
+  .userlist-add-controls {
+    display: flex;
+    justify-content: space-between;
+
+    > .Select {
+      width: 150px;
+      .Select-menu-outer {
+        width: 150%;
+      }
+    }
+
+    .userlist-select-plugin {
+      flex: 1 1 0;
+      &.select-pull-right {
+        .Select-menu-outer {
+          left: initial;
+          right: 0;
+        }
+      }
+    }
   }
 }
 
