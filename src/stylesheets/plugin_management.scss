@@ -73,6 +73,10 @@
   .userlist-existing-rules {
     overflow-y: auto;
     max-height: 300px;
+    
+    .btn {
+      margin-left: 8px;
+    }
   }
 
   .userlist-add-controls {
@@ -94,6 +98,10 @@
           right: 0;
         }
       }
+    }
+
+    .btn {
+      margin-left: 8px;
     }
   }
 }

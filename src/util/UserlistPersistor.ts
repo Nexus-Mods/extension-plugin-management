@@ -123,7 +123,7 @@ class UserlistPersistor implements types.IPersistor {
       .then(() => fs.renameAsync(userlistPath + '.tmp', userlistPath))
       .then(() => { this.mFailed = false; })
       .catch(err => {
-        this.reportError('failed to write userlist', err);
+        this.reportError('Failed to write userlist', err);
       });
   }
 
