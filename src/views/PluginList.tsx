@@ -126,6 +126,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   private actions: ITableRowAction[];
   private mLang: string;
   private mCollator: Intl.Collator;
+  private mMounted: boolean = false;
 
   private installedNative: { [name: string]: number };
 
@@ -441,6 +442,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       .then(() => this.applyUserlist(this.props.userlist.plugins));
   }
 
+  public componentDidMount() {
+    this.mMounted = true;
+  }
+
+  public componentWillUnmount() {
+    this.mMounted = true;
+  }
+
   public componentWillReceiveProps(nextProps: IProps) {
     if (this.props.plugins !== nextProps.plugins) {
       this.updatePlugins(nextProps.plugins);
@@ -545,11 +554,13 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         const pluginsCombined = this.detailedPlugins(plugins, pluginsLoot,
           pluginsParsed);
 
-        this.setState(update(this.state, {
-          pluginsParsed: { $set: pluginsParsed },
-          pluginsLoot: { $set: pluginsLoot },
-          pluginsCombined: { $set: pluginsCombined },
-        }));
+        if (this.mMounted) {
+          this.setState(update(this.state, {
+            pluginsParsed: { $set: pluginsParsed },
+            pluginsLoot: { $set: pluginsLoot },
+            pluginsCombined: { $set: pluginsCombined },
+          }));
+        }
 
         const pluginsFlat = Object.keys(pluginsCombined).map(pluginId => pluginsCombined[pluginId]);
 
@@ -690,9 +701,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       updateSet[pluginId].eslIndex = { $set: modIndices[pluginId].eslIndex };
     });
 
-    this.setState(update(this.state, {
-      pluginsCombined: updateSet,
-    }));
+    if (this.mMounted) {
+      this.setState(update(this.state, {
+        pluginsCombined: updateSet,
+      }));
+    }
   }
 
   private applyUserlist(userlist: ILOOTPlugin[]) {
@@ -716,9 +729,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       }
     });
 
-    this.setState(update(this.state, {
-      pluginsCombined: updateSet,
-    }));
+    if (this.mMounted) {
+      this.setState(update(this.state, {
+        pluginsCombined: updateSet,
+      }));
+    }
   }
 
   private translateLootMessageType(input: number) {
