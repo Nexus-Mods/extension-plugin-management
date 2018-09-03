@@ -1,4 +1,4 @@
-import { addGroup, addGroupRule, removeGroup, removeGroupRule } from '../actions/userlist';
+import { addGroup, addGroupRule, removeGroup, removeGroupRule, setGroup } from '../actions/userlist';
 import { openGroupEditor } from '../actions/userlistEdit';
 import { ILOOTList } from '../types/ILOOTList';
 
@@ -25,6 +25,7 @@ interface IConnectedProps {
 interface IActionProps {
   onOpen: (open: boolean) => void;
   onAddGroup: (group: string) => void;
+  onSetGroup: (pluginId: string, groupId: string) => void;
   onRemoveGroup: (group: string) => void;
   onAddGroupRule: (group: string, reference: string) => void;
   onRemoveGroupRule: (group: string, reference: string) => void;
@@ -69,6 +70,12 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
       show: true,
       action: () => this.mGraphRef.layout(),
     },
+    {
+      icon: '',
+      title: 'Reset...',
+      show: true,
+      action: () => this.reset(),
+    }
   ];
 
   constructor(props: IProps) {
@@ -185,6 +192,59 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
       });
   }
 
+  private reset = () => {
+    const { onRemoveGroup, onRemoveGroupRule, onSetGroup, onShowDialog, masterlist, userlist } = this.props;
+    onShowDialog('question', 'Reset Customisations', {
+      text: 'This will remove customizations you have made to groups. This can\'t be undone!',
+      checkboxes: [
+        { id: 'default_groups', text: 'Revert pre-configured groups to default', value: true },
+        { id: 'custom_groups', text: 'Remove custom groups', value: true },
+      ]
+    }, [ { label: 'Cancel' }, { label: 'Continue' } ])
+    .then((result: types.IDialogResult) => {
+      if (result.action === 'Cancel') {
+        return;
+      }
+      const masterlistGroups = new Set<string>(masterlist.groups.map(group => group.name));
+      if (result.input.custom_groups) {
+        // unassign all plugins from custom groups
+        userlist.plugins
+          .forEach(plugin => {
+            if ((plugin.group !== undefined) && !masterlistGroups.has(plugin.group)) {
+              onSetGroup(plugin.name, undefined);
+            }
+          });
+        // remove all references from masterlist groups to custom groups
+        userlist.groups
+          .filter(group => masterlistGroups.has(group.name))
+          .forEach(group => {
+            (group.after || [])
+              .filter(after => !masterlistGroups.has(after))
+              .forEach(after => {
+                onRemoveGroupRule(group.name, after);
+              })
+          })
+        // remove all custom groups
+        userlist.groups
+          .filter(group => !masterlistGroups.has(group.name))
+          .forEach(group => {
+            onRemoveGroup(group.name);
+          });
+      }
+
+      // do the default groups second, otherwise we'd have to update the userlist object
+      // for th custom_groups step to work
+      if (result.input.default_groups) {
+        // remove all groups known in the masterlist from the userlist
+        userlist.groups
+          .filter(group => masterlistGroups.has(group.name))
+          .forEach(group => {
+            onRemoveGroup(group.name);
+          });
+      }
+    });
+  }
+
   private openContext = (x: number, y: number, selection: IGraphSelection) => {
     if ((selection !== undefined) && selection.readonly) {
       return;
@@ -223,9 +283,9 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
     return [].concat(
       masterlist.groups.map(group =>
         ({ title: group.name, connections: group.after,
-           class: `masterlist group-${group.name}`, readonly: true })),
+           class: `masterlist group-${group.name.replace(/[^A-Za-z0-9]/g, '_')}`, readonly: true })),
       userlist.groups.map(group =>
-        ({ title: group.name, connections: group.after, class: `userlist group-${group.name}` })),
+        ({ title: group.name, connections: group.after, class: `userlist group-${group.name.replace(/[^A-Za-z0-9]/g, '_')}` })),
     ).reduce((prev, ele) => {
       prev[ele.title] = ele;
       return prev;
@@ -254,6 +314,8 @@ function mapDispatchToProps(dispatch: ThunkDispatch<types.IState, null, Redux.Ac
       dispatch(addGroup(groupId)),
     onRemoveGroup: (groupId: string) =>
       dispatch(removeGroup(groupId)),
+    onSetGroup: (pluginId: string, groupId: string) =>
+      dispatch(setGroup(pluginId, groupId)),
     onAddGroupRule: (groupId: string, reference: string) =>
       dispatch(addGroupRule(groupId, reference)),
     onRemoveGroupRule: (groupId: string, reference: string) =>

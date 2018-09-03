@@ -70,6 +70,13 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
           // node removed
           this.mGraph.remove('#' + san(id.slice(1)));
         } else {
+          // updated classes
+          const nodeId = san(id);
+          if (this.props.elements[id].class !== newProps.elements[id].class) {
+            this.mGraph.$(`node#${nodeId}, edge[target = "${nodeId}"]`)
+              .removeClass(this.props.elements[id].class)
+              .addClass(newProps.elements[id].class);
+          }
           // node content changed
           Object.keys(changed[id].connections || []).forEach(refId => {
             const from = san(id);
