@@ -1,4 +1,4 @@
-import { setPluginEnabled, setPluginOrder } from './actions/loadOrder';
+import { setPluginEnabled, updatePluginOrder } from './actions/loadOrder';
 import { setPluginList } from './actions/plugins';
 import { removeGroupRule, setGroup } from './actions/userlist';
 import { openGroupEditor, setCreateRule } from './actions/userlistEdit';
@@ -73,6 +73,8 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
   const enabledModIds = Object.keys(gameMods).filter(
       modId => util.getSafe(newModList, [modId, 'enabled'], false));
 
+  // create a cache of all plugins that originate from a mod so we can assign
+  // the correct origin further down
   return Promise.map(enabledModIds, (modId: string) => {
              const mod = gameMods[modId];
              if ((mod === undefined) || (mod.installationPath === undefined)) {
@@ -310,14 +312,36 @@ function startSyncRemote(api: types.IExtensionApi): Promise<void> {
     // changed, so refresh
     try {
       watcher = fs.watch(modPath, {}, (evt: string, fileName: string) => {
-        if (refreshTimer !== undefined) {
-          clearTimeout(refreshTimer);
+        if (evt !== 'rename') {
+          // only react to file creation or delete
+          return;
         }
-        refreshTimer = setTimeout(() => {
-          updateCurrentProfile(store)
-              .then(() => api.events.emit('autosort-plugins', false));
-          refreshTimer = undefined;
-        }, 500);
+
+        if (['.esp', '.esm', '.esl'].indexOf(path.extname(fileName).toLowerCase()) === -1) {
+          // ignore non-plugins
+          return;
+        }
+
+        // ok, meta data of a plugin file changed but that could still just be the filetime
+        // being changed by the persistor. So check if the file was actually created or removed,
+        // compared to our last refresh
+        fs.statAsync(path.join(modPath, fileName))
+          .then(() => true)
+          .catch(() => false)
+          .then(exists => {
+            const state = store.getState();
+            if (exists !== (state.loadOrder[fileName] !== undefined)) {
+              if (refreshTimer !== undefined) {
+                clearTimeout(refreshTimer);
+              }
+
+              refreshTimer = setTimeout(() => {
+                updateCurrentProfile(store)
+                  .then(() => api.events.emit('autosort-plugins', false));
+                refreshTimer = undefined;
+              }, 500);
+            }
+          });
       });
       watcher.on('error', error => {
         log('warn', 'failed to watch mod directory', { modPath, error });
@@ -579,18 +603,6 @@ function testMissingMasters(t: I18next.TranslationFunction,
   }
 }
 
-function replacePluginList(store: Redux.Store<any>, newPlugins: string[]) {
-  const plugins = util.getSafe(store.getState(), ['session', 'plugins', 'pluginList'], {});
-
-  Object.keys(plugins).map(key => {
-    if (newPlugins.indexOf(key) === -1) {
-      store.dispatch(setPluginEnabled(key, false));
-    } else {
-      store.dispatch(setPluginEnabled(key, true));
-    }
-  });
-}
-
 function init(context: IExtensionContextExt) {
   register(context);
   initPersistor(context);
@@ -634,25 +646,16 @@ function init(context: IExtensionContextExt) {
 
       loot = new LootInterface(context);
 
-      Object.keys(store.getState().persistent.profiles)
-        .forEach((gameId: string) => {
-          if (!gameSupported(gameId)) {
-            return;
-          }
-          // this handles the case that the content of a profile changes
-          context.api.onStateChange(
-            ['persistent', 'profiles', gameId], (oldProfiles, newProfiles) => {
-              const activeProfileId = selectors.activeProfile(store.getState()).id;
-              const oldProfile = oldProfiles[activeProfileId];
-              const newProfile = newProfiles[activeProfileId];
+      // this handles the case that the content of a profile changes
+      context.api.onStateChange(
+        ['persistent', 'profiles'], (oldProfiles, newProfiles) => {
+          const activeProfileId = selectors.activeProfile(store.getState()).id;
+          const oldProfile = oldProfiles[activeProfileId];
+          const newProfile = newProfiles[activeProfileId];
 
-              if (oldProfile !== newProfile) {
-                updatePluginList(store, newProfile.modState)
-                  .then(() => {
-                    context.api.events.emit('autosort-plugins', false);
-                  });
-              }
-            });
+          if (oldProfile !== newProfile) {
+            updatePluginList(store, newProfile.modState);
+          }
         });
 
       context.api.onStateChange(['loadOrder'], () => {
@@ -668,9 +671,8 @@ function init(context: IExtensionContextExt) {
             }
           });
 
-      context.api.events.on('set-plugin-list', (newPlugins: string[]) => {
-        replacePluginList(context.api.store, newPlugins);
-        store.dispatch(setPluginOrder(newPlugins));
+      context.api.events.on('set-plugin-list', (newPlugins: string[], setEnabled?: boolean) => {
+        store.dispatch(updatePluginOrder(newPlugins, setEnabled !== false));
       });
 
       context.api.events.on(

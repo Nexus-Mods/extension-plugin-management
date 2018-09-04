@@ -12,6 +12,6 @@ export const pluginsReducer: types.IReducerSpec = {
     ,
   },
   defaults: {
-    pluginList: [],
+    pluginList: {},
   },
 };

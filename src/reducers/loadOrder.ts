@@ -29,6 +29,32 @@ export const loadOrderReducer: types.IReducerSpec = {
       });
       return result;
     },
+    [actions.updatePluginOrder as any]: (state, payload) => {
+      const { pluginList, setEnabled } = payload;
+
+      const result = JSON.parse(JSON.stringify(state));
+
+      // put the listed plugins in the specified order
+      pluginList.forEach((pluginName: string, idx: number) => {
+        result[pluginName] = {
+          enabled: setEnabled ? true : util.getSafe(state, [pluginName, 'enabled'], true),
+          loadOrder: idx,
+        };
+      });
+
+      // now deal with the rest, appending them to the list
+      let idx = pluginList.length;
+      Object.keys(result)
+        .filter(key => pluginList.indexOf(key) === -1)
+        .forEach(key => {
+          result[key].loadOrder = idx++;
+          if (setEnabled) {
+            result[key].enabled = false;
+          }
+        });
+
+      return result;
+    },
   },
   defaults: {},
 };

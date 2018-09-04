@@ -1,4 +1,4 @@
-import {setPluginOrder} from './actions/loadOrder';
+import {updatePluginOrder} from './actions/loadOrder';
 import {IPluginsLoot} from './types/IPlugins';
 import {gameSupported, pluginPath} from './util/gameSupport';
 
@@ -63,7 +63,8 @@ class LootInterface {
 
       const pluginNames: string[] = Object
         .keys(state.loadOrder)
-        .filter((name: string) => (state.session.plugins.pluginList[name] !== undefined));
+        .filter((name: string) => (state.session.plugins.pluginList[name] !== undefined))
+        .sort((lhs, rhs) => state.loadOrder[lhs].loadOrder - state.loadOrder[rhs].loadOrder);
 
       // ensure no other sort is in progress
       try {
@@ -76,7 +77,7 @@ class LootInterface {
         this.mSortPromise = this.readLists(gameMode, loot)
           .then(() => loot.sortPluginsAsync(pluginNames));
         const sorted: string[] = await this.mSortPromise;
-        store.dispatch(setPluginOrder(sorted));
+        store.dispatch(updatePluginOrder(sorted, false));
       } catch (err) {
         log('info', 'loot failed', { error: err.message });
         if (err.message.startsWith('Cyclic interaction')) {
