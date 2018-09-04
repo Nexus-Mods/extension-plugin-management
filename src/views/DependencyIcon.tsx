@@ -381,7 +381,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       : ref;
 
     if (readOnly) {
-      return <li key={name} className='rule-readonly'>{display}</li>;
+      return <li key={name} className='rule-readonly'>{display || name}</li>;
     }
 
     return (
