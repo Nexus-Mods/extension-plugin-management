@@ -330,7 +330,9 @@ function startSyncRemote(api: types.IExtensionApi): Promise<void> {
           .catch(() => false)
           .then(exists => {
             const state = store.getState();
-            if (exists !== (state.loadOrder[fileName] !== undefined)) {
+            const known = (state.loadOrder[fileName] !== undefined)
+                       && (state.session.plugins.pluginList[fileName] !== undefined);
+            if (exists !== known) {
               if (refreshTimer !== undefined) {
                 clearTimeout(refreshTimer);
               }
@@ -647,16 +649,15 @@ function init(context: IExtensionContextExt) {
       loot = new LootInterface(context);
 
       // this handles the case that the content of a profile changes
-      context.api.onStateChange(
-        ['persistent', 'profiles'], (oldProfiles, newProfiles) => {
-          const activeProfileId = selectors.activeProfile(store.getState()).id;
-          const oldProfile = oldProfiles[activeProfileId];
-          const newProfile = newProfiles[activeProfileId];
-
-          if (oldProfile !== newProfile) {
-            updatePluginList(store, newProfile.modState);
-          }
-        });
+      context.api.onAsync('did-deploy', (profileId, deployment) => {
+        const state: types.IState = store.getState();
+        const profile = state.persistent.profiles[profileId];
+        if (gameSupported(profile.gameId)) {
+          return updatePluginList(store, profile.modState);
+        } else {
+          Promise.resolve();
+        }
+      });
 
       context.api.onStateChange(['loadOrder'], () => {
         context.api.events.emit('trigger-test-run', 'plugins-changed', 500);

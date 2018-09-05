@@ -431,13 +431,6 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     this.nextState.showOverlay = false;
   }
 
-  private pluginFrom(input: ILOOTPlugin, readOnly: boolean): ILOOTPlugin {
-    if (input === undefined) {
-      return undefined;
-    }
-    return input;
-  }
-
   private onRemove = (evt) => {
     const { plugin, onRemoveRule } = this.props;
     const [ ruleType, pluginId ] = splitOnce(evt.currentTarget.value, ':');
