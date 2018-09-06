@@ -7,6 +7,8 @@ import { util } from 'vortex-api';
 (cytoscape as any).use(edgehandles);
 (cytoscape as any).use(coseBilkent);
 
+const NUM_ROWS = 3;
+
 export interface IGraphElement {
   title: string;
   class: string;
@@ -39,6 +41,7 @@ function san(input: string): string {
 class GraphView extends React.Component<IGraphViewProps, {}> {
   private mGraph: cytoscape.Core;
   private mLayout: cytoscape.LayoutManipulation;
+  private mMousePos: { x: number, y: number } = { x: 0, y: 0 };
 
   public componentWillReceiveProps(newProps: IGraphViewProps) {
     if (newProps.elements !== this.props.elements) {
@@ -46,10 +49,12 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
 
       Object.keys(changed).forEach(id => {
         if (id[0] === '+') {
+          const zoom = 1.0 / this.mGraph.zoom();
           // node added
           this.mGraph.add({
             data: { id: san(id.slice(1)), title: changed[id].title },
             classes: changed[id].class,
+            position: this.mMousePos,
           });
           const connections = changed[id].connections;
           Object.keys(connections || []).forEach(refId => {
@@ -162,17 +167,22 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
         ? { source: data.sourceOrig, target: data.targetOrig, readonly: data.readonly }
         : { id: data.title, readonly: data.readonly };
     }
+    this.mMousePos = evt.position;
     this.props.onContext(evt.renderedPosition.x, evt.renderedPosition.y, selection);
   }
 
   private addElements(elements: { [id: string]: IGraphElement }) {
+    const width = Object.keys(elements).length / NUM_ROWS;
+    const distance = (this.mGraph.width() / width) * 2;
     this.mGraph
       .add(Object.keys(elements).reduce((prev, id: string, idx: number) => {
         const ele = elements[id];
+        const row = Math.floor(idx / width);
+        const pos = (row % 2 === 0) ? (idx % width) : width - (idx % width);
         prev.push({
           data: { id: san(id), title: ele.title, readonly: ele.readonly },
           classes: ele.class,
-          position: { x: idx * 2, y: idx },
+          position: { x: pos * distance, y: row * distance },
         });
         (ele.connections || []).forEach(conn => {
           prev.push({
