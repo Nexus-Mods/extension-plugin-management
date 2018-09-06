@@ -7,7 +7,7 @@ import { util } from 'vortex-api';
 (cytoscape as any).use(edgehandles);
 (cytoscape as any).use(coseBilkent);
 
-const NUM_ROWS = 3;
+const MAX_COLUMNS = 10;
 
 export interface IGraphElement {
   title: string;
@@ -172,7 +172,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
   }
 
   private addElements(elements: { [id: string]: IGraphElement }) {
-    const width = Object.keys(elements).length / NUM_ROWS;
+    const width = MAX_COLUMNS;
     const distance = (this.mGraph.width() / width) * 2;
     this.mGraph
       .add(Object.keys(elements).reduce((prev, id: string, idx: number) => {
