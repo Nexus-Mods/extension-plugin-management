@@ -225,6 +225,7 @@ class LootInterface {
           `https://github.com/loot/${this.convertGameId(gameMode, true)}.git`,
           LOOT_LIST_REVISION);
       log('info', 'updated loot masterlist', updated);
+      this.mExtensionApi.events.emit('did-update-masterlist');
     } catch (err) {
       this.mExtensionApi.showErrorNotification('Failed to update masterlist', err, {
           allowReport: false,

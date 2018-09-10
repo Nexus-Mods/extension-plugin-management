@@ -624,6 +624,12 @@ function init(context: IExtensionContextExt) {
           }
         });
     });
+    ipcMain.on('did-update-masterlist', () => {
+      if (masterlistPersistor !== undefined) {
+        const gameId = selectors.activeGameId(context.api.store.getState());
+        masterlistPersistor.loadFiles(gameId);
+      }
+    });
   });
 
   context
@@ -697,6 +703,10 @@ function init(context: IExtensionContextExt) {
               .then(() => startSync(context.api))
               .then(() => context.api.events.emit('autosort-plugins', false));
         }
+      });
+
+      context.api.events.on('did-update-masterlist', () => {
+        ipcRenderer.send('did-update-masterlist');
       });
 
       context.api.events.on('mod-enabled', (profileId: string, modId: string) => {
