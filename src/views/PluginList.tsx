@@ -98,9 +98,17 @@ class GroupSelect extends React.PureComponent<IGroupSelectProps, {}> {
       userlist.groups.map(iter => ({ label: iter.name, value: iter.name })),
     );
 
+    let isCustom: boolean = false;
+
+    if (plugins.length === 1) {
+      isCustom = userlist.plugins.find(plugin =>
+        plugin.name === plugins[0].name && plugin.group !== undefined) !== undefined;
+    }
+
     return (
       <Creatable
-        value={group}
+        value={isCustom ? group : undefined}
+        placeholder={group}
         onChange={this.changeGroup}
         options={options}
         promptTextCreator={this.createPrompt}
