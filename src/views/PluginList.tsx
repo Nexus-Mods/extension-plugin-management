@@ -23,7 +23,7 @@ import update from 'immutability-helper';
 import { Message } from 'loot';
 import * as path from 'path';
 import * as React from 'react';
-import {Alert, ListGroup, ListGroupItem, Panel} from 'react-bootstrap';
+import {Alert, ListGroup, ListGroupItem, Panel, Button} from 'react-bootstrap';
 import {translate} from 'react-i18next';
 import {connect} from 'react-redux';
 import {Creatable} from 'react-select';
@@ -43,6 +43,7 @@ interface IConnectedProps {
   loadOrder: { [name: string]: ILoadOrder };
   autoSort: boolean;
   activity: string[];
+  needToDeploy: boolean;
   userlist: ILOOTList;
   masterlist: ILOOTList;
   mods: { [id: string]: types.IMod };
@@ -395,6 +396,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         component: ToolbarIcon,
         props: () => {
           const {activity} = this.props;
+          console.log('activity', activity);
           const sorting = (activity || []).indexOf('sorting') !== -1;
           return {
             id: 'btn-sort',
@@ -473,15 +475,13 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t } = this.props;
+    const { t, needToDeploy } = this.props;
     const { pluginsCombined } = this.state;
 
-    const PanelX: any = Panel;
-    const IconBarX: any = IconBar;
     return (
       <MainPage>
         <MainPage.Header>
-          <IconBarX
+          <IconBar
             group='gamebryo-plugin-icons'
             staticElements={this.staticButtons}
             className='menubar'
@@ -489,19 +489,37 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           />
         </MainPage.Header>
         <MainPage.Body>
+          {needToDeploy ? this.renderOutdated() : null}
           <Panel>
-            <PanelX.Body>
+            <Panel.Body>
               <Table
                 tableId='gamebryo-plugins'
                 actions={this.actions}
                 staticElements={[this.pluginEnabledAttribute, ...this.pluginAttributes]}
                 data={pluginsCombined}
               />
-            </PanelX.Body>
+            </Panel.Body>
           </Panel>
         </MainPage.Body>
       </MainPage>
     );
+  }
+
+  private renderOutdated() {
+    const { t } = this.props;
+    return (
+          <Alert bsStyle='warning'>
+            {t('This list may be outdated, you should deploy mods before modifying it.')}
+            {' '}
+            <Button onClick={this.deploy}>
+              {t('Deploy now')}
+            </Button>
+          </Alert>
+    );
+  }
+
+  private deploy = () => {
+    this.context.api.events.emit('deploy-mods');
   }
 
   private isMaster(filePath: string, flag: boolean) {
@@ -797,17 +815,18 @@ const emptyList: ILOOTList = {
   plugins: [],
 };
 
-function mapStateToProps(state: any): IConnectedProps {
+function mapStateToProps(state: types.IState): IConnectedProps {
   const profile = selectors.activeProfile(state);
   const gameMode = profile !== undefined ? profile.gameId : undefined;
   return {
     gameMode,
-    plugins: state.session.plugins.pluginList,
-    loadOrder: state.loadOrder,
-    userlist: state.userlist || emptyList,
-    masterlist: state.masterlist || emptyList,
-    autoSort: state.settings.plugins.autoSort,
-    activity: state.session.base.activity['plugins'],
+    plugins: (state.session as any).plugins.pluginList,
+    loadOrder: (state as any).loadOrder,
+    userlist: (state as any).userlist || emptyList,
+    masterlist: (state as any).masterlist || emptyList,
+    autoSort: (state.settings as any).plugins.autoSort,
+    activity: state.session.base.activity['plugins'] as any,
+    needToDeploy: (selectors as any).needToDeploy(state),
     mods: profile !== undefined ? (state as types.IState).persistent.mods[gameMode] : emptyObj,
   };
 }
