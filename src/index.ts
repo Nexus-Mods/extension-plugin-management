@@ -118,7 +118,7 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
         const pluginStates: IPlugins = {};
         pluginNames.forEach(fileName => {
           const modName = pluginSources[fileName] !== undefined
-            ? util.renderModName(gameMods[pluginSources[fileName]], { version: false })
+            ? pluginSources[fileName]
             : '';
           pluginStates[fileName] = {
             modName,

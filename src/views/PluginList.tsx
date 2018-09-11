@@ -155,7 +155,17 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       id: 'modName',
       name: 'Mod',
       edit: {},
-      calc: plugin => plugin.modName,
+      calc: plugin => {
+        if (plugin.modName === undefined) {
+          return '';
+        }
+
+        const mod = this.props.mods[plugin.modName];
+        if (mod === undefined) {
+          return '';
+        }
+        return util.renderModName(mod, { version: false });
+      },
       placement: 'both',
       isDefaultVisible: false,
       isSortable: true,
