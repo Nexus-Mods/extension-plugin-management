@@ -1,4 +1,4 @@
-import { setPluginEnabled, updatePluginOrder } from './actions/loadOrder';
+import { setPluginEnabled, updatePluginOrder, setPluginOrder } from './actions/loadOrder';
 import { setPluginList } from './actions/plugins';
 import { removeGroupRule, setGroup } from './actions/userlist';
 import { openGroupEditor, setCreateRule } from './actions/userlistEdit';
@@ -360,6 +360,9 @@ function startSync(api: types.IExtensionApi): Promise<void> {
     return startSyncRemote(api);
   }
   const store = api.store;
+
+  // start with a clean slate
+  store.dispatch(setPluginOrder([]));
 
   const gameId = selectors.activeGameId(store.getState());
 

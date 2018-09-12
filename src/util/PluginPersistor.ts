@@ -36,6 +36,7 @@ class PluginPersistor implements types.IPersistor {
   private mRefreshTimer: NodeJS.Timer;
   private mLastWriteTime: Date;
   private mSerializing: boolean = false;
+  private mSerializeScheduled: boolean = false;
   private mSerializeQueue: Promise<void> = Promise.resolve();
 
   private mPlugins: IPluginMap;
@@ -159,9 +160,12 @@ class PluginPersistor implements types.IPersistor {
       // this happens during initialization, when the persistor is initially created
       return Promise.resolve();
     }
-    // ensure we don't try to concurrently write the files
-    // TODO: this can enqueue many duplicate file writes
-    return this.enqueue(() => this.doSerialize());
+    if (!this.mSerializeScheduled) {
+      this.mSerializeScheduled = true;
+      // ensure we don't try to concurrently write the files
+      this.enqueue(() => Promise.delay(200, this.doSerialize()));
+    }
+    return Promise.resolve();
   }
 
   private doSerialize(): Promise<void> {
@@ -171,6 +175,7 @@ class PluginPersistor implements types.IPersistor {
     const destPath = this.mPluginPath;
 
     this.mSerializing = true;
+    this.mSerializeScheduled = false;
 
     const sorted: string[] =
         Object.keys(this.mPlugins)
