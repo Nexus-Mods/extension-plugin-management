@@ -50,7 +50,6 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
 
   private contextNodeActions = [
     {
-      icon: '',
       title: 'Remove',
       show: true,
       action: () => this.removeSelection(),
@@ -59,19 +58,16 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
 
   private contextBGActions = [
     {
-      icon: '',
       title: 'Add Group',
       show: true,
       action: () => this.addGroup(),
     },
     {
-      icon: '',
       title: 'Layout',
       show: true,
       action: () => this.mGraphRef.layout(),
     },
     {
-      icon: '',
       title: 'Reset...',
       show: true,
       action: () => this.reset(),
@@ -132,7 +128,7 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
             position={this.state.context}
             visible={this.state.context !== undefined}
             onHide={this.hideContext}
-            instanceId={42}
+            instanceId='42'
             actions={contextActions}
           />
         </Modal.Body>

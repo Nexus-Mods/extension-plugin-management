@@ -26,6 +26,7 @@ export default function(rules: CSSStyleRule[]) {
         'text-background-opacity': 1,
         'text-background-padding': '4px',
         'text-margin-y': '-20px',
+        'font-family': 'Roboto',
         'overlay-color': variables['link-hover-color'],
       },
     },
