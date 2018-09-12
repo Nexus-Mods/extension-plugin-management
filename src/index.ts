@@ -435,8 +435,9 @@ function testMissingGroups(t: I18next.TranslationFunction,
   ));
 
   // all used groups
-  const usedGroups = [].concat(
-    ...userlistGroups.map(group => group.after || []));
+  const usedGroups = Array.from(new Set([].concat(
+    ...userlistGroups.map(group => group.after || []),
+    state.userlist.plugins.filter(plugin => plugin.group !== undefined).map(plugin => plugin.group))));
 
   const missing = usedGroups.filter(group => !groups.has(group));
 

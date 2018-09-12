@@ -82,11 +82,12 @@ class LootInterface {
         log('info', 'loot failed', { error: err.message });
         if (err.message.startsWith('Cyclic interaction')) {
           this.reportCycle(err);
-        } else if (err.message.endsWith('is not a valid plugin')) {
+        } else if (err.message.endsWith('is not a valid plugin')
+                   || err.message.match(/The group "[^"]*" does not exist/))  {
           this.mExtensionApi.sendNotification({
             id: 'loot-failed',
             type: 'warning',
-            message: this.mExtensionApi.translate('Not sorted because: {{msg}}',
+            message: this.mExtensionApi.translate('Plugins not sorted because: {{msg}}',
               { replace: { msg: err.message }, ns: 'gamebryo-plugin' }),
           });
         } else {
