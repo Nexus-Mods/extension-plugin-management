@@ -41,6 +41,7 @@ function san(input: string): string {
 class GraphView extends React.Component<IGraphViewProps, {}> {
   private mGraph: cytoscape.Core;
   private mLayout: cytoscape.LayoutManipulation;
+  private mEdgeHandler: any;
   private mMousePos: { x: number, y: number } = { x: 0, y: 0 };
 
   public componentWillReceiveProps(newProps: IGraphViewProps) {
@@ -118,10 +119,27 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
     return <div ref={this.setRef} className={className} style={style} />;
   }
 
+  private onKeyDown = (evt: KeyboardEvent) => {
+    if (evt.keyCode === 17) {
+      this.mEdgeHandler.enable();
+      // this.mEdgeHandler.enableDrawMode();
+    }
+  }
+
+  private onKeyUp = (evt: KeyboardEvent) => {
+    if (evt.keyCode === 17) {
+      // this.mEdgeHandler.disableDrawMode();
+      this.mEdgeHandler.disable();
+      this.mEdgeHandler.hide();
+    }
+  }
+
   private setRef = (ref: HTMLDivElement) => {
     const { className, elements, visualStyle } = this.props;
     if (ref === null) {
       this.mGraph = undefined;
+      window.removeEventListener('keydown', this.onKeyDown);
+      window.removeEventListener('keyup', this.onKeyUp);
       return;
     }
     this.mGraph = cytoscape({
@@ -129,8 +147,11 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
       style: visualStyle,
       minZoom: 0.33,
       maxZoom: 3,
-      wheelSensitivity: 0.25,
+      wheelSensitivity: 0.1,
+      boxSelectionEnabled: false,
     });
+    window.addEventListener('keydown', this.onKeyDown);
+    window.addEventListener('keyup', this.onKeyUp);
     this.addElements(elements);
     this.mGraph.resize();
     this.mGraph.center();
@@ -140,11 +161,14 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
       randomize: false,
     } as any);
     this.mLayout.run();
-    (this.mGraph as any).edgehandles({
+    this.mEdgeHandler = (this.mGraph as any).edgehandles({
       handlePosition: () => 'middle middle',
       edgeParams: () => ({ classes: className + '-edge' }),
       loopAllowed: () => false,
+      hoverDelay: 0,
+      snap: true,
     });
+    this.mEdgeHandler.disable();
     (this.mGraph as any).on('cxttap', this.handleContext);
     (this.mGraph as any).on('ehcomplete', (evt, source, target, added) => {
       this.props.onConnect(source.data().title, target.data().title);

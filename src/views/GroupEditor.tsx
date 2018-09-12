@@ -112,7 +112,7 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
         <Modal.Header><Modal.Title>{t('Groups')}</Modal.Title></Modal.Header>
         <Modal.Body>
           <div className='group-editor-usage'>
-            <div>{t('Drag line from one group to another to define a rule.')}</div>
+            <div>{t('Hold ctrl and drag a line from one group to another to define a rule.')}</div>
             <div>{t('Right click a line/node to remove the corresponding rule/group.')}</div>
             <div>{t('Right click empty area to create new Group.')}</div>
             <div>{t('Masterlist groups and rules can\'t be removed.')}</div>
