@@ -1,18 +1,20 @@
-import {setPluginEnabled} from '../actions/loadOrder';
-import {setAutoSortEnabled} from '../actions/settings';
-import {addGroup, addGroupRule, setGroup} from '../actions/userlist';
-import {ILoadOrder} from '../types/ILoadOrder';
+import { setPluginEnabled } from '../actions/loadOrder';
+import { setAutoSortEnabled } from '../actions/settings';
+import { setPluginNotifications } from '../actions/plugins';
+import { addGroup, addGroupRule, setGroup } from '../actions/userlist';
+import { ILoadOrder } from '../types/ILoadOrder';
 import { ILOOTList, ILOOTPlugin } from '../types/ILOOTList';
 import {
   IPluginCombined,
   IPluginLoot,
   IPluginParsed,
   IPlugins,
+  INotificationInfo,
 } from '../types/IPlugins';
 
 import DependencyIcon from './DependencyIcon';
 import MasterList from './MasterList';
-import PluginFlags, {getPluginFlags} from './PluginFlags';
+import PluginFlags, { getPluginFlags } from './PluginFlags';
 import PluginFlagsFilter from './PluginFlagsFilter';
 import PluginStatusFilter from './PluginStatusFilter';
 
@@ -23,15 +25,19 @@ import update from 'immutability-helper';
 import { Message } from 'loot';
 import * as path from 'path';
 import * as React from 'react';
-import {Alert, ListGroup, ListGroupItem, Panel} from 'react-bootstrap';
-import {translate} from 'react-i18next';
-import {connect} from 'react-redux';
-import {Creatable} from 'react-select';
+import { Alert, ListGroup, ListGroupItem, Panel } from 'react-bootstrap';
+import { translate } from 'react-i18next';
+import { connect } from 'react-redux';
+import { Creatable } from 'react-select';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import {ComponentEx, IconBar, ITableRowAction, log, MainPage,
-        selectors, Table, TableTextFilter, ToolbarIcon,
-        types, util} from 'vortex-api';
+  selectors, Table, TableTextFilter, ToolbarIcon,
+  types, util
+} from 'vortex-api';
+
+const LOOT_MESSAGES = 'lootmessages';
+const LOOT_TEXT = 'LOOT warning/error messages';
 
 interface IBaseProps {
   nativePlugins: string[];
@@ -54,6 +60,7 @@ interface IActionProps {
   onAddGroup: (group: string) => void;
   onAddGroupRule: (group: string, reference: string) => void;
   onSetGroup: (pluginName: string, group: string) => void;
+  onLootMessage: (pluginName: string, notifier: string, notification: INotificationInfo) => void;
 }
 
 interface IComponentState {
@@ -201,7 +208,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       edit: {},
       isSortable: true,
       customRenderer: (plugin: IPluginCombined, detail: boolean, t: I18next.TranslationFunction) =>
-          (<PluginFlags plugin={plugin} t={t} />),
+        (<PluginFlags plugin={plugin} t={t} />),
       calc: (plugin: IPluginCombined, t) => getPluginFlags(plugin, t),
       sortFunc: (lhs: string[], rhs: string[]) => lhs.length - rhs.length,
       filter: new PluginFlagsFilter(),
@@ -279,7 +286,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         if (!Array.isArray(plugins)) {
           plugins = (plugins === undefined)
             ? []
-            : [ plugins ];
+            : [plugins];
         }
         return (
           <GroupSelect
@@ -301,7 +308,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       icon: 'plug',
       placement: 'table',
       customRenderer: (plugin: IPluginCombined, detail: boolean,
-                       t: I18next.TranslationFunction, props: types.ICustomProps) =>
+        t: I18next.TranslationFunction, props: types.ICustomProps) =>
         <DependencyIcon plugin={plugin} t={t} onHighlight={props.onHighlight} />,
       calc: () => null,
       isToggleable: true,
@@ -335,7 +342,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       pluginsLoot: {},
       pluginsCombined: {},
     };
-    const {t, onSetAutoSortEnabled} = props;
+    const { t, onSetAutoSortEnabled } = props;
 
     this.actions = [
       {
@@ -358,8 +365,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       description: 'Is plugin enabled in current profile',
       icon: 'check-o',
       calc: (plugin: IPluginCombined) => plugin.isNative
-          ? undefined
-          : plugin.enabled === true ? 'Enabled' : 'Disabled',
+        ? undefined
+        : plugin.enabled === true ? 'Enabled' : 'Disabled',
       placement: 'table',
       isToggleable: false,
       edit: {
@@ -389,13 +396,13 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       {
         component: ToolbarIcon,
         props: () => {
-          const {autoSort} = this.props;
+          const { autoSort } = this.props;
           return {
             id: 'btn-autosort-loot',
             key: 'btn-autosort-loot',
             icon: autoSort ? 'locked' : 'unlocked',
             text: autoSort ? t('Autosort enabled', { ns: 'gamebryo-plugin' })
-                           : t('Autosort disabled', { ns: 'gamebryo-plugin' }),
+              : t('Autosort disabled', { ns: 'gamebryo-plugin' }),
             state: autoSort,
             onClick: () => onSetAutoSortEnabled(!autoSort),
           };
@@ -404,7 +411,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       {
         component: ToolbarIcon,
         props: () => {
-          const {activity} = this.props;
+          const { activity } = this.props;
           const sorting = (activity || []).indexOf('sorting') !== -1;
           return {
             id: 'btn-sort',
@@ -443,6 +450,35 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       };
       return prev;
     }, {});
+  }
+
+  private handleLootMessages(plugins: { [name: string]: IPluginLoot }) {
+    const state = this.context.api.store.getState();
+    const pluginNames = Object.keys(plugins);
+    pluginNames.map(pluginName => {
+      const lootNotif = plugins[pluginName].messages.filter(message => this.translateLootMessageType(message.type) !== 'info');
+      const notifications = util.getSafe(state, ['session', 'plugins', 'pluginList', pluginName, 'notifications'], undefined);
+      const inMap: boolean = LOOT_MESSAGES in notifications;
+      const currentNotifyVal: boolean = inMap ? notifications[LOOT_MESSAGES].notify : false;
+      if (lootNotif.length > 0) {
+        if (inMap && !currentNotifyVal) {
+          this.props.onLootMessage(pluginName, LOOT_MESSAGES, {
+            notify: true, 
+          });
+        } else if (!inMap) {
+          this.props.onLootMessage(pluginName, LOOT_MESSAGES, {
+            notify: true, 
+            description: LOOT_TEXT
+          });
+        }
+      } else {
+        if (inMap && currentNotifyVal) {
+          this.props.onLootMessage(pluginName, LOOT_MESSAGES, {
+            notify: false, 
+          });
+        }
+      }
+    })
   }
 
   public componentWillMount() {
@@ -516,13 +552,13 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
   private isMaster(filePath: string, flag: boolean) {
     return flag
-        || ((['fallout4', 'skyrimse'].indexOf(this.props.gameMode) !== -1)
-            && ['.esm', '.esl'].indexOf(path.extname(filePath).toLowerCase()) !== -1);
+      || ((['fallout4', 'skyrimse'].indexOf(this.props.gameMode) !== -1)
+        && ['.esm', '.esl'].indexOf(path.extname(filePath).toLowerCase()) !== -1);
   }
 
   private isLight(filePath: string, flag: boolean) {
     return (['fallout4', 'skyrimse'].indexOf(this.props.gameMode) !== -1)
-        && (flag || (path.extname(filePath).toLowerCase() === '.esl'));
+      && (flag || (path.extname(filePath).toLowerCase() === '.esl'));
   }
 
   private updatePlugins(plugins: IPlugins) {
@@ -579,6 +615,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             pluginsCombined: { $set: pluginsCombined },
           }));
         }
+        
+        // Go through the loot messages and raise the notification flag
+        //  for any warning or error messages.
+        this.handleLootMessages(this.state.pluginsLoot);
 
         const pluginsFlat = Object.keys(pluginsCombined).map(pluginId => pluginsCombined[pluginId]);
 
@@ -620,7 +660,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private modIndices(pluginObjects: ILoadOrder[]): { [pluginId: string]: {
-    modIndex: number, eslIndex?: number } } {
+      modIndex: number, eslIndex?: number } } {
     // overly complicated?
     // This sorts the whole plugin list by the load order, inserting the installed
     // native plugins at the top in their hard-coded order. Then it assigns
@@ -659,9 +699,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private detailedPlugins(plugins: IPlugins,
-                          pluginsLoot: { [pluginId: string]: IPluginLoot },
-                          pluginsParsed: { [pluginId: string]: IPluginParsed },
-                          ): { [id: string]: IPluginCombined } {
+    pluginsLoot: { [pluginId: string]: IPluginLoot },
+    pluginsParsed: { [pluginId: string]: IPluginParsed },
+  ): { [id: string]: IPluginCombined } {
     const { loadOrder, userlist } = this.props;
 
     const pluginNames = Object.keys(plugins);
@@ -679,7 +719,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       };
 
       if ((userlistEntry !== undefined)
-          && (userlistEntry.group !== undefined)) {
+        && (userlistEntry.group !== undefined)) {
         res.group = userlistEntry.group;
       }
 
@@ -783,8 +823,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   private setGroup = (plugin: string, group: string) => {
     const { onAddGroup, onAddGroupRule, onSetGroup, masterlist, userlist } = this.props;
     if ((group !== undefined)
-        && (masterlist.groups.find(iter => iter.name === group) === undefined)
-        && (userlist.groups.find(iter => iter.name === group) === undefined)) {
+      && (masterlist.groups.find(iter => iter.name === group) === undefined)
+      && (userlist.groups.find(iter => iter.name === group) === undefined)) {
       onAddGroup(group);
       onAddGroupRule(group, 'default');
     }
@@ -833,10 +873,12 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
       dispatch(addGroupRule(group, reference)),
     onSetGroup: (pluginName: string, group: string) =>
       dispatch(setGroup(pluginName, group)),
+      onLootMessage: (pluginName: string, notifier: string, notification: INotificationInfo) =>
+      dispatch(setPluginNotifications(pluginName, notifier, notification)),
   };
 }
 
 export default
-  translate(['common', 'gamebryo-plugin'], {wait: false})(
+  translate(['common', 'gamebryo-plugin'], { wait: false })(
     connect<IConnectedProps, IActionProps, IBaseProps>(mapStateToProps, mapDispatchToProps)(
       PluginList)) as React.ComponentClass<IBaseProps>;

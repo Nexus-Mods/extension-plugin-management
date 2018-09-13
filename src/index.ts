@@ -1,5 +1,5 @@
 import { setPluginEnabled, updatePluginOrder, setPluginOrder } from './actions/loadOrder';
-import { setPluginList } from './actions/plugins';
+import { setPluginList, setPluginNotifications } from './actions/plugins';
 import { removeGroupRule, setGroup } from './actions/userlist';
 import { openGroupEditor, setCreateRule } from './actions/userlistEdit';
 import { loadOrderReducer } from './reducers/loadOrder';
@@ -37,6 +37,10 @@ import * as path from 'path';
 import * as Redux from 'redux';
 import * as nodeUtil from 'util';
 import { actions, fs, log, selectors, types, util } from 'vortex-api';
+
+// The notifier id and text.
+const MASTERS_MISSING = 'master';
+const MASTERS_TEXT = 'Plugin has missing masters';
 
 interface IModState {
   enabled: boolean;
@@ -118,12 +122,13 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
         const pluginStates: IPlugins = {};
         pluginNames.forEach(fileName => {
           const modName = pluginSources[fileName] !== undefined
-            ? pluginSources[fileName]
+          ? pluginSources[fileName]
             : '';
           pluginStates[fileName] = {
             modName,
             filePath: path.join(modPath, fileName),
             isNative: isNativePlugin(gameMode, fileName),
+            notifications: util.getSafe(state, ['session', 'plugins', 'pluginList', fileName, 'notifications'], {}),
           };
         });
         store.dispatch(setPluginList(pluginStates));
@@ -199,9 +204,9 @@ function register(context: IExtensionContextExt) {
   context.registerTest('plugins-locked', 'gamemode-activated',
     () => testPluginsLocked(selectors.activeGameId(context.api.store.getState())));
   context.registerTest('master-missing', 'gamemode-activated',
-    () => testMissingMasters(context.api.translate, context.api.store.getState()));
+    () => testMissingMasters(context.api.translate, context.api.store));
   context.registerTest('master-missing', 'plugins-changed' as any,
-    () => testMissingMasters(context.api.translate, context.api.store.getState()));
+    () => testMissingMasters(context.api.translate, context.api.store));
   context.registerTest('invalid-userlist', 'gamemode-activated',
     () => testUserlistInvalid(context.api.translate, context.api.store.getState()));
   context.registerTest('missing-groups', 'gamemode-activated',
@@ -439,6 +444,7 @@ function testMissingGroups(t: I18next.TranslationFunction,
     ...userlistGroups.map(group => group.after || []),
     state.userlist.plugins.filter(plugin => plugin.group !== undefined).map(plugin => plugin.group))));
 
+
   const missing = usedGroups.filter(group => !groups.has(group));
 
   // nothing found => everything good
@@ -551,7 +557,8 @@ function testUserlistInvalid(t: I18next.TranslationFunction,
 }
 
 function testMissingMasters(t: I18next.TranslationFunction,
-                            state: any): Promise<types.ITestResult> {
+                            store: Redux.Store<any>,): Promise<types.ITestResult> {
+  const state = store.getState();
   const gameMode = selectors.activeGameId(state);
   if (!gameSupported(gameMode)) {
     return Promise.resolve(undefined);
@@ -583,10 +590,32 @@ function testMissingMasters(t: I18next.TranslationFunction,
     nativePlugins(gameMode)).map(name => name.toLowerCase()));
 
   const broken = pluginDetails.reduce((prev, plugin) => {
+    const notifications = util.getSafe(state, ['session', 'plugins', 'pluginList', plugin.name, 'notifications'], {});
     const missing = plugin.masterList.filter(
       (requiredMaster) => !masters.has(requiredMaster.toLowerCase()));
+
+    const inMap: boolean = MASTERS_MISSING in notifications;
+    const currentNotifyVal: boolean = inMap ? notifications[MASTERS_MISSING].notify : false;
+    
     if (missing.length > 0) {
       prev[plugin.name] = missing;
+
+      if (inMap && !currentNotifyVal) {
+        store.dispatch(setPluginNotifications(plugin.name, MASTERS_MISSING, { 
+          notify: true, 
+        }));
+      } else if (!inMap) {
+        store.dispatch(setPluginNotifications(plugin.name, MASTERS_MISSING, { 
+          notify: true, 
+          description: MASTERS_TEXT 
+        }));
+      }
+    } else {
+      if (inMap && currentNotifyVal) {
+        store.dispatch(setPluginNotifications(plugin.name, MASTERS_MISSING, { 
+          notify: false, 
+        }));
+      }
     }
     return prev;
   }, {});

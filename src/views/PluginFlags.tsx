@@ -35,6 +35,12 @@ export function getPluginFlags(plugin: IPluginCombined, t: I18next.TranslationFu
   if ((plugin.dirtyness !== undefined) && (plugin.dirtyness.length > 0)) {
     result.push(t('Dirty'));
   }
+
+  if (plugin.notifications !== undefined && Object.keys(plugin.notifications).length > 0) {
+    if (Object.keys(plugin.notifications).find( notification => plugin.notifications[notification].notify)) {
+      result.push(t('Notifications'));
+    }
+  }
   return result;
 }
 
@@ -84,6 +90,28 @@ const PluginFlags = (props: IProps): JSX.Element => {
         key={key}
         name='plugin-native'
         tooltip={t('Loaded by the engine, can\'t be configured', { ns: 'gamebryo-plugin' })}
+      />);
+  }
+
+  const notificationKeys = Object.keys(plugin.notifications);
+  if (notificationKeys !== undefined 
+    && notificationKeys.length > 0 
+    && Object.keys(plugin.notifications).find(notification => plugin.notifications[notification].notify)) {
+
+    let tooltipText = '';
+    for (const notification in plugin.notifications) {
+      if (plugin.notifications[notification].notify === true) {
+        tooltipText += '-' + plugin.notifications[notification].description + '\n';
+      }
+    }
+
+    const key = `ico-notifications-${plugin.name}`;
+    flags.push(
+      <tooltip.Icon
+        id={key}
+        key={key}
+        name='notifications'
+        tooltip={t(tooltipText, { ns: 'gamebryo-plugin' })}
       />);
   }
 

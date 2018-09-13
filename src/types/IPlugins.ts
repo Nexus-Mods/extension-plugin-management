@@ -27,6 +27,18 @@ export interface IPlugin {
    * @memberOf IPlugin
    */
   isNative: boolean;
+
+  /**
+   * Specifies whether this plugin has any notifications which it
+   * wishes to bring to the user's attention. Will add a notification
+   * icon under plugin flags.
+   */
+  notifications?: {[key: string]: INotificationInfo};
+}
+
+export interface INotificationInfo {
+  description?: string,
+  notify: boolean,
 }
 
 export interface IPlugins { [key: string]: IPlugin; }
