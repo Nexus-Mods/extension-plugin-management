@@ -33,10 +33,10 @@ export interface IPlugin {
    * wishes to bring to the user's attention. Will add a notification
    * icon under plugin flags.
    */
-  notifications?: {[key: string]: INotificationInfo};
+  notifications?: {[key: string]: IPluginNotification};
 }
 
-export interface INotificationInfo {
+export interface IPluginNotification {
   description?: string,
   notify: boolean,
 }

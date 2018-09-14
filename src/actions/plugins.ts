@@ -1,4 +1,4 @@
-import {IPlugins, INotificationInfo} from '../types/IPlugins';
+import {IPlugins, IPluginNotification} from '../types/IPlugins';
 
 import { createAction } from 'redux-act';
 
@@ -9,4 +9,7 @@ export const setPluginNotifications =
     createAction('SET_PLUGIN_NOTIFICATION', (
       pluginName: string,
       notifier: string,
-      notification: INotificationInfo) => ({pluginName, notifier, notification}));
+      notification: IPluginNotification) => ({pluginName, notifier, notification}));
+
+export const remPluginNotifications = 
+    createAction('REMOVE_PLUGIN_NOTIFICATION', (pluginName: string) => ({pluginName}));

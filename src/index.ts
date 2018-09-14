@@ -38,10 +38,6 @@ import * as Redux from 'redux';
 import * as nodeUtil from 'util';
 import { actions, fs, log, selectors, types, util } from 'vortex-api';
 
-// The notifier id and text.
-const MASTERS_MISSING = 'master';
-const MASTERS_TEXT = 'Plugin has missing masters';
-
 interface IModState {
   enabled: boolean;
 }
@@ -594,25 +590,40 @@ function testMissingMasters(t: I18next.TranslationFunction,
     const missing = plugin.masterList.filter(
       (requiredMaster) => !masters.has(requiredMaster.toLowerCase()));
 
-    const inMap: boolean = MASTERS_MISSING in notifications;
-    const currentNotifyVal: boolean = inMap ? notifications[MASTERS_MISSING].notify : false;
+    // The notifier id and text we use to add notifications.
+    const notifierMissingMasters = {
+      id: 'master',
+      description: 'Plugin has missing masters',
+    };
+
+    const inMap: boolean = notifierMissingMasters.id in notifications;
+    const currentNotifyVal: boolean = inMap ? notifications[notifierMissingMasters.id].notify : false;
+    const isEnabled: boolean = (enabledPlugins.indexOf(plugin.name) !== -1);
     
     if (missing.length > 0) {
       prev[plugin.name] = missing;
 
-      if (inMap && !currentNotifyVal) {
-        store.dispatch(setPluginNotifications(plugin.name, MASTERS_MISSING, { 
-          notify: true, 
-        }));
-      } else if (!inMap) {
-        store.dispatch(setPluginNotifications(plugin.name, MASTERS_MISSING, { 
-          notify: true, 
-          description: MASTERS_TEXT 
-        }));
+      if (isEnabled) {
+        if ( inMap && !currentNotifyVal) {
+          store.dispatch(setPluginNotifications(plugin.name, notifierMissingMasters.id, { 
+            notify: true, 
+          }));
+        } else if (!inMap) {
+          store.dispatch(setPluginNotifications(plugin.name, notifierMissingMasters.id, { 
+            notify: true, 
+            description: notifierMissingMasters.description, 
+          }));
+        }
+      } else {
+        if (inMap && currentNotifyVal) {
+          store.dispatch(setPluginNotifications(plugin.name, notifierMissingMasters.id, { 
+            notify: false, 
+          }));  
+        }
       }
     } else {
       if (inMap && currentNotifyVal) {
-        store.dispatch(setPluginNotifications(plugin.name, MASTERS_MISSING, { 
+        store.dispatch(setPluginNotifications(plugin.name, notifierMissingMasters.id, { 
           notify: false, 
         }));
       }

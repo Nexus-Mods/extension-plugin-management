@@ -10,7 +10,7 @@ export const pluginsReducer: types.IReducerSpec = {
     [actions.setPluginList as any]: (state, payload) =>
       util.setSafe(state, ['pluginList'], payload.plugins)
     ,
-    [actions.setPluginNotifications as any]: (state, payload) => {   
+    [actions.setPluginNotifications as any]: (state, payload) => {
       const notifications = util.getSafe(state, ['pluginList', payload.pluginName, 'notifications'], {})
       const currentDescription = util.getSafe(state, ['pluginList', payload.pluginName, 'notifications', payload.notifier, 'description'], '');
       if (undefined === notifications) {
@@ -20,6 +20,14 @@ export const pluginsReducer: types.IReducerSpec = {
           description: payload.notification.description ? payload.notification.description : currentDescription,
           notify: payload.notification.notify,
         });
+      }
+    },
+    [actions.remPluginNotifications as any]: (state, payload) => {
+      const notifications = util.getSafe(state, ['pluginList', payload.pluginName, 'notifications'], undefined)
+      if (notifications !== undefined) {  
+        return util.setSafe(state, ['pluginList', payload.pluginName, 'notifications'], {});
+      } else {
+        return state;
       }
     },
   },

@@ -1,6 +1,6 @@
 import { setPluginEnabled } from '../actions/loadOrder';
 import { setAutoSortEnabled } from '../actions/settings';
-import { setPluginNotifications } from '../actions/plugins';
+import { setPluginNotifications, remPluginNotifications } from '../actions/plugins';
 import { addGroup, addGroupRule, setGroup } from '../actions/userlist';
 import { ILoadOrder } from '../types/ILoadOrder';
 import { ILOOTList, ILOOTPlugin } from '../types/ILOOTList';
@@ -9,7 +9,7 @@ import {
   IPluginLoot,
   IPluginParsed,
   IPlugins,
-  INotificationInfo,
+  IPluginNotification,
 } from '../types/IPlugins';
 
 import DependencyIcon from './DependencyIcon';
@@ -36,9 +36,6 @@ import {ComponentEx, IconBar, ITableRowAction, log, MainPage,
   types, util
 } from 'vortex-api';
 
-const LOOT_MESSAGES = 'lootmessages';
-const LOOT_TEXT = 'LOOT warning/error messages';
-
 interface IBaseProps {
   nativePlugins: string[];
 }
@@ -60,7 +57,8 @@ interface IActionProps {
   onAddGroup: (group: string) => void;
   onAddGroupRule: (group: string, reference: string) => void;
   onSetGroup: (pluginName: string, group: string) => void;
-  onLootMessage: (pluginName: string, notifier: string, notification: INotificationInfo) => void;
+  onLootWarningMessage: (pluginName: string, notifier: string, notification: IPluginNotification) => void;
+  onRemoveNotifications: (pluginName: string) => void;
 }
 
 interface IComponentState {
@@ -380,11 +378,18 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             // safeguard so we don't accidentally disable a native plugin
             return;
           }
+
           if (value === undefined) {
             // toggle
             this.props.onSetPluginEnabled(plugin.name, !plugin.enabled);
           } else {
             this.props.onSetPluginEnabled(plugin.name, value === 'enabled');
+          }
+
+          if (false === !plugin.enabled
+            && plugin.notifications !== undefined 
+            && Object.keys(plugin.notifications).length > 0) {
+            this.props.onRemoveNotifications(plugin.name);
           }
         },
       },
@@ -452,28 +457,40 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     }, {});
   }
 
-  private handleLootMessages(plugins: { [name: string]: IPluginLoot }) {
+  /**
+   * Function to handle plugin notification related to loot messages.
+   * - Verify LOOT messages for warning and error messages and notify the
+   *   user if any are found.
+   */
+  private handlePluginNotifications(plugins: { [name: string]: IPluginCombined }) {
     const state = this.context.api.store.getState();
-    const pluginNames = Object.keys(plugins);
-    pluginNames.map(pluginName => {
-      const lootNotif = plugins[pluginName].messages.filter(message => this.translateLootMessageType(message.type) !== 'info');
-      const notifications = util.getSafe(state, ['session', 'plugins', 'pluginList', pluginName, 'notifications'], undefined);
-      const inMap: boolean = LOOT_MESSAGES in notifications;
-      const currentNotifyVal: boolean = inMap ? notifications[LOOT_MESSAGES].notify : false;
+
+    // The LOOT notifier object used to create notifications.
+    const notifierLOOT = {
+      id: 'lootMessages',
+      description: 'LOOT warning/error messages',
+    };
+
+    Object.keys(plugins).map(pluginName => {
+      const plugin = plugins[pluginName];
+      const lootNotif = plugin.messages.filter(message => this.translateLootMessageType(message.type) !== 'info');
+      const notifications = util.getSafe(state, ['session', 'plugins', 'pluginList', plugin.name, 'notifications'], undefined);
+      const inMap: boolean = notifierLOOT.id in notifications;
+      const currentNotifyVal: boolean = inMap ? notifications[notifierLOOT.id].notify : false;
       if (lootNotif.length > 0) {
         if (inMap && !currentNotifyVal) {
-          this.props.onLootMessage(pluginName, LOOT_MESSAGES, {
+          this.props.onLootWarningMessage(plugin.name, notifierLOOT.id, {
             notify: true, 
           });
         } else if (!inMap) {
-          this.props.onLootMessage(pluginName, LOOT_MESSAGES, {
+          this.props.onLootWarningMessage(plugin.name, notifierLOOT.id, {
             notify: true, 
-            description: LOOT_TEXT
+            description: notifierLOOT.description
           });
         }
       } else {
         if (inMap && currentNotifyVal) {
-          this.props.onLootMessage(pluginName, LOOT_MESSAGES, {
+          this.props.onLootWarningMessage(plugin.name, notifierLOOT.id, {
             notify: false, 
           });
         }
@@ -492,6 +509,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       pluginsCombined: { $set: combined },
     }));
 
+    // Will verify plugins for warning/error loot messages
+    //  and notify the user if any are found.
+    this.handlePluginNotifications(combined);
     this.updatePlugins(this.props.plugins)
       .then(() => this.applyUserlist(this.props.userlist.plugins));
   }
@@ -615,10 +635,6 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             pluginsCombined: { $set: pluginsCombined },
           }));
         }
-        
-        // Go through the loot messages and raise the notification flag
-        //  for any warning or error messages.
-        this.handleLootMessages(this.state.pluginsLoot);
 
         const pluginsFlat = Object.keys(pluginsCombined).map(pluginId => pluginsCombined[pluginId]);
 
@@ -873,8 +889,10 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
       dispatch(addGroupRule(group, reference)),
     onSetGroup: (pluginName: string, group: string) =>
       dispatch(setGroup(pluginName, group)),
-      onLootMessage: (pluginName: string, notifier: string, notification: INotificationInfo) =>
+    onLootWarningMessage: (pluginName: string, notifier: string, notification: IPluginNotification) =>
       dispatch(setPluginNotifications(pluginName, notifier, notification)),
+    onRemoveNotifications: (pluginName: string) =>
+      dispatch(remPluginNotifications(pluginName)),
   };
 }
 
