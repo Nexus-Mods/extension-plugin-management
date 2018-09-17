@@ -36,12 +36,19 @@ export function getPluginFlags(plugin: IPluginCombined, t: I18next.TranslationFu
     result.push(t('Dirty'));
   }
 
-  if (plugin.notifications !== undefined && Object.keys(plugin.notifications).length > 0) {
-    if (Object.keys(plugin.notifications).find( notification => plugin.notifications[notification].notify)) {
-      result.push(t('Notifications'));
-    }
+  if (plugin.enabled
+      && (plugin.warnings !== undefined)
+      && (Object.keys(plugin.warnings).find(key => plugin.warnings[key]) !== undefined)) {
+    result.push(t('Warnings'));
   }
   return result;
+}
+
+function warningText(t: I18next.TranslationFunction, key: string) {
+  return t({
+    'missing-master': 'Plugin has missing masters',
+    'loot-messages': 'LOOT warnings',
+  }[key] || key);
 }
 
 const PluginFlags = (props: IProps): JSX.Element => {
@@ -93,26 +100,26 @@ const PluginFlags = (props: IProps): JSX.Element => {
       />);
   }
 
-  const notificationKeys = Object.keys(plugin.notifications);
-  if (notificationKeys !== undefined 
-    && notificationKeys.length > 0 
-    && Object.keys(plugin.notifications).find(notification => plugin.notifications[notification].notify)) {
+  if (plugin.enabled) {
+    const warningKeys = Object.keys(plugin.warnings);
+    if ((warningKeys !== undefined)
+      && (warningKeys.length > 0)
+      && (warningKeys.find(notification => plugin.warnings[notification] !== undefined))) {
 
-    let tooltipText = '';
-    for (const notification in plugin.notifications) {
-      if (plugin.notifications[notification].notify === true) {
-        tooltipText += '-' + plugin.notifications[notification].description + '\n';
-      }
+      const tooltipText = Object.keys(plugin.warnings)
+        .filter(key => plugin.warnings[key])
+        .map(key => `- ${warningText(t, key)}`)
+        .join('\n');
+
+      const key = `ico-notifications-${plugin.name}`;
+      flags.push(
+        <tooltip.Icon
+          id={key}
+          key={key}
+          name='notifications'
+          tooltip={t(tooltipText, { ns: 'gamebryo-plugin' })}
+        />);
     }
-
-    const key = `ico-notifications-${plugin.name}`;
-    flags.push(
-      <tooltip.Icon
-        id={key}
-        key={key}
-        name='notifications'
-        tooltip={t(tooltipText, { ns: 'gamebryo-plugin' })}
-      />);
   }
 
   const cleanKey = `ico-clean-${plugin.name}`;

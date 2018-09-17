@@ -29,11 +29,11 @@ export interface IPlugin {
   isNative: boolean;
 
   /**
-   * Specifies whether this plugin has any notifications which it
-   * wishes to bring to the user's attention. Will add a notification
+   * Specifies whether this plugin has any warning which it
+   * wishes to bring to the user's attention. Will add a warning
    * icon under plugin flags.
    */
-  notifications?: {[key: string]: IPluginNotification};
+  warnings?: {[key: string]: boolean};
 }
 
 export interface IPluginNotification {

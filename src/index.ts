@@ -1,5 +1,5 @@
 import { setPluginEnabled, updatePluginOrder, setPluginOrder } from './actions/loadOrder';
-import { setPluginList, setPluginNotifications } from './actions/plugins';
+import { setPluginList, updatePluginWarnings } from './actions/plugins';
 import { removeGroupRule, setGroup } from './actions/userlist';
 import { openGroupEditor, setCreateRule } from './actions/userlistEdit';
 import { loadOrderReducer } from './reducers/loadOrder';
@@ -124,7 +124,7 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
             modName,
             filePath: path.join(modPath, fileName),
             isNative: isNativePlugin(gameMode, fileName),
-            notifications: util.getSafe(state, ['session', 'plugins', 'pluginList', fileName, 'notifications'], {}),
+            warnings: util.getSafe(state, ['session', 'plugins', 'pluginList', fileName, 'warnings'], {}),
           };
         });
         store.dispatch(setPluginList(pluginStates));
@@ -586,47 +586,16 @@ function testMissingMasters(t: I18next.TranslationFunction,
     nativePlugins(gameMode)).map(name => name.toLowerCase()));
 
   const broken = pluginDetails.reduce((prev, plugin) => {
-    const notifications = util.getSafe(state, ['session', 'plugins', 'pluginList', plugin.name, 'notifications'], {});
     const missing = plugin.masterList.filter(
-      (requiredMaster) => !masters.has(requiredMaster.toLowerCase()));
-
-    // The notifier id and text we use to add notifications.
-    const notifierMissingMasters = {
-      id: 'master',
-      description: 'Plugin has missing masters',
-    };
-
-    const inMap: boolean = notifierMissingMasters.id in notifications;
-    const currentNotifyVal: boolean = inMap ? notifications[notifierMissingMasters.id].notify : false;
-    const isEnabled: boolean = (enabledPlugins.indexOf(plugin.name) !== -1);
-    
+      requiredMaster => !masters.has(requiredMaster.toLowerCase()));
+    const oldWarn = util.getSafe(state, ['session', 'plugins', 'pluginList', plugin.name, 'warnings', 'master'], false);
+    const newWarn = missing.length > 0;
+    if (oldWarn !== newWarn) {
+      store.dispatch(updatePluginWarnings(plugin.name, 'missing-master', newWarn));
+    }
+   
     if (missing.length > 0) {
       prev[plugin.name] = missing;
-
-      if (isEnabled) {
-        if ( inMap && !currentNotifyVal) {
-          store.dispatch(setPluginNotifications(plugin.name, notifierMissingMasters.id, { 
-            notify: true, 
-          }));
-        } else if (!inMap) {
-          store.dispatch(setPluginNotifications(plugin.name, notifierMissingMasters.id, { 
-            notify: true, 
-            description: notifierMissingMasters.description, 
-          }));
-        }
-      } else {
-        if (inMap && currentNotifyVal) {
-          store.dispatch(setPluginNotifications(plugin.name, notifierMissingMasters.id, { 
-            notify: false, 
-          }));  
-        }
-      }
-    } else {
-      if (inMap && currentNotifyVal) {
-        store.dispatch(setPluginNotifications(plugin.name, notifierMissingMasters.id, { 
-          notify: false, 
-        }));
-      }
     }
     return prev;
   }, {});

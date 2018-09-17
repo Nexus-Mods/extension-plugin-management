@@ -7,7 +7,7 @@ import { remote } from 'electron';
 import { LootAsync } from 'loot';
 import * as path from 'path';
 import {} from 'redux-thunk';
-import {actions, fs, log, selectors, types, util} from 'vortex-api';
+import {actions, fs, log, selectors, types} from 'vortex-api';
 
 const LOOT_LIST_REVISION = 'v0.13';
 

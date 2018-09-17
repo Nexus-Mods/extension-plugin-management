@@ -1,6 +1,6 @@
 import { setPluginEnabled } from '../actions/loadOrder';
 import { setAutoSortEnabled } from '../actions/settings';
-import { setPluginNotifications, remPluginNotifications } from '../actions/plugins';
+import { updatePluginWarnings } from '../actions/plugins';
 import { addGroup, addGroupRule, setGroup } from '../actions/userlist';
 import { ILoadOrder } from '../types/ILoadOrder';
 import { ILOOTList, ILOOTPlugin } from '../types/ILOOTList';
@@ -9,7 +9,6 @@ import {
   IPluginLoot,
   IPluginParsed,
   IPlugins,
-  IPluginNotification,
 } from '../types/IPlugins';
 
 import DependencyIcon from './DependencyIcon';
@@ -57,8 +56,7 @@ interface IActionProps {
   onAddGroup: (group: string) => void;
   onAddGroupRule: (group: string, reference: string) => void;
   onSetGroup: (pluginName: string, group: string) => void;
-  onLootWarningMessage: (pluginName: string, notifier: string, notification: IPluginNotification) => void;
-  onRemoveNotifications: (pluginName: string) => void;
+  onUpdateWarnings: (id: string, warning: string, value: boolean) => void;
 }
 
 interface IComponentState {
@@ -385,12 +383,6 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           } else {
             this.props.onSetPluginEnabled(plugin.name, value === 'enabled');
           }
-
-          if (false === !plugin.enabled
-            && plugin.notifications !== undefined 
-            && Object.keys(plugin.notifications).length > 0) {
-            this.props.onRemoveNotifications(plugin.name);
-          }
         },
       },
       isSortable: false,
@@ -457,47 +449,6 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     }, {});
   }
 
-  /**
-   * Function to handle plugin notification related to loot messages.
-   * - Verify LOOT messages for warning and error messages and notify the
-   *   user if any are found.
-   */
-  private handlePluginNotifications(plugins: { [name: string]: IPluginCombined }) {
-    const state = this.context.api.store.getState();
-
-    // The LOOT notifier object used to create notifications.
-    const notifierLOOT = {
-      id: 'lootMessages',
-      description: 'LOOT warning/error messages',
-    };
-
-    Object.keys(plugins).map(pluginName => {
-      const plugin = plugins[pluginName];
-      const lootNotif = plugin.messages.filter(message => this.translateLootMessageType(message.type) !== 'info');
-      const notifications = util.getSafe(state, ['session', 'plugins', 'pluginList', plugin.name, 'notifications'], undefined);
-      const inMap: boolean = notifierLOOT.id in notifications;
-      const currentNotifyVal: boolean = inMap ? notifications[notifierLOOT.id].notify : false;
-      if (lootNotif.length > 0) {
-        if (inMap && !currentNotifyVal) {
-          this.props.onLootWarningMessage(plugin.name, notifierLOOT.id, {
-            notify: true, 
-          });
-        } else if (!inMap) {
-          this.props.onLootWarningMessage(plugin.name, notifierLOOT.id, {
-            notify: true, 
-            description: notifierLOOT.description
-          });
-        }
-      } else {
-        if (inMap && currentNotifyVal) {
-          this.props.onLootWarningMessage(plugin.name, notifierLOOT.id, {
-            notify: false, 
-          });
-        }
-      }
-    })
-  }
-
   public componentWillMount() {
     const { plugins } = this.props;
     const parsed = this.emptyPluginParsed();
@@ -511,7 +462,6 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     // Will verify plugins for warning/error loot messages
     //  and notify the user if any are found.
-    this.handlePluginNotifications(combined);
     this.updatePlugins(this.props.plugins)
       .then(() => this.applyUserlist(this.props.userlist.plugins));
   }
@@ -620,7 +570,18 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       .then(() => new Promise((resolve, reject) => {
         this.context.api.events.emit('plugin-details',
           pluginNames, (resolved: { [name: string]: IPluginLoot }) => {
+            const { onUpdateWarnings, plugins } = this.props;
             pluginsLoot = resolved;
+            
+            Object.keys(pluginsLoot).forEach(name => {
+              const oldWarn = util.getSafe(plugins, [name, 'warnings', 'loot-messages'], false);
+              const newWarn = pluginsLoot[name].messages
+                .find(message => this.translateLootMessageType(message.type) !== 'info') !== undefined;
+              if (oldWarn !== newWarn) {
+                onUpdateWarnings(name, 'loot-messages', newWarn);
+              }
+            });
+
             resolve();
           });
       }))
@@ -889,10 +850,8 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
       dispatch(addGroupRule(group, reference)),
     onSetGroup: (pluginName: string, group: string) =>
       dispatch(setGroup(pluginName, group)),
-    onLootWarningMessage: (pluginName: string, notifier: string, notification: IPluginNotification) =>
-      dispatch(setPluginNotifications(pluginName, notifier, notification)),
-    onRemoveNotifications: (pluginName: string) =>
-      dispatch(remPluginNotifications(pluginName)),
+    onUpdateWarnings: (pluginName: string, notificationId: string, value: boolean) =>
+      dispatch(updatePluginWarnings(pluginName, notificationId, value)),
   };
 }
 

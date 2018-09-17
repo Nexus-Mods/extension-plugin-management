@@ -36,8 +36,10 @@
     white-space: nowrap;
   }
   
-  .icon-notifications {
-    fill: $brand-warning;
+  .cell-flags {
+    .icon-notifications {
+      fill: $brand-warning;
+    }
   }
 }
 
