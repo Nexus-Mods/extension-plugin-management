@@ -163,7 +163,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           return '';
         }
 
-        const mod = this.props.mods[plugin.modName];
+        const mod = util.getSafe(this.props.mods, [plugin.modName], undefined);
         if (mod === undefined) {
           return '';
         }
@@ -835,7 +835,7 @@ function mapStateToProps(state: any): IConnectedProps {
     masterlist: state.masterlist || emptyList,
     autoSort: state.settings.plugins.autoSort,
     activity: state.session.base.activity['plugins'],
-    mods: profile !== undefined ? (state as types.IState).persistent.mods[gameMode] : emptyObj,
+    mods: profile !== undefined ? ((state as types.IState).persistent.mods[gameMode] || emptyObj) : emptyObj,
   };
 }
 
