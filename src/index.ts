@@ -588,7 +588,7 @@ function testMissingMasters(t: I18next.TranslationFunction,
   const broken = pluginDetails.reduce((prev, plugin) => {
     const missing = plugin.masterList.filter(
       requiredMaster => !masters.has(requiredMaster.toLowerCase()));
-    const oldWarn = util.getSafe(state, ['session', 'plugins', 'pluginList', plugin.name, 'warnings', 'master'], false);
+    const oldWarn = util.getSafe(state, ['session', 'plugins', 'pluginList', plugin.name, 'warnings', 'missing-master'], false);
     const newWarn = missing.length > 0;
     if (oldWarn !== newWarn) {
       store.dispatch(updatePluginWarnings(plugin.name, 'missing-master', newWarn));

@@ -38,7 +38,7 @@ export function getPluginFlags(plugin: IPluginCombined, t: I18next.TranslationFu
 
   if (plugin.enabled
       && (plugin.warnings !== undefined)
-      && (Object.keys(plugin.warnings).find(key => plugin.warnings[key]) !== undefined)) {
+      && (Object.keys(plugin.warnings).find(key => plugin.warnings[key] !== false) !== undefined)) {
     result.push(t('Warnings'));
   }
   return result;
@@ -104,7 +104,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
     const warningKeys = Object.keys(plugin.warnings);
     if ((warningKeys !== undefined)
       && (warningKeys.length > 0)
-      && (warningKeys.find(notification => plugin.warnings[notification] !== undefined))) {
+      && (warningKeys.find(notification => plugin.warnings[notification] !== false))) {
 
       const tooltipText = Object.keys(plugin.warnings)
         .filter(key => plugin.warnings[key])
