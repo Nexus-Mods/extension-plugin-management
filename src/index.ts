@@ -53,22 +53,21 @@ function isPlugin(fileName: string): boolean {
 /**
  * updates the list of known plugins for the managed game
  */
-function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Promise<void> {
+function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameId: string): Promise<void> {
   const state: types.IState = store.getState();
 
-  const gameMode = selectors.activeGameId(state);
   const pluginSources: { [pluginName: string]: string } = {};
 
-  const currentDiscovery = selectors.currentGameDiscovery(state);
-  if ((currentDiscovery === undefined) || (currentDiscovery.path === undefined)) {
+  const discovery = (selectors as any).discoveryByGame(state, gameId);
+  if ((discovery === undefined) || (discovery.path === undefined)) {
     // paranoia, this shouldn't happen
     return Promise.resolve();
   }
   const readErrors = [];
 
-  const gameMods = state.persistent.mods[gameMode] || {};
-  const game = util.getGame(gameMode);
-  const modPath = game.getModPaths(currentDiscovery.path)[''];
+  const gameMods = state.persistent.mods[gameId] || {};
+  const game = util.getGame(gameId);
+  const modPath = game.getModPaths(discovery.path)[''];
 
   const enabledModIds = Object.keys(gameMods).filter(
       modId => util.getSafe(newModList, [modId, 'enabled'], false));
@@ -78,10 +77,10 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
   return Promise.map(enabledModIds, (modId: string) => {
              const mod = gameMods[modId];
              if ((mod === undefined) || (mod.installationPath === undefined)) {
-               log('error', 'mod not found', { gameMode, modId });
+               log('error', 'mod not found', { gameId, modId });
                return;
              }
-             return fs.readdirAsync(path.join(selectors.installPath(state),
+             return fs.readdirAsync(path.join(selectors.installPathForGame(state, gameId),
                                               mod.installationPath))
                  .then((fileNames: string[]) => {
                    fileNames.filter((fileName: string) =>
@@ -105,7 +104,7 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
             + readErrors.map(error => `"${error}"`).join('\n')
             + '\n' + (new Error()).stack, { allowReport: false });
         }
-        if (currentDiscovery === undefined) {
+        if (discovery === undefined) {
           return Promise.resolve([]);
         }
         // if reading the mod directory fails that's probably a broken installation,
@@ -123,7 +122,7 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
           pluginStates[fileName] = {
             modName,
             filePath: path.join(modPath, fileName),
-            isNative: isNativePlugin(gameMode, fileName),
+            isNative: isNativePlugin(gameId, fileName),
             warnings: util.getSafe(state, ['session', 'plugins', 'pluginList', fileName, 'warnings'], {}),
           };
         });
@@ -260,7 +259,7 @@ function updateCurrentProfile(store: Redux.Store<any>): Promise<void> {
     return Promise.resolve();
   }
 
-  return updatePluginList(store, profile.modState);
+  return updatePluginList(store, profile.modState, gameId);
 }
 
 let watcher: fs.FSWatcher;
@@ -672,7 +671,7 @@ function init(context: IExtensionContextExt) {
         const state: types.IState = store.getState();
         const profile = state.persistent.profiles[profileId];
         if (gameSupported(profile.gameId)) {
-          return updatePluginList(store, profile.modState);
+          return updatePluginList(store, profile.modState, profile.gameId);
         } else {
           Promise.resolve();
         }
@@ -712,7 +711,7 @@ function init(context: IExtensionContextExt) {
                         ['persistent', 'profiles', newProfileId], undefined);
 
         if ((newProfile !== undefined) && gameSupported(newProfile.gameId)) {
-          updatePluginList(store, newProfile.modState)
+          updatePluginList(store, newProfile.modState, newProfile.gameId)
               .then(() => startSync(context.api))
               .then(() => context.api.events.emit('autosort-plugins', false));
         }
