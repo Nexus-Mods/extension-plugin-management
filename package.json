@@ -18,7 +18,6 @@
   "devDependencies": {
     "@types/cytoscape": "3.2.7",
     "@types/i18next": "^8.4.4",
-    "@types/iconv-lite": "^0.0.1",
     "@types/immutability-helper": "^2.6.3",
     "@types/js-yaml": "^3.11.2",
     "@types/react": "^16.4.11",
@@ -38,7 +37,6 @@
     "cytoscape-edgehandles": "^3.4.0",
     "esptk": "Nexus-Mods/node-esptk",
     "i18next": "^11.6.0",
-    "iconv-lite": "^0.4.24",
     "immutability-helper": "^2.7.1",
     "js-yaml": "^3.12.0",
     "json-loader": "^0.5.7",
