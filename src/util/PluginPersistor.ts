@@ -291,7 +291,7 @@ class PluginPersistor implements types.IPersistor {
       .then((newPlugins: IPluginMap) => {
         const pluginsFile = path.join(this.mPluginPath, 'plugins.txt');
 
-        let phaseOne: Promise<NodeBuffer>;
+        let phaseOne: Promise<Buffer>;
         // for games with the old format we use the loadorder.txt file as reference for the
         // load order and only use the plugins.txt as "backup".
         // for newer games, since all plugins are listed, we don't really need the loadorder.txt
@@ -300,7 +300,7 @@ class PluginPersistor implements types.IPersistor {
           const loadOrderFile = path.join(this.mPluginPath, 'loadorder.txt');
           log('debug', 'deserialize', { format: this.mPluginFormat, pluginsFile, loadOrderFile });
           phaseOne = fs.readFileAsync(loadOrderFile)
-            .then((data: NodeBuffer) => {
+            .then((data: Buffer) => {
               const keys: string[] =
                 this.filterFileData(decode(data, 'utf-8'), false);
               offset = this.initFromKeyList(newPlugins, keys, false, offset);
@@ -311,7 +311,7 @@ class PluginPersistor implements types.IPersistor {
           phaseOne = fs.readFileAsync(pluginsFile);
         }
         return phaseOne
-          .then((data: NodeBuffer) => {
+          .then((data: Buffer) => {
             if ((data.length === 0) && !retry) {
               // not even a header? I don't trust this
               // TODO: This is just a workaround

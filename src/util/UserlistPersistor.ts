@@ -135,7 +135,7 @@ class UserlistPersistor implements types.IPersistor {
     let empty: boolean = false;
 
     return fs.readFileAsync(this.mUserlistPath)
-    .then((data: NodeBuffer) => {
+    .then((data: Buffer) => {
       if (data.byteLength <= 5) {
         // the smallest non-empty file is actually around 20 bytes long and
         // the smallest useful file probably 30. This is really to catch

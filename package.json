@@ -15,11 +15,6 @@
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
-  "babel": {
-    "presets": [
-      "es2015"
-    ]
-  },
   "devDependencies": {
     "@types/cytoscape": "3.2.7",
     "@types/i18next": "^8.4.4",
@@ -36,9 +31,6 @@
     "@types/react-select": "^1.2.1",
     "@types/redux": "^3.6.0",
     "@types/redux-thunk": "^2.1.0",
-    "babel-core": "^6.26.3",
-    "babel-loader": "^7.1.5",
-    "babel-polyfill": "^6.26.0",
     "bluebird": "^3.5.1",
     "copyfiles": "^2.0.0",
     "cytoscape": "^3.2.16",
@@ -46,7 +38,7 @@
     "cytoscape-edgehandles": "^3.4.0",
     "esptk": "Nexus-Mods/node-esptk",
     "i18next": "^11.6.0",
-    "iconv-lite": "^0.4.23",
+    "iconv-lite": "^0.4.24",
     "immutability-helper": "^2.7.1",
     "js-yaml": "^3.12.0",
     "json-loader": "^0.5.7",
