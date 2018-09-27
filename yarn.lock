@@ -18,12 +18,6 @@
   version "8.4.6"
   resolved "https://registry.yarnpkg.com/@types/i18next/-/i18next-8.4.6.tgz#d03e36289c913dc624378f5f1c8925e553e6d6c8"
 
-"@types/iconv-lite@^0.0.1":
-  version "0.0.1"
-  resolved "https://registry.yarnpkg.com/@types/iconv-lite/-/iconv-lite-0.0.1.tgz#aa3b8bda2be512b1ae0a057b942e869c370a5569"
-  dependencies:
-    "@types/node" "*"
-
 "@types/immutability-helper@^2.6.3":
   version "2.6.3"
   resolved "https://registry.yarnpkg.com/@types/immutability-helper/-/immutability-helper-2.6.3.tgz#9c864d84dabf45176904ececce439257cefdbc3c"
@@ -1020,8 +1014,8 @@ esprima@^4.0.0:
   resolved "https://registry.yarnpkg.com/esprima/-/esprima-4.0.1.tgz#13b04cdb3e6c5d19df91ab6987a8695619b0aa71"
 
 esptk@Nexus-Mods/node-esptk:
-  version "1.2.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/66717414636036034cea4b0dae6ebe67647845c5"
+  version "1.2.1"
+  resolved "https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/e911b989e492e93be9434987907a2f698dda1c52"
   dependencies:
     autogypi "^0.2.2"
     nbind "^0.3.15"
@@ -1377,7 +1371,7 @@ i18next@^11.6.0:
   version "11.9.0"
   resolved "https://registry.yarnpkg.com/i18next/-/i18next-11.9.0.tgz#c30c0a5e0a857124923a8dd1ce8f1df603e30c70"
 
-iconv-lite@^0.4.24, iconv-lite@^0.4.4, iconv-lite@~0.4.13:
+iconv-lite@^0.4.4, iconv-lite@~0.4.13:
   version "0.4.24"
   resolved "https://registry.yarnpkg.com/iconv-lite/-/iconv-lite-0.4.24.tgz#2022b4b25fbddc21d2f524974a474aafe733908b"
   dependencies:
