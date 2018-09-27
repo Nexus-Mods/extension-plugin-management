@@ -50,6 +50,9 @@ function isPlugin(fileName: string): boolean {
   return ['.esp', '.esm', '.esl'].indexOf(path.extname(fileName).toLowerCase()) !== -1;
 }
 
+function isFile(fileName: string): Promise<boolean> {
+  return fs.isDirectoryAsync(fileName).then(res => !res);
+}
 /**
  * updates the list of known plugins for the managed game
  */
@@ -113,21 +116,29 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameI
         return fs.readdirAsync(modPath).catch(err => []);
       })
       .then((fileNames: string[]) => {
-        const pluginNames: string[] = fileNames.filter(isPlugin);
         const pluginStates: IPlugins = {};
-        pluginNames.forEach(fileName => {
-          const modName = pluginSources[fileName] !== undefined
-          ? pluginSources[fileName]
+        const viableFiles = Promise.map(fileNames, val => {
+          return Promise.all([isFile(path.join(modPath, val)), isPlugin(val), val]);
+        }).filter(item => (item[0] && item[1]));
+
+        return (viableFiles as any).each(item => {
+          const file = item[2];
+          const modName = pluginSources[file] !== undefined
+          ? pluginSources[file]
             : '';
-          pluginStates[fileName] = {
+          pluginStates[file] = {
             modName,
-            filePath: path.join(modPath, fileName),
-            isNative: isNativePlugin(gameId, fileName),
-            warnings: util.getSafe(state, ['session', 'plugins', 'pluginList', fileName, 'warnings'], {}),
+            filePath: path.join(modPath, file),
+            isNative: isNativePlugin(gameId, file),
+            warnings: util.getSafe(state, ['session', 'plugins', 'pluginList', file, 'warnings'], {}),
           };
-        });
-        store.dispatch(setPluginList(pluginStates));
-        return Promise.resolve();
+          return Promise.resolve();
+        }).then(() => {
+          if (Object.keys(pluginStates).length > 0) {
+            store.dispatch(setPluginList(pluginStates));
+          }
+          return Promise.resolve();
+        })
       })
       .catch((err: Error) => {
         util.showError(store.dispatch, 'Failed to update plugin list', err);
