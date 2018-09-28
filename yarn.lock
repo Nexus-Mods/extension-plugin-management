@@ -1014,8 +1014,8 @@ esprima@^4.0.0:
   resolved "https://registry.yarnpkg.com/esprima/-/esprima-4.0.1.tgz#13b04cdb3e6c5d19df91ab6987a8695619b0aa71"
 
 esptk@Nexus-Mods/node-esptk:
-  version "1.2.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/e911b989e492e93be9434987907a2f698dda1c52"
+  version "1.2.2"
+  resolved "https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/7e9dfe3a9e1f2e49a5e86c29c2f54d5e8cca3f8c"
   dependencies:
     autogypi "^0.2.2"
     nbind "^0.3.15"
