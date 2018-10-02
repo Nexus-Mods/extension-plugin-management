@@ -49,58 +49,67 @@ class LootInterface {
     await this.mSortPromise;
   }
 
-  private onSort = async (manual: boolean) => {
+  private onSort = async (manual: boolean, callback?: (err: Error) => void) => {
     const { store } = this.mExtensionApi;
-    if (manual || store.getState().settings.plugins.autoSort) {
-      // ensure initialisation is done
-      const { game, loot } = await this.mInitPromise;
+    try {
+      if (manual || store.getState().settings.plugins.autoSort) {
+        // ensure initialisation is done
+        const { game, loot } = await this.mInitPromise;
 
-      const state = store.getState();
-      const gameMode = selectors.activeGameId(state);
-      if ((gameMode !== game) || !gameSupported(gameMode) || (loot === undefined)) {
-        return;
-      }
-
-      const pluginNames: string[] = Object
-        .keys(state.loadOrder)
-        .filter((name: string) => (state.session.plugins.pluginList[name] !== undefined))
-        .sort((lhs, rhs) => state.loadOrder[lhs].loadOrder - state.loadOrder[rhs].loadOrder);
-
-      // ensure no other sort is in progress
-      try {
-        await this.mSortPromise;
-      // tslint:disable-next-line:no-empty
-      } catch (err) {}
-
-      try {
-        store.dispatch(actions.startActivity('plugins', 'sorting'));
-        this.mSortPromise = this.readLists(gameMode, loot)
-          .then(() => loot.sortPluginsAsync(pluginNames));
-        const sorted: string[] = await this.mSortPromise;
-        store.dispatch(updatePluginOrder(sorted, false));
-      } catch (err) {
-        log('info', 'loot failed', { error: err.message });
-        if (err.message.startsWith('Cyclic interaction')) {
-          this.reportCycle(err);
-        } else if (err.message.endsWith('is not a valid plugin')
-                   || err.message.match(/The group "[^"]*" does not exist/))  {
-          this.mExtensionApi.sendNotification({
-            id: 'loot-failed',
-            type: 'warning',
-            message: this.mExtensionApi.translate('Plugins not sorted because: {{msg}}',
-              { replace: { msg: err.message }, ns: 'gamebryo-plugin' }),
-          });
-        } else {
-          this.mExtensionApi.showErrorNotification('LOOT operation failed', {
-            message: err.message,
-          }, {
-            id: 'loot-failed', allowReport: true });
+        const state = store.getState();
+        const gameMode = selectors.activeGameId(state);
+        if ((gameMode !== game) || !gameSupported(gameMode) || (loot === undefined)) {
+          return;
         }
-      } finally {
-        store.dispatch(actions.stopActivity('plugins', 'sorting'));
+
+        const pluginNames: string[] = Object
+          .keys(state.loadOrder)
+          .filter((name: string) => (state.session.plugins.pluginList[name] !== undefined))
+          .sort((lhs, rhs) => state.loadOrder[lhs].loadOrder - state.loadOrder[rhs].loadOrder);
+
+        // ensure no other sort is in progress
+        try {
+          await this.mSortPromise;
+        // tslint:disable-next-line:no-empty
+        } catch (err) {}
+
+        try {
+          store.dispatch(actions.startActivity('plugins', 'sorting'));
+          this.mSortPromise = this.readLists(gameMode, loot)
+            .then(() => loot.sortPluginsAsync(pluginNames));
+          const sorted: string[] = await this.mSortPromise;
+          store.dispatch(updatePluginOrder(sorted, false));
+        } catch (err) {
+          log('info', 'loot failed', { error: err.message });
+          if (err.message.startsWith('Cyclic interaction')) {
+            this.reportCycle(err);
+          } else if (err.message.endsWith('is not a valid plugin')
+                    || err.message.match(/The group "[^"]*" does not exist/))  {
+            this.mExtensionApi.sendNotification({
+              id: 'loot-failed',
+              type: 'warning',
+              message: this.mExtensionApi.translate('Plugins not sorted because: {{msg}}',
+                { replace: { msg: err.message }, ns: 'gamebryo-plugin' }),
+            });
+          } else {
+            this.mExtensionApi.showErrorNotification('LOOT operation failed', {
+              message: err.message,
+            }, {
+              id: 'loot-failed', allowReport: true });
+          }
+        } finally {
+          store.dispatch(actions.stopActivity('plugins', 'sorting'));
+        }
+      }
+      if (callback !== undefined) {
+        callback(null);
+      }
+      return Promise.resolve();
+    } catch (err) {
+      if (callback !== undefined) {
+        callback(err);
       }
     }
-    return Promise.resolve();
   }
 
   private onGameModeChanged = async (context: types.IExtensionContext, gameMode: string) => {
@@ -134,6 +143,10 @@ class LootInterface {
 
   private pluginDetails = async (plugins: string[], callback: (result: IPluginsLoot) => void) => {
     const { game, loot } = await this.mInitPromise;
+    // not really interested in these messages but apparently it's the only way to make the api
+    // drop its cache of _all_ previously evaluated conditions
+    await loot.getGeneralMessagesAsync(true);
+    await loot.loadCurrentLoadOrderStateAsync();
     if (loot === undefined) {
       callback({});
       return;
@@ -245,6 +258,7 @@ class LootInterface {
         mtime = null;
       }
       await loot.loadListsAsync(masterlistPath, mtime !== null ? userlistPath : '');
+      await loot.loadCurrentLoadOrderStateAsync();
       this.mUserlistTime = mtime;
     } catch (err) {
       this.mExtensionApi.showErrorNotification('Failed to load master-/userlist', err, {

@@ -322,7 +322,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     },
     {
       id: 'loot_messages',
-      name: 'Loot Messages',
+      name: 'Loot Messages (only updates on sort)',
       edit: {},
       customRenderer: (plugin: IPluginCombined) => this.renderLootMessages(plugin),
       calc: (plugin: IPluginCombined) => plugin.messages,
@@ -415,7 +415,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             key: 'btn-sort',
             icon: sorting ? 'spinner' : 'loot-sort',
             text: t('Sort Now', { ns: 'gamebryo-plugin' }),
-            onClick: () => this.context.api.events.emit('autosort-plugins', true),
+            onClick: () => this.context.api.events.emit('autosort-plugins', true, () => {
+              this.updatePlugins(this.props.plugins);
+            }),
           };
         },
       },
