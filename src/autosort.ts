@@ -145,12 +145,12 @@ class LootInterface {
     const { game, loot } = await this.mInitPromise;
     // not really interested in these messages but apparently it's the only way to make the api
     // drop its cache of _all_ previously evaluated conditions
-    await loot.getGeneralMessagesAsync(true);
-    await loot.loadCurrentLoadOrderStateAsync();
     if (loot === undefined) {
       callback({});
       return;
     }
+    await loot.getGeneralMessagesAsync(true);
+    await loot.loadCurrentLoadOrderStateAsync();
     const t = this.mExtensionApi.translate;
     const result: IPluginsLoot = {};
     Bluebird.map(plugins, (pluginName: string) =>
