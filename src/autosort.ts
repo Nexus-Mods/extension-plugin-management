@@ -113,10 +113,13 @@ class LootInterface {
   }
 
   private onGameModeChanged = async (context: types.IExtensionContext, gameMode: string) => {
-    const { game, loot } = await this.mInitPromise;
+    const { game, loot }: { game: string, loot: LootAsync } = await this.mInitPromise;
     if (gameMode === game) {
       // no change
       return;
+    }
+    if (loot !== undefined) {
+      (loot as any).close();
     }
     const store = context.api.store;
     const discovery = selectors.currentGameDiscovery(store.getState());
