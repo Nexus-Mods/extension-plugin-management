@@ -51,7 +51,14 @@ function isPlugin(fileName: string): boolean {
 }
 
 function isFile(fileName: string): Promise<boolean> {
-  return fs.isDirectoryAsync(fileName).then(res => !res);
+  return fs.isDirectoryAsync(fileName).then(res => !res)
+  // Given that this function runs asynchronously, Vortex may be creating/modifying
+  //  its temporary deployment files 'vortex.deployment.json.XXXXXX.tmp' in the background,
+  //  which may be removed by the time isDirectoryAsync finishes its operations, 
+  //  throwing an ENOENT error.
+  //  This is an arguably acceptable scenario given that the .tmp file extension would've failed
+  //  the following isPlugin predicate anyway so we can just return false here.
+  .catch(err => err.code === 'ENOENT' ? Promise.resolve(false) : Promise.reject(err));
 }
 /**
  * updates the list of known plugins for the managed game
