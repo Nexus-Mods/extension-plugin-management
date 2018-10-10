@@ -77,6 +77,10 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameI
 
   const gameMods = state.persistent.mods[gameId] || {};
   const game = util.getGame(gameId);
+  if (game === undefined) {
+    // we may get here if the active game is no longer supported due to the extension being disabled.
+    return Promise.resolve();
+  }
   const modPath = game.getModPaths(discovery.path)[''];
 
   const enabledModIds = Object.keys(gameMods).filter(
