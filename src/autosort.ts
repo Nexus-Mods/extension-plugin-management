@@ -198,9 +198,16 @@ class LootInterface {
         userlistPath,
         last: this.mUserlistTime,
       });
-      await loot.loadListsAsync(masterlistPath, mtime !== null ? userlistPath : '');
-      log('info', 'loaded loot lists');
-      this.mUserlistTime = mtime;
+      try {
+        await fs.statAsync(masterlistPath);
+        await loot.loadListsAsync(masterlistPath, mtime !== null ? userlistPath : '');
+        log('info', 'loaded loot lists');
+        this.mUserlistTime = mtime;
+      } catch (err) {
+        this.mExtensionApi.showErrorNotification('Failed to load master-/userlist', err, {
+            allowReport: false,
+          } as any);
+      }
     }
   });
 
@@ -230,7 +237,7 @@ class LootInterface {
     } catch (err) {
       this.mExtensionApi.showErrorNotification('Failed to initialize LOOT', err, {
         allowReport: false,
-      });
+      } as any);
       return { game: gameMode, loot: undefined };
     }
     const masterlistPath = path.join(remote.app.getPath('userData'), gameMode,
@@ -260,13 +267,15 @@ class LootInterface {
       } catch (err) {
         mtime = null;
       }
+      // ensure masterlist is available
+      await fs.statAsync(masterlistPath);
       await loot.loadListsAsync(masterlistPath, mtime !== null ? userlistPath : '');
       await loot.loadCurrentLoadOrderStateAsync();
       this.mUserlistTime = mtime;
     } catch (err) {
       this.mExtensionApi.showErrorNotification('Failed to load master-/userlist', err, {
           allowReport: false,
-        });
+        } as any);
     }
 
     return { game: gameMode, loot };
