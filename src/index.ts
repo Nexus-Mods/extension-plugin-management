@@ -748,6 +748,10 @@ function init(context: IExtensionContextExt) {
         * if there are more the user gets a notification if he wants to enable all. */
         const state: types.IState = context.api.store.getState();
         const currentProfile = selectors.activeProfile(state);
+        if (currentProfile === undefined) {
+          return;
+        }
+
         if ((profileId === currentProfile.id) && gameSupported(currentProfile.gameId)) {
           const mod: types.IMod = state.persistent.mods[currentProfile.gameId][modId];
           if (mod === undefined) {
