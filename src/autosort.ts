@@ -58,7 +58,7 @@ class LootInterface {
 
         const state = store.getState();
         const gameMode = selectors.activeGameId(state);
-        if ((gameMode !== game) || !gameSupported(gameMode) || (loot === undefined)) {
+        if ((gameMode !== game) || !gameSupported(gameMode) || (loot === undefined) || loot.isClosed()) {
           return;
         }
 
@@ -146,16 +146,25 @@ class LootInterface {
 
   private pluginDetails = async (plugins: string[], callback: (result: IPluginsLoot) => void) => {
     const { game, loot } = await this.mInitPromise;
-    // not really interested in these messages but apparently it's the only way to make the api
-    // drop its cache of _all_ previously evaluated conditions
-    if (loot === undefined) {
+    if ((loot === undefined) || loot.isClosed()) {
       callback({});
       return;
     }
-    await loot.getGeneralMessagesAsync(true);
-    await loot.loadCurrentLoadOrderStateAsync();
-    const t = this.mExtensionApi.translate;
+
+    try {
+      // not really interested in these messages but apparently it's the only way to make the api
+      // drop its cache of _all_ previously evaluated conditions
+      await loot.getGeneralMessagesAsync(true);
+      await loot.loadCurrentLoadOrderStateAsync();
+    } catch (err) {
+      this.mExtensionApi.showErrorNotification('There were errors getting plugin information from LOOT',
+        err, { allowReport: false });
+      callback({});
+      return;
+    }
+
     const result: IPluginsLoot = {};
+    let error: Error;
     Bluebird.map(plugins, (pluginName: string) =>
       loot.getPluginMetadataAsync(pluginName)
       .then(meta => {
@@ -166,8 +175,23 @@ class LootInterface {
           dirtyness: meta.dirtyInfo,
           group: meta.group,
         };
+      })
+      .catch(err => {
+        result[pluginName] = {
+          messages: [],
+          tags: [],
+          cleanliness: [],
+          dirtyness: [],
+          group: undefined,
+        };
+        log('error', 'Failed to get plugin meta data from loot', { pluginName, error: err.message });
+        error = err;
       }))
     .then(() => {
+      if (error !== undefined) {
+        this.mExtensionApi.showErrorNotification('There were errors getting plugin information from LOOT',
+          error, { allowReport: false });
+      }
       callback(result);
     });
   }
@@ -224,7 +248,6 @@ class LootInterface {
 
   // tslint:disable-next-line:member-ordering
   private init = Bluebird.method(async (gameMode: string, gamePath: string) => {
-    const t = this.mExtensionApi.translate;
     const localPath = pluginPath(gameMode);
     await fs.ensureDirAsync(localPath);
 
