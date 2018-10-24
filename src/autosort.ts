@@ -92,9 +92,7 @@ class LootInterface {
                 { replace: { msg: err.message }, ns: 'gamebryo-plugin' }),
             });
           } else {
-            this.mExtensionApi.showErrorNotification('LOOT operation failed', {
-              message: err.message,
-            }, {
+            this.mExtensionApi.showErrorNotification('LOOT operation failed', err, {
               id: 'loot-failed', allowReport: true });
           }
         } finally {
@@ -119,7 +117,12 @@ class LootInterface {
       return;
     }
     if (loot !== undefined) {
-      (loot as any).close();
+      // close the loot instance of the old game, but give it a little time, otherwise it may try to
+      // to run instructions after being closed.
+      // TODO: Would be nice if this was deterministic...
+      setTimeout(() => {
+        loot.close();
+      }, 5000);
     }
     const store = context.api.store;
     const discovery = selectors.currentGameDiscovery(store.getState());
@@ -133,9 +136,9 @@ class LootInterface {
         this.mInitPromise = this.init(gameMode, gamePath);
       } catch (err) {
         context.api.showErrorNotification('Failed to initialize LOOT', {
-          message: err.message,
-          game: gameMode,
-          path: gamePath,
+          error: err,
+          Game: gameMode,
+          Path: gamePath,
         });
         this.mInitPromise = Bluebird.resolve({ game: gameMode, loot: undefined });
       }
