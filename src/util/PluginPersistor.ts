@@ -217,7 +217,7 @@ class PluginPersistor implements types.IPersistor {
       .catch(util.UserCanceled, () => null)
       .catch(err => {
         if (err.code !== 'EBUSY') {
-          this.reportError('failed to write plugin list', err);
+          this.reportError('failed to write plugin list', err, { allowReport: err.code !== 'EPERM' });
         } // no point reporting an error if the file is locked by another
           // process (could be the game itself)
       })
