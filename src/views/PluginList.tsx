@@ -91,9 +91,9 @@ class GroupSelect extends React.PureComponent<IGroupSelectProps, {}> {
   public render(): JSX.Element {
     const { t, plugins, masterlist, userlist } = this.props;
 
-    const group = util.getSafe(plugins, [0, 'group'], '');
+    let group = util.getSafe(plugins, [0, 'group'], '');
     if (plugins.find(plugin => plugin.group !== group) !== undefined) {
-      return <div>{t('Multiple Values')}</div>;
+      group = '';
     }
 
     const options = [].concat(
@@ -101,12 +101,10 @@ class GroupSelect extends React.PureComponent<IGroupSelectProps, {}> {
       userlist.groups.map(iter => ({ label: iter.name, value: iter.name })),
     );
 
-    let isCustom: boolean = false;
-
-    if (plugins.length === 1) {
-      isCustom = userlist.plugins.find(plugin =>
-        plugin.name === plugins[0].name && plugin.group !== undefined) !== undefined;
-    }
+    let isCustom: boolean = userlist.plugins.find(plugin => {
+        const refPlugin = plugins.find(iter => iter.name === plugin.name);
+        return (refPlugin !== undefined) && (plugin.group !== undefined);
+      }) !== undefined;
 
     return (
       <Creatable
