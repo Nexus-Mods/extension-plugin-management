@@ -91,6 +91,8 @@ class LootInterface {
               message: this.mExtensionApi.translate('Plugins not sorted because: {{msg}}',
                 { replace: { msg: err.message }, ns: 'gamebryo-plugin' }),
             });
+          } else if (err.message === 'already closed') {
+            // loot process terminated, don't really care about the result anyway
           } else {
             this.mExtensionApi.showErrorNotification('LOOT operation failed', err, {
               id: 'loot-failed', allowReport: true });
