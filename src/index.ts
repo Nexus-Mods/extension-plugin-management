@@ -692,11 +692,9 @@ function init(context: IExtensionContextExt) {
       context.api.onAsync('did-deploy', (profileId, deployment) => {
         const state: types.IState = store.getState();
         const profile = state.persistent.profiles[profileId];
-        if (gameSupported(profile.gameId)) {
-          return updatePluginList(store, profile.modState, profile.gameId);
-        } else {
-          Promise.resolve();
-        }
+        return (profile !== undefined) && gameSupported(profile.gameId)
+          ? updatePluginList(store, profile.modState, profile.gameId)
+          : Promise.resolve();
       });
 
       context.api.onStateChange(['loadOrder'], () => {
