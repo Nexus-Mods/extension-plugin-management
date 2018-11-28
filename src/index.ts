@@ -516,7 +516,7 @@ function testUserlistInvalid(t: I18next.TranslationFunction,
   }
 
   // search for duplicate plugin entries
-  const duplicate = userlist.plugins.find(iter => {
+  const duplicate = (userlist.plugins || []).find(iter => {
     const name = iter.name.toUpperCase();
     if (names.has(name)) {
       return true;
@@ -545,7 +545,7 @@ function testUserlistInvalid(t: I18next.TranslationFunction,
 
   // search for duplicate after rules
   let duplicateAfter: string | ILootReference;
-  const plugin = userlist.plugins.find(iter => {
+  const plugin = (userlist.plugins || []).find(iter => {
     duplicateAfter = (iter.after || []).find((val, idx) =>
             iter.after.indexOf(val, idx + 1) !== -1);
     return duplicateAfter !== undefined;
