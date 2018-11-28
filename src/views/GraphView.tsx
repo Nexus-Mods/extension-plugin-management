@@ -137,9 +137,11 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
   private setRef = (ref: HTMLDivElement) => {
     const { className, elements, visualStyle } = this.props;
     if (ref === null) {
-      this.mGraph = undefined;
       window.removeEventListener('keydown', this.onKeyDown);
       window.removeEventListener('keyup', this.onKeyUp);
+      (this.mGraph as any).off('cxttap', this.handleContext);
+      (this.mGraph as any).off('ehcomplete', this.handleEHComplete);
+      this.mGraph = undefined;
       return;
     }
     this.mGraph = cytoscape({
@@ -170,13 +172,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
     });
     this.mEdgeHandler.disable();
     (this.mGraph as any).on('cxttap', this.handleContext);
-    (this.mGraph as any).on('ehcomplete', (evt, source, target, added) => {
-      this.props.onConnect(source.data().title, target.data().title);
-      // remove the automatically created edge so we can add our own, in sync with the backend data
-      if (added.data() !== undefined) {
-        this.mGraph.remove('#' + added.data().id);
-      }
-    });
+    (this.mGraph as any).on('ehcomplete', this.handleEHComplete);
   }
 
   private handleContext = (evt: cytoscape.EventObject) => {
@@ -193,6 +189,14 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
     }
     this.mMousePos = evt.position;
     this.props.onContext(evt.renderedPosition.x, evt.renderedPosition.y, selection);
+  }
+
+  private handleEHComplete = (evt, source, target, added) => {
+    this.props.onConnect(source.data().title, target.data().title);
+    // remove the automatically created edge so we can add our own, in sync with the backend data
+    if ((added.data() !== undefined) && (this.mGraph !== undefined)) {
+      this.mGraph.remove('#' + added.data().id);
+    }
   }
 
   private addElements(elements: { [id: string]: IGraphElement }) {
