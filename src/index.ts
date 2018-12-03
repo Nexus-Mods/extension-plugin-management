@@ -46,10 +46,6 @@ interface IModStates {
   [modId: string]: IModState;
 }
 
-function isPlugin(fileName: string): boolean {
-  return ['.esp', '.esm', '.esl'].indexOf(path.extname(fileName).toLowerCase()) !== -1;
-}
-
 function isFile(fileName: string): Promise<boolean> {
   return fs.isDirectoryAsync(fileName).then(res => !res)
   // Given that this function runs asynchronously, Vortex may be creating/modifying
@@ -60,6 +56,15 @@ function isFile(fileName: string): Promise<boolean> {
   //  the following isPlugin predicate anyway so we can just return false here.
   .catch(err => err.code === 'ENOENT' ? Promise.resolve(false) : Promise.reject(err));
 }
+
+function isPlugin(filePath: string, fileName: string): Promise<boolean> {
+  if (!fileName
+    || (['.esp', '.esm', '.esl'].indexOf(path.extname(fileName).toLowerCase()) === -1)) {
+    return Promise.resolve(false);
+  }
+  return isFile(path.join(filePath, fileName));
+}
+
 /**
  * updates the list of known plugins for the managed game
  */
@@ -67,6 +72,20 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameI
   const state: types.IState = store.getState();
 
   const pluginSources: { [pluginName: string]: string } = {};
+  const pluginStates: IPlugins = {};
+
+  const setPluginState = (modPath: string, fileName: string) => {
+    const modName = pluginSources[fileName] !== undefined
+      ? pluginSources[fileName]
+      : '';
+    pluginStates[fileName] = {
+      modName,
+      filePath: path.join(modPath, fileName),
+      isNative: isNativePlugin(gameId, fileName),
+      warnings: util.getSafe(state, ['session', 'plugins', 'pluginList', fileName, 'warnings'], {}),
+    };
+    return Promise.resolve();
+  }
 
   const discovery = (selectors as any).discoveryByGame(state, gameId);
   if ((discovery === undefined) || (discovery.path === undefined)) {
@@ -86,6 +105,7 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameI
   const enabledModIds = Object.keys(gameMods).filter(
       modId => util.getSafe(newModList, [modId, 'enabled'], false));
 
+  const installBasePath = selectors.installPathForGame(state, gameId);
   // create a cache of all plugins that originate from a mod so we can assign
   // the correct origin further down
   return Promise.map(enabledModIds, (modId: string) => {
@@ -94,15 +114,12 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameI
                log('error', 'mod not found', { gameId, modId });
                return;
              }
-             return fs.readdirAsync(path.join(selectors.installPathForGame(state, gameId),
-                                              mod.installationPath))
-                 .then((fileNames: string[]) => {
-                   fileNames.filter((fileName: string) =>
-                                        ['.esp', '.esm', '.esl'].indexOf(
-                                            path.extname(fileName)) !== -1)
-                       .forEach((fileName: string) => {
-                         pluginSources[fileName] = mod.id;
-                       });
+             const modInstPath = path.join(installBasePath, mod.installationPath)
+             return fs.readdirAsync(modInstPath)
+                 .filter(fileName => isPlugin(modInstPath, fileName))
+                 .each(fileName => {
+                  pluginSources[fileName] = mod.id;
+                  setPluginState(modInstPath, fileName);
                  })
                  .catch((err: Error) => {
                    readErrors.push(mod.id);
@@ -127,29 +144,16 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameI
         return fs.readdirAsync(modPath).catch(err => []);
       })
       .then((fileNames: string[]) => {
-        const pluginStates: IPlugins = {};
-        const viableFiles = Promise.map(fileNames, val => {
-          return Promise.all([isFile(path.join(modPath, val)), isPlugin(val), val]);
-        }).filter(item => (item[0] && item[1]));
-
-        return (viableFiles as any).each(item => {
-          const file = item[2];
-          const modName = pluginSources[file] !== undefined
-          ? pluginSources[file]
-            : '';
-          pluginStates[file] = {
-            modName,
-            filePath: path.join(modPath, file),
-            isNative: isNativePlugin(gameId, file),
-            warnings: util.getSafe(state, ['session', 'plugins', 'pluginList', file, 'warnings'], {}),
-          };
-          return Promise.resolve();
-        }).then(() => {
+        return Promise
+          .filter(fileNames, val =>
+            (pluginStates[val] === undefined) && isPlugin(modPath, val))
+          .each(fileName => setPluginState(modPath, fileName))
+          .then(() => {
           if (Object.keys(pluginStates).length > 0) {
             store.dispatch(setPluginList(pluginStates));
           }
           return Promise.resolve();
-        })
+        });
       })
       .catch((err: Error) => {
         util.showError(store.dispatch, 'Failed to update plugin list', err);
