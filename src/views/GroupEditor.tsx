@@ -11,10 +11,9 @@ import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import { actions, ComponentEx, Modal, types } from 'vortex-api';
+import { actions, ComponentEx, ContextMenu, Modal, types } from 'vortex-api';
 
-// tslint:disable-next-line:no-var-requires
-const { ContextMenu } = require('vortex-api');
+const { Usage } = require('vortex-api');
 
 interface IConnectedProps {
   open: boolean;
@@ -99,6 +98,7 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
         ? this.contextNodeActions
         : this.contextBGActions;
     }
+
     return (
       <Modal
         id='plugin-group-editor'
@@ -107,13 +107,13 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
       >
         <Modal.Header><Modal.Title>{t('Groups')}</Modal.Title></Modal.Header>
         <Modal.Body>
-          <div className='group-editor-usage'>
+          <Usage persistent infoId='plugins-group-editor' className='group-editor-usage'>
             <div>{t('Hold ctrl and drag a line from one group to another to define a rule.')}</div>
             <div>{t('Right click a line/node to remove the corresponding rule/group.')}</div>
             <div>{t('Right click empty area to create new Group.')}</div>
             <div>{t('Masterlist groups and rules can\'t be removed.')}</div>
             <div>{t('Use the mouse wheel to zoom, drag on an empty area to pan the view')}</div>
-          </div>
+          </Usage>
           <GraphView
             className='group-graph'
             elements={elements}

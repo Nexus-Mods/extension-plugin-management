@@ -32,8 +32,10 @@ import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import {ComponentEx, IconBar, ITableRowAction, log, MainPage,
   selectors, Table, TableTextFilter, ToolbarIcon,
-  types, util
+  types, util, FlexLayout,
 } from 'vortex-api';
+
+const { Usage } = require('vortex-api');
 
 interface IBaseProps {
   nativePlugins: string[];
@@ -494,6 +496,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const { t, needToDeploy } = this.props;
     const { pluginsCombined } = this.state;
 
+    const PanelX: any = Panel;
     return (
       <MainPage>
         <MainPage.Header>
@@ -505,17 +508,28 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           />
         </MainPage.Header>
         <MainPage.Body>
-          {needToDeploy ? this.renderOutdated() : null}
-          <Panel>
-            <Panel.Body>
-              <Table
-                tableId='gamebryo-plugins'
-                actions={this.actions}
-                staticElements={[this.pluginEnabledAttribute, ...this.pluginAttributes]}
-                data={pluginsCombined}
-              />
-            </Panel.Body>
-          </Panel>
+          <FlexLayout type='column'>
+            <FlexLayout.Fixed>
+              {needToDeploy ? this.renderOutdated() : null}
+            </FlexLayout.Fixed>
+            <FlexLayout.Flex>
+              <Panel>
+                <PanelX.Body>
+                  <Table
+                    tableId='gamebryo-plugins'
+                    actions={this.actions}
+                    staticElements={[this.pluginEnabledAttribute, ...this.pluginAttributes]}
+                    data={pluginsCombined}
+                  />
+                </PanelX.Body>
+              </Panel>
+            </FlexLayout.Flex>
+            <FlexLayout.Fixed>
+              <Usage infoId='deployed-plugins' persistent>
+                {t('This screen shows only deployed plugins, if you\'re missing files, try deploying manually.')}
+              </Usage>
+            </FlexLayout.Fixed>
+          </FlexLayout>
         </MainPage.Body>
       </MainPage>
     );

@@ -153,10 +153,7 @@
     position: absolute;
     bottom: $gutter-width;
     left: $gutter-width;
-    background-color: $brand-bg;
-    opacity: 0.75;
-    border: $border-width solid $border-color;
-    padding: 4px;
+    z-index: 1;
   }
 
   .group-graph {
