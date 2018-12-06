@@ -26,6 +26,7 @@ import * as path from 'path';
 import * as React from 'react';
 import { Alert, Button, ListGroup, ListGroupItem, Panel } from 'react-bootstrap';
 import { translate } from 'react-i18next';
+import * as ReactMarkdown from 'react-markdown';
 import { connect } from 'react-redux';
 import { Creatable } from 'react-select';
 import * as Redux from 'redux';
@@ -807,7 +808,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     return {
       0: 'info',
       1: 'warning',
-      2: 'error',
+      2: 'danger',
     }[input];
   }
 
@@ -821,7 +822,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         {
           plugin.messages.map((msg: Message, idx: number) => (
             <ListGroupItem key={idx}>
-              <Alert bsStyle={this.translateLootMessageType(msg.type)}>{msg.value}</Alert>
+              <Alert bsStyle={this.translateLootMessageType(msg.type)}>
+              <ReactMarkdown source={msg.value as any} />
+              </Alert>
             </ListGroupItem>
           ))
         }
