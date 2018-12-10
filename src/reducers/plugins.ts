@@ -7,12 +7,15 @@ import * as actions from '../actions/plugins';
  */
 export const pluginsReducer: types.IReducerSpec = {
   reducers: {
-    [actions.setPluginList as any]: (state, payload) =>
+    [actions.setAvailablePluginList as any]: (state, payload) =>
       util.setSafe(state, ['pluginList'], payload.plugins),
+    [actions.setDeployedPluginList as any]: (state, payload) =>
+      util.setSafe(state, ['deployedPlugins'], payload),
     [actions.updatePluginWarnings as any]: (state, payload) =>
       util.setSafe(state, ['pluginList', payload.id, 'warnings', payload.warning], payload.value),
   },
   defaults: {
     pluginList: {},
+    deployedPlugins: [],
   },
 };

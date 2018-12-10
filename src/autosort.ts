@@ -62,7 +62,7 @@ class LootInterface {
           return;
         }
 
-        const pluginNames: string[] = Object
+        let pluginNames: string[] = Object
           .keys(state.loadOrder)
           .filter((name: string) => (state.session.plugins.pluginList[name] !== undefined))
           .sort((lhs, rhs) => state.loadOrder[lhs].loadOrder - state.loadOrder[rhs].loadOrder);
@@ -73,33 +73,7 @@ class LootInterface {
         // tslint:disable-next-line:no-empty
         } catch (err) {}
 
-        try {
-          store.dispatch(actions.startActivity('plugins', 'sorting'));
-          this.mSortPromise = this.readLists(gameMode, loot)
-            .then(() => loot.sortPluginsAsync(pluginNames));
-          const sorted: string[] = await this.mSortPromise;
-          store.dispatch(updatePluginOrder(sorted, false));
-        } catch (err) {
-          log('info', 'loot failed', { error: err.message });
-          if (err.message.startsWith('Cyclic interaction')) {
-            this.reportCycle(err);
-          } else if (err.message.endsWith('is not a valid plugin')
-                    || err.message.match(/The group "[^"]*" does not exist/))  {
-            this.mExtensionApi.sendNotification({
-              id: 'loot-failed',
-              type: 'warning',
-              message: this.mExtensionApi.translate('Plugins not sorted because: {{msg}}',
-                { replace: { msg: err.message }, ns: 'gamebryo-plugin' }),
-            });
-          } else if (err.message === 'already closed') {
-            // loot process terminated, don't really care about the result anyway
-          } else {
-            this.mExtensionApi.showErrorNotification('LOOT operation failed', err, {
-              id: 'loot-failed', allowReport: true });
-          }
-        } finally {
-          store.dispatch(actions.stopActivity('plugins', 'sorting'));
-        }
+        await this.doSort(pluginNames, gameMode, loot);
       }
       if (callback !== undefined) {
         callback(null);
@@ -109,6 +83,70 @@ class LootInterface {
       if (callback !== undefined) {
         callback(err);
       }
+    }
+  }
+
+  private get gamePath() {
+    const { store } = this.mExtensionApi;
+    const discovery = selectors.currentGameDiscovery(store.getState());
+    if (discovery === undefined) {
+      // no game selected
+      return undefined;
+    }
+    return discovery.path;
+  }
+
+  private async doSort(pluginNames: string[], gameMode: string, loot: typeof LootProm) {
+    const { store } = this.mExtensionApi;
+    try {
+      store.dispatch(actions.startActivity('plugins', 'sorting'));
+      this.mSortPromise = this.readLists(gameMode, loot)
+        .then(() => loot.sortPluginsAsync(pluginNames));
+      const sorted: string[] = await this.mSortPromise;
+      store.dispatch(updatePluginOrder(sorted, false));
+    } catch (err) {
+      log('info', 'loot failed', { error: err.message });
+      if (err.message.startsWith('Cyclic interaction')) {
+        this.reportCycle(err);
+      } else if (err.message.endsWith('is not a valid plugin')) {
+        const pluginName = err.message.replace(/"([^"]*)" is not a valid plugin/, '$1');
+        const reportErr = () => {
+          this.mExtensionApi.sendNotification({
+            id: 'loot-failed',
+            type: 'warning',
+            message: this.mExtensionApi.translate('Plugins not sorted because: {{msg}}',
+              { replace: { msg: err.message }, ns: 'gamebryo-plugin' }),
+          });
+        }
+        try {
+          await fs.statAsync(path.join(this.gamePath, 'data', pluginName));
+          reportErr();
+        } catch (err) {
+          const idx = pluginNames.indexOf(pluginName);
+          if (idx !== -1) {
+            const newList = pluginNames.slice();
+            newList.splice(idx, 1);
+            return await this.doSort(newList, gameMode, loot);
+          } else {
+            reportErr();
+          }
+        }
+      } else if (err.message.match(/The group "[^"]*" does not exist/)) {
+        this.mExtensionApi.sendNotification({
+          id: 'loot-failed',
+          type: 'warning',
+          message: this.mExtensionApi.translate('Plugins not sorted because: {{msg}}',
+            { replace: { msg: err.message }, ns: 'gamebryo-plugin' }),
+        });
+      } else if (err.message === 'already closed') {
+        // loot process terminated, don't really care about the result anyway
+      } else {
+        this.mExtensionApi.showErrorNotification('LOOT operation failed', err, {
+          id: 'loot-failed', allowReport: true
+        });
+      }
+    } finally {
+      store.dispatch(actions.stopActivity('plugins', 'sorting'));
     }
   }
 
@@ -126,13 +164,7 @@ class LootInterface {
         loot.close();
       }, 5000);
     }
-    const store = context.api.store;
-    const discovery = selectors.currentGameDiscovery(store.getState());
-    if (discovery === undefined) {
-      // no game selected
-      return;
-    }
-    const gamePath: string = discovery.path;
+    const gamePath = this.gamePath;
     if (gameSupported(gameMode)) {
       try {
         this.mInitPromise = this.init(gameMode, gamePath);

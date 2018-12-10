@@ -45,6 +45,7 @@ interface IBaseProps {
 interface IConnectedProps {
   gameMode: string;
   plugins: IPlugins;
+  deployedPlugins: string[];
   loadOrder: { [name: string]: ILoadOrder };
   autoSort: boolean;
   activity: string[];
@@ -141,7 +142,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   private mCollator: Intl.Collator;
   private mMounted: boolean = false;
 
-  private installedNative: { [name: string]: number };
+  private installedNative: { [name: string]: number } = {};
 
   private pluginAttributes: Array<types.ITableAttribute<IPluginCombined>> = [
     {
@@ -227,18 +228,13 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       isToggleable: true,
       edit: {},
       isSortable: true,
-      calc: (plugin: IPluginCombined) => plugin.loadOrder,
-      sortFuncRaw: (lhs: IPluginCombined, rhs: IPluginCombined) => {
-        if (this.installedNative !== undefined) {
-          const lhsLO = lhs.isNative
-            ? this.installedNative[lhs.name.toLowerCase()] : lhs.loadOrder + 1000;
-          const rhsLO = rhs.isNative
-            ? this.installedNative[rhs.name.toLowerCase()] : rhs.loadOrder + 1000;
-          return lhsLO - rhsLO;
-        } else {
-          return lhs.loadOrder - rhs.loadOrder;
-        }
+      calc: (plugin: IPluginCombined) => {
+        const nameL = plugin.name.toLowerCase();
+        return plugin.isNative
+          ? this.installedNative[nameL]
+          : plugin.loadOrder;
       },
+      sortFuncRaw: (lhs, rhs) => this.sortByLoadOrder(lhs, rhs),
       placement: 'table',
     },
     {
@@ -341,6 +337,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       pluginsLoot: {},
       pluginsCombined: {},
     };
+
     const { t, onSetAutoSortEnabled } = props;
 
     this.actions = [
@@ -456,8 +453,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
   public componentWillMount() {
     const { plugins } = this.props;
+    this.updateInstalledNativePlugins(this.props);
     const parsed = this.emptyPluginParsed();
     const loot = this.emptyPluginLOOT();
+
     const combined = this.detailedPlugins(plugins, loot, parsed);
     this.setState(update(this.state, {
       pluginsParsed: { $set: parsed },
@@ -480,6 +479,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentWillReceiveProps(nextProps: IProps) {
+    if ((this.props.deployedPlugins !== nextProps.deployedPlugins)
+        || (this.props.nativePlugins !== nextProps.nativePlugins)) {
+      this.updateInstalledNativePlugins(nextProps);
+    }
+
     if (this.props.plugins !== nextProps.plugins) {
       this.updatePlugins(nextProps.plugins);
     }
@@ -494,8 +498,15 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, needToDeploy } = this.props;
+    const { t, needToDeploy, deployedPlugins } = this.props;
     const { pluginsCombined } = this.state;
+
+    const visiblePlugins = deployedPlugins.reduce((prev, pluginName) => {
+      if (pluginsCombined[pluginName] !== undefined) {
+        prev[pluginName] = pluginsCombined[pluginName];
+      }
+      return prev;
+    }, {});
 
     const PanelX: any = Panel;
     return (
@@ -520,7 +531,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
                     tableId='gamebryo-plugins'
                     actions={this.actions}
                     staticElements={[this.pluginEnabledAttribute, ...this.pluginAttributes]}
-                    data={pluginsCombined}
+                    data={visiblePlugins}
                   />
                 </PanelX.Body>
               </Panel>
@@ -629,18 +640,20 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             pluginsCombined: { $set: pluginsCombined },
           }));
         }
-
-        const pluginsFlat = Object.keys(pluginsCombined).map(pluginId => pluginsCombined[pluginId]);
-
-        const { nativePlugins } = this.props;
-        this.installedNative = nativePlugins.filter(name =>
-          pluginsFlat.find(
-            (plugin: IPluginCombined) => name === plugin.name.toLowerCase()) !== undefined)
-          .reduce((prev, name, idx) => {
-            prev[name] = idx;
-            return prev;
-          }, {});
       });
+  }
+
+  private updateInstalledNativePlugins(props: IProps) {
+    const { deployedPlugins, nativePlugins } = props;
+
+    const deployedSet = new Set(deployedPlugins.map(name => name.toLowerCase()));
+
+    this.installedNative = nativePlugins
+      .filter(name => deployedSet.has(name))
+      .reduce((prev, name, idx) => {
+        prev[name] = idx;
+        return prev;
+      }, {});
   }
 
   private enableSelected = (pluginIds: string[]) => {
@@ -676,17 +689,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     // native plugins at the top in their hard-coded order. Then it assigns
     // the ascending mod index to all enabled plugins.
 
-    const byLO = pluginObjects.sort((lhs: IPluginCombined, rhs: IPluginCombined) => {
-      if (this.installedNative !== undefined) {
-        const lhsLO = lhs.isNative
-          ? this.installedNative[lhs.name.toLowerCase()] : lhs.loadOrder + 1000;
-        const rhsLO = rhs.isNative
-          ? this.installedNative[rhs.name.toLowerCase()] : rhs.loadOrder + 1000;
-        return lhsLO - rhsLO;
-      } else {
-        return lhs.loadOrder - rhs.loadOrder;
-      }
-    });
+    const byLO = pluginObjects.slice().sort(this.sortByLoadOrder);
 
     let modIndex = 0;
     let eslIndex = 0;
@@ -832,6 +835,18 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     );
   }
 
+  private sortByLoadOrder = (lhs: IPluginCombined, rhs: IPluginCombined) => {
+    if (this.installedNative !== undefined) {
+      const lhsLO = lhs.isNative
+        ? this.installedNative[lhs.name.toLowerCase()] : (lhs.loadOrder | 0) + 1000;
+      const rhsLO = rhs.isNative
+        ? this.installedNative[rhs.name.toLowerCase()] : (rhs.loadOrder | 0) + 1000;
+      return lhsLO - rhsLO;
+    } else {
+      return lhs.loadOrder - rhs.loadOrder;
+    }
+  }
+
   private setGroup = (plugin: string, group: string) => {
     const { onAddGroup, onAddGroupRule, onSetGroup, masterlist, userlist } = this.props;
     if ((group !== undefined)
@@ -865,6 +880,7 @@ function mapStateToProps(state: any): IConnectedProps {
   return {
     gameMode,
     plugins: state.session.plugins.pluginList,
+    deployedPlugins: state.session.plugins.deployedPlugins,
     loadOrder: state.loadOrder,
     userlist: state.userlist || emptyList,
     masterlist: state.masterlist || emptyList,

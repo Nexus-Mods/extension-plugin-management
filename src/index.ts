@@ -1,5 +1,5 @@
 import { setPluginEnabled, updatePluginOrder, setPluginOrder } from './actions/loadOrder';
-import { setPluginList, updatePluginWarnings } from './actions/plugins';
+import { setAvailablePluginList, updatePluginWarnings, setDeployedPluginList } from './actions/plugins';
 import { removeGroupRule, setGroup } from './actions/userlist';
 import { openGroupEditor, setCreateRule } from './actions/userlistEdit';
 import { loadOrderReducer } from './reducers/loadOrder';
@@ -100,6 +100,9 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameI
     // we may get here if the active game is no longer supported due to the extension being disabled.
     return Promise.resolve();
   }
+
+  const stackErr = new Error();
+
   const modPath = game.getModPaths(discovery.path)[''];
 
   const enabledModIds = Object.keys(gameMods).filter(
@@ -130,10 +133,11 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameI
       .then(() => {
         if (readErrors.length > 0) {
           util.showError(
-            store.dispatch, 'Failed to read some mods',
-            'The following mods could not be searched (see log for details):\n'
-            + readErrors.map(error => `"${error}"`).join('\n')
-            + '\n' + (new Error()).stack, { allowReport: false });
+            store.dispatch, 'Failed to read some mods', {
+              text: 'The following mods could not be searched (see log for details):\n'
+                    + readErrors.map(error => `"${error}"`).join('\n'),
+              stack: stackErr.stack,
+            }, { allowReport: false });
         }
         if (discovery === undefined) {
           return Promise.resolve([]);
@@ -145,15 +149,16 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameI
       })
       .then((fileNames: string[]) => {
         return Promise
-          .filter(fileNames, val =>
-            (pluginStates[val] === undefined) && isPlugin(modPath, val))
-          .each(fileName => setPluginState(modPath, fileName))
-          .then(() => {
-          if (Object.keys(pluginStates).length > 0) {
-            store.dispatch(setPluginList(pluginStates));
-          }
-          return Promise.resolve();
-        });
+          .filter(fileNames, val => isPlugin(modPath, val))
+          .then(pluginNames => {
+            store.dispatch(setDeployedPluginList(pluginNames));
+            pluginNames
+              .filter(val => pluginStates[val] === undefined)
+              .forEach(fileName => setPluginState(modPath, fileName));
+            if (Object.keys(pluginStates).length > 0) {
+              store.dispatch(setAvailablePluginList(pluginStates));
+            }
+          });
       })
       .catch((err: Error) => {
         util.showError(store.dispatch, 'Failed to update plugin list', err);
@@ -743,6 +748,19 @@ function init(context: IExtensionContextExt) {
 
       context.api.events.on('did-update-masterlist', () => {
         ipcRenderer.send('did-update-masterlist');
+      });
+
+      context.api.onAsync('did-deploy', () => {
+        const state = context.api.store.getState();
+        const gameId = selectors.activeGameId(state);
+        const discovery = selectors.discoveryByGame(state, gameId);
+        const game = util.getGame(gameId);
+        const modPath = game.getModPaths(discovery.path)[''];
+        return fs.readdirAsync(modPath)
+          .filter(file => isPlugin(modPath, file))
+          .then(files => {
+            store.dispatch(setDeployedPluginList(files));
+          });
       });
 
       context.api.events.on('mod-enabled', (profileId: string, modId: string) => {
