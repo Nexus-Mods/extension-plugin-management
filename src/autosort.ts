@@ -286,7 +286,13 @@ class LootInterface {
   // tslint:disable-next-line:member-ordering
   private init = Bluebird.method(async (gameMode: string, gamePath: string) => {
     const localPath = pluginPath(gameMode);
-    await fs.ensureDirAsync(localPath);
+    try {
+      await fs.ensureDirAsync(localPath);
+    } catch (err) {
+      this.mExtensionApi.showErrorNotification('Failed to create necessary directory', err, {
+          allowReport: false,
+        });
+    }
 
     let loot: any;
 
