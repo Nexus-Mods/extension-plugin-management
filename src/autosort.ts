@@ -306,8 +306,9 @@ class LootInterface {
       } as any);
       return { game: gameMode, loot: undefined };
     }
-    const masterlistPath = path.join(remote.app.getPath('userData'), gameMode,
-                                     'masterlist', 'masterlist.yaml');
+    const masterlistRepoPath = path.join(remote.app.getPath('userData'), gameMode,
+                                     'masterlist');
+    const masterlistPath = path.join(masterlistRepoPath, 'masterlist.yaml');
     try {
       await fs.ensureDirAsync(path.dirname(masterlistPath));
       const updated = await loot.updateMasterlistAsync(
@@ -317,7 +318,13 @@ class LootInterface {
       log('info', 'updated loot masterlist', updated);
       this.mExtensionApi.events.emit('did-update-masterlist');
     } catch (err) {
-      this.mExtensionApi.showErrorNotification('Failed to update masterlist', err, {
+      const t = this.mExtensionApi.translate;
+      this.mExtensionApi.showErrorNotification('Failed to update masterlist', {
+        message: t('This might be a temporary network error. '
+              + 'If it persists, please delete "{{masterlistPath}}" to force Vortex to '
+              + 'download a new copy.', { replace: { masterlistPath: masterlistRepoPath } }),
+        error: err,
+      }, {
           allowReport: false,
         });
     }
