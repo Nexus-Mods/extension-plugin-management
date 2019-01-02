@@ -158,7 +158,9 @@ export function initGameSupport(store: Redux.Store<any>): Promise<void> {
 
 export function pluginPath(gameMode: string): string {
   const gamePath = gameSupport[gameMode].appDataPath;
-  return path.resolve(app.getPath('appData'), '..', 'Local', gamePath);
+  return (process.env.LOCALAPPDATA !== undefined)
+    ? path.join(process.env.LOCALAPPDATA, gamePath)
+    : path.resolve(app.getPath('appData'), '..', 'Local', gamePath);
 }
 
 export function pluginFormat(gameMode: string): PluginFormat {
