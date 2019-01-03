@@ -38,6 +38,12 @@ class LootInterface {
       }
     }
 
+    context.api.events.on('restart-helpers', async () => {
+      const { game, loot } = await this.mInitPromise;
+      const gameMode = selectors.activeGameId(store.getState());
+      this.startStopLoot(context, gameMode, loot)
+    });
+
     // on demand, re-sort the plugin list
     context.api.events.on('autosort-plugins', this.onSort);
 
@@ -119,6 +125,10 @@ class LootInterface {
       // no change
       return;
     }
+    this.startStopLoot(context, gameMode, loot);
+  }
+
+  private startStopLoot(context: types.IExtensionContext, gameMode: string, loot: LootAsync) {
     if (loot !== undefined) {
       // close the loot instance of the old game, but give it a little time, otherwise it may try to
       // to run instructions after being closed.
