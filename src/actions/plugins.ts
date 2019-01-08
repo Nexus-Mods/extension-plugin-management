@@ -1,4 +1,4 @@
-import {IPlugins, IPluginNotification} from '../types/IPlugins';
+import {IPlugins} from '../types/IPlugins';
 
 import { createAction } from 'redux-act';
 

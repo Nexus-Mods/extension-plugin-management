@@ -561,7 +561,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private deploy = () => {
-    this.context.api.events.emit('deploy-mods');
+    this.context.api.events.emit('deploy-mods', () => undefined);
   }
 
   private isMaster(filePath: string, flag: boolean) {
