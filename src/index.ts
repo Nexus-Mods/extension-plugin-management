@@ -1,5 +1,5 @@
 import { setPluginEnabled, updatePluginOrder, setPluginOrder } from './actions/loadOrder';
-import { setAvailablePluginList, updatePluginWarnings, setDeployedPluginList } from './actions/plugins';
+import { setPluginList, updatePluginWarnings } from './actions/plugins';
 import { removeGroupRule, setGroup } from './actions/userlist';
 import { openGroupEditor, setCreateRule } from './actions/userlistEdit';
 import { loadOrderReducer } from './reducers/loadOrder';
@@ -149,15 +149,14 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameI
       })
       .then((fileNames: string[]) => {
         return Promise
-          .filter(fileNames, val => isPlugin(modPath, val))
-          .then(pluginNames => {
-            store.dispatch(setDeployedPluginList(pluginNames));
-            pluginNames
-              .filter(val => pluginStates[val] === undefined)
-              .forEach(fileName => setPluginState(modPath, fileName));
+          .filter(fileNames, val =>
+            (pluginStates[val] === undefined) && isPlugin(modPath, val))
+          .each(fileName => setPluginState(modPath, fileName))
+          .then(() => {
             if (Object.keys(pluginStates).length > 0) {
-              store.dispatch(setAvailablePluginList(pluginStates));
+            store.dispatch(setPluginList(pluginStates));
             }
+          return Promise.resolve();
           });
       })
       .catch((err: Error) => {
@@ -748,19 +747,6 @@ function init(context: IExtensionContextExt) {
 
       context.api.events.on('did-update-masterlist', () => {
         ipcRenderer.send('did-update-masterlist');
-      });
-
-      context.api.onAsync('did-deploy', () => {
-        const state = context.api.store.getState();
-        const gameId = selectors.activeGameId(state);
-        const discovery = selectors.discoveryByGame(state, gameId);
-        const game = util.getGame(gameId);
-        const modPath = game.getModPaths(discovery.path)[''];
-        return fs.readdirAsync(modPath)
-          .filter(file => isPlugin(modPath, file))
-          .then(files => {
-            store.dispatch(setDeployedPluginList(files));
-          });
       });
 
       context.api.events.on('mod-enabled', (profileId: string, modId: string) => {

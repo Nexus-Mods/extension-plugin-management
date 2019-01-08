@@ -45,7 +45,6 @@ interface IBaseProps {
 interface IConnectedProps {
   gameMode: string;
   plugins: IPlugins;
-  deployedPlugins: string[];
   loadOrder: { [name: string]: ILoadOrder };
   autoSort: boolean;
   activity: string[];
@@ -453,10 +452,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
   public componentWillMount() {
     const { plugins } = this.props;
-    this.updateInstalledNativePlugins(this.props);
     const parsed = this.emptyPluginParsed();
     const loot = this.emptyPluginLOOT();
-
     const combined = this.detailedPlugins(plugins, loot, parsed);
     this.setState(update(this.state, {
       pluginsParsed: { $set: parsed },
@@ -479,11 +476,6 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentWillReceiveProps(nextProps: IProps) {
-    if ((this.props.deployedPlugins !== nextProps.deployedPlugins)
-        || (this.props.nativePlugins !== nextProps.nativePlugins)) {
-      this.updateInstalledNativePlugins(nextProps);
-    }
-
     if (this.props.plugins !== nextProps.plugins) {
       this.updatePlugins(nextProps.plugins);
     }
@@ -498,15 +490,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, needToDeploy, deployedPlugins } = this.props;
+    const { t, needToDeploy } = this.props;
     const { pluginsCombined } = this.state;
-
-    const visiblePlugins = deployedPlugins.reduce((prev, pluginName) => {
-      if (pluginsCombined[pluginName] !== undefined) {
-        prev[pluginName] = pluginsCombined[pluginName];
-      }
-      return prev;
-    }, {});
 
     const PanelX: any = Panel;
     return (
@@ -531,7 +516,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
                     tableId='gamebryo-plugins'
                     actions={this.actions}
                     staticElements={[this.pluginEnabledAttribute, ...this.pluginAttributes]}
-                    data={visiblePlugins}
+                    data={pluginsCombined}
                   />
                 </PanelX.Body>
               </Panel>
@@ -640,20 +625,18 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             pluginsCombined: { $set: pluginsCombined },
           }));
         }
-      });
-  }
 
-  private updateInstalledNativePlugins(props: IProps) {
-    const { deployedPlugins, nativePlugins } = props;
+        const pluginsFlat = Object.keys(pluginsCombined).map(pluginId => pluginsCombined[pluginId]);
 
-    const deployedSet = new Set(deployedPlugins.map(name => name.toLowerCase()));
-
-    this.installedNative = nativePlugins
-      .filter(name => deployedSet.has(name))
+        const { nativePlugins } = this.props;
+        this.installedNative = nativePlugins.filter(name =>
+          pluginsFlat.find(
+            (plugin: IPluginCombined) => name === plugin.name.toLowerCase()) !== undefined)
       .reduce((prev, name, idx) => {
         prev[name] = idx;
         return prev;
       }, {});
+      });
   }
 
   private enableSelected = (pluginIds: string[]) => {
@@ -880,7 +863,6 @@ function mapStateToProps(state: any): IConnectedProps {
   return {
     gameMode,
     plugins: state.session.plugins.pluginList,
-    deployedPlugins: state.session.plugins.deployedPlugins,
     loadOrder: state.loadOrder,
     userlist: state.userlist || emptyList,
     masterlist: state.masterlist || emptyList,
