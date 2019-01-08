@@ -41,6 +41,11 @@ export function getPluginFlags(plugin: IPluginCombined, t: I18next.TranslationFu
       && (Object.keys(plugin.warnings).find(key => plugin.warnings[key] !== false) !== undefined)) {
     result.push(t('Warnings'));
   }
+
+  if (!plugin.deployed) {
+    result.push(t('Not deployed'));
+  }
+
   return result;
 }
 
@@ -140,6 +145,18 @@ const PluginFlags = (props: IProps): JSX.Element => {
         tooltip={t('Must not be cleaned (LOOT)', { ns: 'gamebryo-plugin' })}
       />);
   }*/
+
+  if (!plugin.deployed) {
+    const key = `ico-undeployed-${plugin.name}`;
+    flags.push(
+      <tooltip.Icon
+        id={key}
+        key={key}
+        name='hide'
+        tooltip={t('Not deployed', { ns: 'gamebryo-plugin' })}
+      />
+    );
+  }
 
   return (
     <div>

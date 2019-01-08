@@ -34,6 +34,11 @@ export interface IPlugin {
    * icon under plugin flags.
    */
   warnings?: {[key: string]: boolean};
+
+  /**
+   * true if the plugin is currently deployed
+   */
+  deployed?: boolean;
 }
 
 export interface IPluginNotification {

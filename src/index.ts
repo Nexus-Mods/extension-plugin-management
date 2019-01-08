@@ -74,7 +74,7 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameI
   const pluginSources: { [pluginName: string]: string } = {};
   const pluginStates: IPlugins = {};
 
-  const setPluginState = (modPath: string, fileName: string) => {
+  const setPluginState = (modPath: string, fileName: string, deployed: boolean) => {
     const modName = pluginSources[fileName] !== undefined
       ? pluginSources[fileName]
       : '';
@@ -83,6 +83,7 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameI
       filePath: path.join(modPath, fileName),
       isNative: isNativePlugin(gameId, fileName),
       warnings: util.getSafe(state, ['session', 'plugins', 'pluginList', fileName, 'warnings'], {}),
+      deployed,
     };
     return Promise.resolve();
   }
@@ -122,7 +123,7 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameI
                  .filter(fileName => isPlugin(modInstPath, fileName))
                  .each(fileName => {
                   pluginSources[fileName] = mod.id;
-                  setPluginState(modInstPath, fileName);
+                  setPluginState(modInstPath, fileName, false);
                  })
                  .catch((err: Error) => {
                    readErrors.push(mod.id);
@@ -148,15 +149,20 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameI
         return fs.readdirAsync(modPath).catch(err => []);
       })
       .then((fileNames: string[]) => {
+
         return Promise
-          .filter(fileNames, val =>
-            (pluginStates[val] === undefined) && isPlugin(modPath, val))
-          .each(fileName => setPluginState(modPath, fileName))
+          .filter(fileNames, val => isPlugin(modPath, val))
+          .each(fileName => setPluginState(modPath, fileName, true))
           .then(() => {
             if (Object.keys(pluginStates).length > 0) {
-            store.dispatch(setPluginList(pluginStates));
+              store.dispatch(setPluginList(pluginStates));
+              const notDeployed = Object.keys(pluginStates).find(key =>
+                !pluginStates[key].deployed);
+              if (notDeployed !== undefined) {
+                store.dispatch((actions as any).setDeploymentNecessary(gameId, true));
+              }
             }
-          return Promise.resolve();
+            return Promise.resolve();
           });
       })
       .catch((err: Error) => {

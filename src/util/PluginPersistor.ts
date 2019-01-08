@@ -249,7 +249,10 @@ class PluginPersistor implements types.IPersistor {
       }
       // ignore files that don't exist on disk
       if (plugins[key] === undefined) {
-        return;
+        plugins[key] = {
+          enabled: false,
+          loadOrder: -1,
+        };
       }
 
       plugins[key].enabled = keyEnabled || nativePluginSet.has(key.toLowerCase());
