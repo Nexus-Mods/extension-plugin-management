@@ -74,11 +74,13 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameI
   const pluginSources: { [pluginName: string]: string } = {};
   const pluginStates: IPlugins = {};
 
+  let normalize = (input: string) => input;
+
   const setPluginState = (modPath: string, fileName: string, deployed: boolean) => {
     const modName = pluginSources[fileName] !== undefined
       ? pluginSources[fileName]
       : '';
-    pluginStates[fileName] = {
+    pluginStates[normalize(fileName)] = {
       modName,
       filePath: path.join(modPath, fileName),
       isNative: isNativePlugin(gameId, fileName),
@@ -112,25 +114,29 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameI
   const installBasePath = selectors.installPathForGame(state, gameId);
   // create a cache of all plugins that originate from a mod so we can assign
   // the correct origin further down
-  return Promise.map(enabledModIds, (modId: string) => {
-             const mod = gameMods[modId];
-             if ((mod === undefined) || (mod.installationPath === undefined)) {
-               log('error', 'mod not found', { gameId, modId });
-               return;
-             }
-             const modInstPath = path.join(installBasePath, mod.installationPath)
-             return fs.readdirAsync(modInstPath)
-                 .filter(fileName => isPlugin(modInstPath, fileName))
-                 .each(fileName => {
-                  pluginSources[fileName] = mod.id;
-                  setPluginState(modInstPath, fileName, false);
-                 })
-                 .catch((err: Error) => {
-                   readErrors.push(mod.id);
-                   log('warn', 'failed to read mod directory',
-                       {path: mod.installationPath, error: err.message});
-                 });
-           })
+  return util.getNormalizeFunc(modPath)
+    .then(normalizeIn => {
+      normalize = normalizeIn;
+      return Promise.map(enabledModIds, (modId: string) => {
+        const mod = gameMods[modId];
+        if ((mod === undefined) || (mod.installationPath === undefined)) {
+          log('error', 'mod not found', { gameId, modId });
+          return;
+        }
+        const modInstPath = path.join(installBasePath, mod.installationPath)
+        return fs.readdirAsync(modInstPath)
+          .filter(fileName => isPlugin(modInstPath, fileName))
+          .each(fileName => {
+            pluginSources[fileName] = mod.id;
+            setPluginState(modInstPath, fileName, false);
+          })
+          .catch((err: Error) => {
+            readErrors.push(mod.id);
+            log('warn', 'failed to read mod directory',
+              { path: mod.installationPath, error: err.message });
+          });
+      })
+    })
       .then(() => {
         if (readErrors.length > 0) {
           util.showError(
