@@ -106,7 +106,7 @@ class GroupSelect extends React.PureComponent<IGroupSelectProps, {}> {
     );
 
     let isCustom: boolean = userlist.plugins.find(plugin => {
-        const refPlugin = plugins.find(iter => iter.name === plugin.name);
+        const refPlugin = plugins.find(iter => iter.id === plugin.name.toLowerCase());
         return (refPlugin !== undefined) && (plugin.group !== undefined);
       }) !== undefined;
 
@@ -128,7 +128,7 @@ class GroupSelect extends React.PureComponent<IGroupSelectProps, {}> {
 
   private changeGroup = (selection: { name: string, value: string }) => {
     const { plugins, onSetGroup } = this.props;
-    plugins.forEach(plugin => onSetGroup(plugin.name,
+    plugins.forEach(plugin => onSetGroup(plugin.id,
       selection ? selection.value : undefined));
   }
 }
@@ -228,9 +228,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       edit: {},
       isSortable: true,
       calc: (plugin: IPluginCombined) => {
-        const nameL = plugin.name.toLowerCase();
         return plugin.isNative
-          ? this.installedNative[nameL]
+          ? this.installedNative[plugin.id]
           : plugin.loadOrder;
       },
       sortFuncRaw: (lhs, rhs) => this.sortByLoadOrder(lhs, rhs),
@@ -378,9 +377,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
           if (value === undefined) {
             // toggle
-            this.props.onSetPluginEnabled(plugin.name, !plugin.enabled);
+            this.props.onSetPluginEnabled(plugin.id, !plugin.enabled);
           } else {
-            this.props.onSetPluginEnabled(plugin.name, value === 'enabled');
+            this.props.onSetPluginEnabled(plugin.id, value === 'enabled');
           }
         },
       },
@@ -615,8 +614,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           });
       }))
       .then(() => {
-        const pluginsCombined = this.detailedPlugins(plugins, pluginsLoot,
-          pluginsParsed);
+        const pluginsCombined = this.detailedPlugins(plugins, pluginsLoot, pluginsParsed);
 
         if (this.mMounted) {
           this.setState(update(this.state, {
@@ -631,7 +629,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         const { nativePlugins } = this.props;
         this.installedNative = nativePlugins.filter(name =>
           pluginsFlat.find(
-            (plugin: IPluginCombined) => name === plugin.name.toLowerCase()) !== undefined)
+            (plugin: IPluginCombined) => name === plugin.id) !== undefined)
       .reduce((prev, name, idx) => {
         prev[name] = idx;
         return prev;
@@ -679,14 +677,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const res = {};
     byLO.forEach((plugin: IPluginCombined) => {
       if (!plugin.enabled && !plugin.isNative) {
-        res[plugin.name] = { modIndex: -1 };
+        res[plugin.id] = { modIndex: -1 };
       } else if (plugin.isLight) {
-        res[plugin.name] = {
+        res[plugin.id] = {
           modIndex: 0xFE,
           eslIndex: eslIndex++,
         };
       } else {
-        res[plugin.name] = {
+        res[plugin.id] = {
           modIndex: modIndex++,
         };
       }
@@ -700,18 +698,19 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   ): { [id: string]: IPluginCombined } {
     const { loadOrder, userlist } = this.props;
 
-    const pluginNames = Object.keys(plugins);
+    const pluginIds = Object.keys(plugins);
 
-    const pluginObjects: IPluginCombined[] = pluginNames.map((pluginName: string) => {
-      const userlistEntry = userlist.plugins.find(entry => entry.name === pluginName);
+    const pluginObjects: IPluginCombined[] = pluginIds.map((pluginId: string) => {
+      const userlistEntry = userlist.plugins.find(entry => entry.name.toLowerCase() === pluginId);
       const res = {
-        name: pluginName,
+        id: pluginId,
+        name: path.basename(plugins[pluginId].filePath),
         modIndex: -1,
-        enabled: plugins[pluginName].isNative ? undefined : false,
-        ...plugins[pluginName],
-        ...loadOrder[pluginName],
-        ...pluginsLoot[pluginName],
-        ...pluginsParsed[pluginName],
+        enabled: plugins[pluginId].isNative ? undefined : false,
+        ...plugins[pluginId],
+        ...loadOrder[pluginId],
+        ...pluginsLoot[pluginId],
+        ...pluginsParsed[pluginId],
       };
 
       if ((userlistEntry !== undefined)
@@ -725,9 +724,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const modIndices = this.modIndices(pluginObjects);
     const result: { [id: string]: IPluginCombined } = {};
     pluginObjects.forEach((plugin: IPluginCombined) => {
-      result[plugin.name] = plugin;
-      result[plugin.name].modIndex = modIndices[plugin.name].modIndex;
-      result[plugin.name].eslIndex = modIndices[plugin.name].eslIndex;
+      result[plugin.id] = plugin;
+      result[plugin.id].modIndex = modIndices[plugin.id].modIndex;
+      result[plugin.id].eslIndex = modIndices[plugin.id].eslIndex;
     });
 
     return result;
@@ -739,12 +738,12 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const updateSet = {};
     const pluginsFlat = Object.keys(pluginsCombined).map(pluginId => pluginsCombined[pluginId]);
     pluginsFlat.forEach((plugin, idx) => {
-      const lo = loadOrder[plugin.name] || {
+      const lo = loadOrder[plugin.id] || {
         enabled: false,
         loadOrder: undefined,
       };
       Object.assign(pluginsFlat[idx], lo);
-      updateSet[plugin.name] = {
+      updateSet[plugin.id] = {
         enabled: { $set: lo.enabled },
         loadOrder: { $set: lo.loadOrder },
       };
@@ -767,18 +766,19 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     const updateSet = {};
     userlist.forEach(plugin => {
-      if (pluginsCombined[plugin.name] === undefined) {
+      const pluginId = plugin.name.toLowerCase();
+      if (pluginsCombined[pluginId] === undefined) {
         return;
       }
 
-      updateSet[plugin.name] = {};
+      updateSet[pluginId] = {};
 
       if (plugin.group !== undefined) {
-        updateSet[plugin.name]['group'] = { $set: plugin.group };
+        updateSet[pluginId]['group'] = { $set: plugin.group };
       } else {
         const loot = pluginsLoot[plugin.name];
         if (loot !== undefined) {
-          updateSet[plugin.name]['group'] = { $set: loot.group };
+          updateSet[pluginId]['group'] = { $set: loot.group };
         }
       }
     });
@@ -821,9 +821,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   private sortByLoadOrder = (lhs: IPluginCombined, rhs: IPluginCombined) => {
     if (this.installedNative !== undefined) {
       const lhsLO = lhs.isNative
-        ? this.installedNative[lhs.name.toLowerCase()] : (lhs.loadOrder | 0) + 1000;
+        ? this.installedNative[lhs.id] : (lhs.loadOrder | 0) + 1000;
       const rhsLO = rhs.isNative
-        ? this.installedNative[rhs.name.toLowerCase()] : (rhs.loadOrder | 0) + 1000;
+        ? this.installedNative[rhs.id] : (rhs.loadOrder | 0) + 1000;
       return lhsLO - rhsLO;
     } else {
       return lhs.loadOrder - rhs.loadOrder;

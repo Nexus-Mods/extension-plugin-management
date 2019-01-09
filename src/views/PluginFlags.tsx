@@ -62,7 +62,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
   const flags: JSX.Element[] = [];
 
   if (plugin.isMaster) {
-    const key = `ico-master-${plugin.name}`;
+    const key = `ico-master-${plugin.id}`;
     flags.push(
       <tooltip.Icon
         id={key}
@@ -73,7 +73,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
   }
  
   if (plugin.isLight) {
-    const key = `ico-light-${plugin.name}`;
+    const key = `ico-light-${plugin.id}`;
     flags.push(
       <tooltip.Icon
         id={key}
@@ -84,7 +84,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
   }
 
   if (plugin.parseFailed) {
-    const key = `ico-parsefailed-${plugin.name}`;
+    const key = `ico-parsefailed-${plugin.id}`;
     flags.push(
       <tooltip.Icon
         id={key}
@@ -95,7 +95,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
   }
 
   if (plugin.isNative) {
-    const key = `ico-native-${plugin.name}`;
+    const key = `ico-native-${plugin.id}`;
     flags.push(
       <tooltip.Icon
         id={key}
@@ -116,7 +116,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
         .map(key => `- ${warningText(t, key)}`)
         .join('\n');
 
-      const key = `ico-notifications-${plugin.name}`;
+      const key = `ico-notifications-${plugin.id}`;
       flags.push(
         <tooltip.Icon
           id={key}
@@ -127,7 +127,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
     }
   }
 
-  const cleanKey = `ico-clean-${plugin.name}`;
+  const cleanKey = `ico-clean-${plugin.id}`;
   if ((plugin.dirtyness !== undefined) && (plugin.dirtyness.length > 0)) {
     flags.push(
       <tooltip.Icon
@@ -147,7 +147,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
   }*/
 
   if (!plugin.deployed) {
-    const key = `ico-undeployed-${plugin.name}`;
+    const key = `ico-undeployed-${plugin.id}`;
     flags.push(
       <tooltip.Icon
         id={key}

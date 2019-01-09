@@ -250,7 +250,7 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
   }
 
   private hideContext = () => {
-    if (Date.now() - this.mContextTime < 20) {
+    if (Date.now() - this.mContextTime < 100) {
       // workaround: somehow I can't prevent the event that opens the context menu from being
       // propagated up, which will be picked up as close event
       return;

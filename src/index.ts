@@ -74,13 +74,11 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameI
   const pluginSources: { [pluginName: string]: string } = {};
   const pluginStates: IPlugins = {};
 
-  let normalize = (input: string) => input;
-
   const setPluginState = (modPath: string, fileName: string, deployed: boolean) => {
     const modName = pluginSources[fileName] !== undefined
       ? pluginSources[fileName]
       : '';
-    pluginStates[normalize(fileName)] = {
+    pluginStates[fileName.toLowerCase()] = {
       modName,
       filePath: path.join(modPath, fileName),
       isNative: isNativePlugin(gameId, fileName),
@@ -114,66 +112,62 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameI
   const installBasePath = selectors.installPathForGame(state, gameId);
   // create a cache of all plugins that originate from a mod so we can assign
   // the correct origin further down
-  return util.getNormalizeFunc(modPath)
-    .then(normalizeIn => {
-      normalize = normalizeIn;
-      return Promise.map(enabledModIds, (modId: string) => {
-        const mod = gameMods[modId];
-        if ((mod === undefined) || (mod.installationPath === undefined)) {
-          log('error', 'mod not found', { gameId, modId });
-          return;
-        }
-        const modInstPath = path.join(installBasePath, mod.installationPath)
-        return fs.readdirAsync(modInstPath)
-          .filter(fileName => isPlugin(modInstPath, fileName))
-          .each(fileName => {
-            pluginSources[fileName] = mod.id;
-            setPluginState(modInstPath, fileName, false);
-          })
-          .catch((err: Error) => {
-            readErrors.push(mod.id);
-            log('warn', 'failed to read mod directory',
-              { path: mod.installationPath, error: err.message });
-          });
-      })
-    })
-      .then(() => {
-        if (readErrors.length > 0) {
-          util.showError(
-            store.dispatch, 'Failed to read some mods', {
-              text: 'The following mods could not be searched (see log for details):\n'
-                    + readErrors.map(error => `"${error}"`).join('\n'),
-              stack: stackErr.stack,
-            }, { allowReport: false });
-        }
-        if (discovery === undefined) {
-          return Promise.resolve([]);
-        }
-        // if reading the mod directory fails that's probably a broken installation,
-        // but it's not the responsible of this extension to report that, the
-        // game mode management will notice this as well.
-        return fs.readdirAsync(modPath).catch(err => []);
-      })
-      .then((fileNames: string[]) => {
-
-        return Promise
-          .filter(fileNames, val => isPlugin(modPath, val))
-          .each(fileName => setPluginState(modPath, fileName, true))
-          .then(() => {
-            if (Object.keys(pluginStates).length > 0) {
-              store.dispatch(setPluginList(pluginStates));
-              const notDeployed = Object.keys(pluginStates).find(key =>
-                !pluginStates[key].deployed);
-              if (notDeployed !== undefined) {
-                store.dispatch((actions as any).setDeploymentNecessary(gameId, true));
-              }
-            }
-            return Promise.resolve();
-          });
+  return Promise.map(enabledModIds, (modId: string) => {
+    const mod = gameMods[modId];
+    if ((mod === undefined) || (mod.installationPath === undefined)) {
+      log('error', 'mod not found', { gameId, modId });
+      return;
+    }
+    const modInstPath = path.join(installBasePath, mod.installationPath)
+    return fs.readdirAsync(modInstPath)
+      .filter(fileName => isPlugin(modInstPath, fileName))
+      .each(fileName => {
+        pluginSources[fileName] = mod.id;
+        setPluginState(modInstPath, fileName, false);
       })
       .catch((err: Error) => {
-        util.showError(store.dispatch, 'Failed to update plugin list', err);
+        readErrors.push(mod.id);
+        log('warn', 'failed to read mod directory',
+          { path: mod.installationPath, error: err.message });
       });
+  })
+    .then(() => {
+      if (readErrors.length > 0) {
+        util.showError(
+          store.dispatch, 'Failed to read some mods', {
+            text: 'The following mods could not be searched (see log for details):\n'
+              + readErrors.map(error => `"${error}"`).join('\n'),
+            stack: stackErr.stack,
+          }, { allowReport: false });
+      }
+      if (discovery === undefined) {
+        return Promise.resolve([]);
+      }
+      // if reading the mod directory fails that's probably a broken installation,
+      // but it's not the responsible of this extension to report that, the
+      // game mode management will notice this as well.
+      return fs.readdirAsync(modPath).catch(err => []);
+    })
+    .then((fileNames: string[]) => {
+
+      return Promise
+        .filter(fileNames, val => isPlugin(modPath, val))
+        .each(fileName => setPluginState(modPath, fileName, true))
+        .then(() => {
+          if (Object.keys(pluginStates).length > 0) {
+            store.dispatch(setPluginList(pluginStates));
+            const notDeployed = Object.keys(pluginStates).find(key =>
+              !pluginStates[key].deployed);
+            if (notDeployed !== undefined) {
+              store.dispatch((actions as any).setDeploymentNecessary(gameId, true));
+            }
+          }
+          return Promise.resolve();
+        });
+    })
+    .catch((err: Error) => {
+      util.showError(store.dispatch, 'Failed to update plugin list', err);
+    });
 }
 
 interface IExtensionContextExt extends types.IExtensionContext {

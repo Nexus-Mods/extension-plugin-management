@@ -80,6 +80,10 @@ export interface IPluginsLoot { [fileName: string]: IPluginLoot; }
 export type IPluginCombined = IPlugin & ILoadOrder & IPluginParsed
                             & IPluginLoot & IPluginUserlist & {
   /**
+   * plugin id, which is the normalized (lower cased) name
+   */
+  id: string;
+  /**
    * file name of the plugin
    *
    * @type {string}

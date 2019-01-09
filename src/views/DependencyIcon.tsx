@@ -102,7 +102,7 @@ const dependencySource: DragSourceSpec<IProps, any> = {
   beginDrag(props: IProps, monitor: DragSourceMonitor, component) {
     updateCursorPos(monitor, component, props.onSetSource, props.onSetTarget);
     return {
-      id: props.plugin.name,
+      id: props.plugin.id,
     };
   },
   endDrag(props: IProps, monitor: DragSourceMonitor,
@@ -132,7 +132,7 @@ const dependencySource: DragSourceSpec<IProps, any> = {
 const dependencyTarget: DropTargetSpec<IProps> = {
   drop(props: IProps, monitor: DropTargetMonitor, component) {
     return {
-      id: props.plugin.name,
+      id: props.plugin.id,
     };
   },
 };
@@ -182,14 +182,14 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       if (nextProps.isDragging) {
         pos = componentCenter(this);
       }
-      nextProps.onSetSource(nextProps.plugin.name, pos);
+      nextProps.onSetSource(nextProps.plugin.id, pos);
     } else if (this.props.isOver !== nextProps.isOver) {
       let pos;
       if (nextProps.isOver) {
         pos = componentCenter(this);
       }
       nextProps.onHighlight(nextProps.isOver);
-      nextProps.onSetTarget(nextProps.plugin.name, pos);
+      nextProps.onSetTarget(nextProps.plugin.id, pos);
     }
   }
 
@@ -197,7 +197,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     const { plugin, quickEdit } = this.props;
 
     if (quickEdit.plugin !== undefined) {
-      return (plugin.name === quickEdit.plugin)
+      return (plugin.id === quickEdit.plugin)
         ? this.renderQuickEditClose()
         : this.renderQuickEditCheckbox();
     } else {
@@ -226,9 +226,9 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     const refPlugin = userlist.find(iter => iter.name === quickEdit.plugin);
     const refMasterPlugin = masterlist.find(iter => iter.name === quickEdit.plugin);
     const masterEnabled =
-      (util.getSafe(refMasterPlugin, [quickEdit.mode], []).indexOf(plugin.name) !== -1);
+      (util.getSafe(refMasterPlugin, [quickEdit.mode], []).indexOf(plugin.id) !== -1);
     const thisEnabled = masterEnabled
-      || (util.getSafe(refPlugin, [quickEdit.mode], []).indexOf(plugin.name) !== -1);
+      || (util.getSafe(refPlugin, [quickEdit.mode], []).indexOf(plugin.id) !== -1);
 
     const tooltipText = t('load {{ reference }} after {{ name }}',
       {
@@ -331,7 +331,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
 
     const popover = (
       <Popover
-        id={`popover-${plugin.name}`}
+        id={`popover-${plugin.id}`}
         style={{ maxWidth: 500 }}
       >
         <div style={{ maxHeight: 300, overflowY: 'auto' }}>
@@ -348,9 +348,9 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     const connectorIcon = connectDragSource(
         <div style={{ display: 'inline' }}>
           <tooltip.IconButton
-            id={`btn-meta-data-${plugin.name}`}
+            id={`btn-meta-data-${plugin.id}`}
             className={classes.join(' ')}
-            key={`rules-${plugin.name}`}
+            key={`rules-${plugin.id}`}
             tooltip={t('Drag to another plugin to set userlist rule', { ns: 'gamebryo-plugin' })}
             icon='connection'
             ref={this.setRef}
@@ -401,7 +401,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   private startQuickEdit = () => {
     const { plugin } = this.props;
     this.hideOverlay();
-    this.props.onQuickEdit(plugin.name, 'after');
+    this.props.onQuickEdit(plugin.id, 'after');
   }
 
   private closeQuickEdit = () => {
@@ -411,11 +411,11 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   private toggleQuick = () => {
     const { onAddRule, onRemoveRule, plugin, quickEdit, userlist } = this.props;
     const refPlugin = userlist.find(iter => iter.name === quickEdit.plugin);
-    const thisEnabled = (util.getSafe(refPlugin, [quickEdit.mode], []).indexOf(plugin.name) !== -1);
+    const thisEnabled = (util.getSafe(refPlugin, [quickEdit.mode], []).indexOf(plugin.id) !== -1);
     if (thisEnabled) {
-      onRemoveRule(quickEdit.plugin, plugin.name, quickEdit.mode);
+      onRemoveRule(quickEdit.plugin, plugin.id, quickEdit.mode);
     } else {
-      onAddRule(quickEdit.plugin, plugin.name, quickEdit.mode);
+      onAddRule(quickEdit.plugin, plugin.id, quickEdit.mode);
     }
   }
 
@@ -434,7 +434,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   private onRemove = (evt) => {
     const { plugin, onRemoveRule } = this.props;
     const [ ruleType, pluginId ] = splitOnce(evt.currentTarget.value, ':');
-    onRemoveRule(plugin.name, pluginId, ruleType);
+    onRemoveRule(plugin.id, pluginId, ruleType);
   }
 }
 
