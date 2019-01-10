@@ -1,5 +1,5 @@
 import {updatePluginOrder} from './actions/loadOrder';
-import {IPluginsLoot} from './types/IPlugins';
+import {IPluginsLoot, IPlugins} from './types/IPlugins';
 import {gameSupported, pluginPath} from './util/gameSupport';
 
 import * as Bluebird from 'bluebird';
@@ -7,7 +7,7 @@ import { remote } from 'electron';
 import { LootAsync } from 'loot';
 import * as path from 'path';
 import {} from 'redux-thunk';
-import {actions, fs, log, selectors, types} from 'vortex-api';
+import {actions, fs, log, selectors, types, util} from 'vortex-api';
 
 const LOOT_LIST_REVISION = 'v0.13';
 
@@ -38,6 +38,12 @@ class LootInterface {
       }
     }
 
+    context.api.events.on('restart-helpers', async () => {
+      const { game, loot } = await this.mInitPromise;
+      const gameMode = selectors.activeGameId(store.getState());
+      this.startStopLoot(context, gameMode, loot)
+    });
+
     // on demand, re-sort the plugin list
     context.api.events.on('autosort-plugins', this.onSort);
 
@@ -61,12 +67,13 @@ class LootInterface {
         if ((gameMode !== game) || !gameSupported(gameMode) || (loot === undefined) || loot.isClosed()) {
           return;
         }
+        const pluginList: IPlugins = state.session.plugins.pluginList;
 
         let pluginNames: string[] = Object
           .keys(state.loadOrder)
           .filter((name: string) => (
-            (state.session.plugins.pluginList[name] !== undefined)
-            && (state.session.plugins.pluginList[name].deployed)))
+            (pluginList[name] !== undefined)
+            && (pluginList[name].deployed)))
           .sort((lhs, rhs) => state.loadOrder[lhs].loadOrder - state.loadOrder[rhs].loadOrder);
 
         // ensure no other sort is in progress
@@ -158,6 +165,10 @@ class LootInterface {
       // no change
       return;
     }
+    this.startStopLoot(context, gameMode, loot);
+  }
+
+  private startStopLoot(context: types.IExtensionContext, gameMode: string, loot: LootAsync) {
     if (loot !== undefined) {
       // close the loot instance of the old game, but give it a little time, otherwise it may try to
       // to run instructions after being closed.
@@ -301,7 +312,7 @@ class LootInterface {
     try {
       loot = Bluebird.promisifyAll(
         await LootProm.createAsync(this.convertGameId(gameMode, false), gamePath,
-                                   localPath, 'en', this.log));
+                                   localPath, 'en', this.log, this.fork));
     } catch (err) {
       this.mExtensionApi.showErrorNotification('Failed to initialize LOOT', err, {
         allowReport: false,
@@ -355,6 +366,12 @@ class LootInterface {
 
     return { game: gameMode, loot };
   });
+
+  private fork = (modulePath: string, args: string[]) => {
+    (this.mExtensionApi as any).runExecutable(process.execPath, [modulePath].concat(args || []), {})
+      .catch(util.ProcessCanceled, () => null)
+      .catch(err => this.mExtensionApi.showErrorNotification('Failed to start LOOT', err));
+  }
 
   private log = (level: number, message: string) => {
     log(this.logLevel(level) as any, message);

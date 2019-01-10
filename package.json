@@ -40,7 +40,7 @@
     "immutability-helper": "^2.7.1",
     "js-yaml": "^3.12.0",
     "json-loader": "^0.5.7",
-    "loot": "Nexus-Mods/node-loot",
+    "loot": "Nexus-Mods/node-loot#custom_ipc",
     "prop-types": "^15.6.2",
     "react": "^16.4.2",
     "react-dnd": "^5.0.0",
