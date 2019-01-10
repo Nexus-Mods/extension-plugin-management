@@ -50,7 +50,6 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
 
       Object.keys(changed).forEach(id => {
         if (id[0] === '+') {
-          const zoom = 1.0 / this.mGraph.zoom();
           // node added
           this.mGraph.add({
             data: { id: san(id.slice(1)), title: changed[id].title },
