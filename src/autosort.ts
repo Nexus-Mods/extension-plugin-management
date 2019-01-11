@@ -234,8 +234,13 @@ class LootInterface {
           dirtyness: [],
           group: undefined,
         };
-        log('error', 'Failed to get plugin meta data from loot', { pluginName, error: err.message });
-        error = err;
+        if (err.arg !== undefined) {
+          // invalid parameter. This simply means that loot has no meta data for this plugin so that's
+          // not a problem
+        } else {
+          log('error', 'Failed to get plugin meta data from loot', { pluginName, error: err.message });
+          error = err;
+        }
       }))
     .then(() => {
       if (error !== undefined) {
