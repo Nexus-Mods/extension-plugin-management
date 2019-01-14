@@ -373,7 +373,12 @@ class LootInterface {
   });
 
   private fork = (modulePath: string, args: string[]) => {
-    (this.mExtensionApi as any).runExecutable(process.execPath, [modulePath].concat(args || []), {})
+    (this.mExtensionApi as any).runExecutable(process.execPath, [modulePath].concat(args || []), {
+      detach: false,
+      env: {
+        ELECTRON_RUN_AS_NODE: '1',
+      },
+    })
       .catch(util.ProcessCanceled, () => null)
       .catch(err => this.mExtensionApi.showErrorNotification('Failed to start LOOT', err));
   }
