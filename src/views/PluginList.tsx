@@ -33,7 +33,7 @@ import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import {ComponentEx, IconBar, ITableRowAction, log, MainPage,
   selectors, Table, TableTextFilter, ToolbarIcon,
-  types, util, FlexLayout,
+  types, util, FlexLayout, Spinner,
 } from 'vortex-api';
 
 const { Usage } = require('vortex-api');
@@ -140,6 +140,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   private mLang: string;
   private mCollator: Intl.Collator;
   private mMounted: boolean = false;
+  private mCachedGameMode: string;
 
   private installedNative: { [name: string]: number } = {};
 
@@ -454,6 +455,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const parsed = this.emptyPluginParsed();
     const loot = this.emptyPluginLOOT();
     const combined = this.detailedPlugins(plugins, loot, parsed);
+    this.mCachedGameMode = this.props.gameMode;
     this.setState(update(this.state, {
       pluginsParsed: { $set: parsed },
       pluginsLoot: { $set: loot },
@@ -489,7 +491,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, needToDeploy } = this.props;
+    const { t, gameMode, needToDeploy } = this.props;
     const { pluginsCombined } = this.state;
 
     const PanelX: any = Panel;
@@ -511,12 +513,18 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             <FlexLayout.Flex>
               <Panel>
                 <PanelX.Body>
-                  <Table
-                    tableId='gamebryo-plugins'
-                    actions={this.actions}
-                    staticElements={[this.pluginEnabledAttribute, ...this.pluginAttributes]}
-                    data={pluginsCombined}
-                  />
+                  {this.mCachedGameMode === gameMode ? (
+                    <Table
+                      tableId='gamebryo-plugins'
+                      actions={this.actions}
+                      staticElements={[this.pluginEnabledAttribute, ...this.pluginAttributes]}
+                      data={pluginsCombined}
+                    />
+                  ) : (
+                    <div className='plugin-list-loading'>
+                      <Spinner />
+                    </div>
+                  )}
                 </PanelX.Body>
               </Panel>
             </FlexLayout.Flex>
@@ -617,6 +625,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         const pluginsCombined = this.detailedPlugins(plugins, pluginsLoot, pluginsParsed);
 
         if (this.mMounted) {
+          this.mCachedGameMode = this.props.gameMode;
           this.setState(update(this.state, {
             pluginsParsed: { $set: pluginsParsed },
             pluginsLoot: { $set: pluginsLoot },
