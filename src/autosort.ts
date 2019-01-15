@@ -375,6 +375,7 @@ class LootInterface {
   private fork = (modulePath: string, args: string[]) => {
     (this.mExtensionApi as any).runExecutable(process.execPath, [modulePath].concat(args || []), {
       detach: false,
+      suggestDeploy: false,
       env: {
         ELECTRON_RUN_AS_NODE: '1',
       },
