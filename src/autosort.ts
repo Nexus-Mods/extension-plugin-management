@@ -205,10 +205,14 @@ class LootInterface {
       // not really interested in these messages but apparently it's the only way to make the api
       // drop its cache of _all_ previously evaluated conditions
       await loot.getGeneralMessagesAsync(true);
+      if (loot.isClosed()) {
+        callback({});
+        return;
+      }
       await loot.loadCurrentLoadOrderStateAsync();
     } catch (err) {
       this.mExtensionApi.showErrorNotification('There were errors getting plugin information from LOOT',
-        err, { allowReport: false });
+        err, { allowReport: false, id: 'gamebryo-plugins-loot-meta-error' });
       callback({});
       return;
     }
@@ -245,7 +249,7 @@ class LootInterface {
     .then(() => {
       if (error !== undefined) {
         this.mExtensionApi.showErrorNotification('There were errors getting plugin information from LOOT',
-          error, { allowReport: false });
+          error, { allowReport: false, id: 'gamebryo-plugins-loot-details-error' });
       }
       callback(result);
     });

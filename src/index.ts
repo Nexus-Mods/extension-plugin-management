@@ -149,7 +149,6 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameI
       return fs.readdirAsync(modPath).catch(err => []);
     })
     .then((fileNames: string[]) => {
-
       return Promise
         .filter(fileNames, val => isPlugin(modPath, val))
         .each(fileName => setPluginState(modPath, fileName, true))

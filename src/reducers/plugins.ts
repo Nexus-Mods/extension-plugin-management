@@ -9,8 +9,9 @@ export const pluginsReducer: types.IReducerSpec = {
   reducers: {
     [actions.setPluginList as any]: (state, payload) =>
       util.setSafe(state, ['pluginList'], payload.plugins),
-    [actions.updatePluginWarnings as any]: (state, payload) =>
-      util.setSafe(state, ['pluginList', payload.id, 'warnings', payload.warning], payload.value),
+    [actions.updatePluginWarnings as any]: (state, payload) => (state.pluginList[payload.id] !== undefined)
+      ? util.setSafe(state, ['pluginList', payload.id, 'warnings', payload.warning], payload.value)
+      : state,
   },
   defaults: {
     pluginList: {},

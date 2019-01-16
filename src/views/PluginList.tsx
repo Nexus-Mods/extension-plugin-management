@@ -493,7 +493,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   public render(): JSX.Element {
     const { t, gameMode, needToDeploy } = this.props;
     const { pluginsCombined } = this.state;
-
+    
     const PanelX: any = Panel;
     return (
       <MainPage>
