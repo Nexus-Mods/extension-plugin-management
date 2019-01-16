@@ -701,6 +701,12 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     return res;
   }
 
+  private safeBasename(filePath: string) {
+    return filePath !== undefined
+      ? path.basename(filePath)
+      : '';
+  }
+
   private detailedPlugins(plugins: IPlugins,
     pluginsLoot: { [pluginId: string]: IPluginLoot },
     pluginsParsed: { [pluginId: string]: IPluginParsed },
@@ -713,7 +719,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       const userlistEntry = userlist.plugins.find(entry => entry.name.toLowerCase() === pluginId);
       const res = {
         id: pluginId,
-        name: path.basename(plugins[pluginId].filePath),
+        name: this.safeBasename(plugins[pluginId].filePath),
         modIndex: -1,
         enabled: plugins[pluginId].isNative ? undefined : false,
         ...plugins[pluginId],
