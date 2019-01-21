@@ -17,6 +17,9 @@ export interface IPlugin {
    * @memberOf IPlugin
    */
   modName?: string;
+  /**
+   * path to the plugin on disk
+   */
   filePath: string;
   /**
    * specifies whether this is a "native" plugin, that is: One
@@ -88,7 +91,7 @@ export type IPluginCombined = IPlugin & ILoadOrder & IPluginParsed
    *
    * @type {string}
    */
-  name: string,
+  name: string;
   /**
    * mod index of the plugin as used in form-ids. Please note that this is
    * directly derived from other attributes, namely 'enabled', 'isNative' and

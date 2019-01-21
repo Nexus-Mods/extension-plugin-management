@@ -13,16 +13,20 @@ interface ILoadOrderMap {
 export const loadOrderReducer: types.IReducerSpec = {
   reducers: {
     [actions.setPluginEnabled as any]:
-        (state, payload) => state[payload.pluginName] !== undefined
-          ? util.setSafe(state, [payload.pluginName, 'enabled'], payload.enabled)
-          : util.merge(state, [payload.pluginName], {
+        (state, payload) => {
+          return (state[payload.pluginName] !== undefined)
+          ? util.setSafe(state, [payload.pluginName.toLowerCase(), 'enabled'], payload.enabled)
+          : util.merge(state, [payload.pluginName.toLowerCase()], {
+            name: payload.pluginName,
             enabled: true,
             loadOrder: -1,
-          }),
+          });
+        },
     [actions.setPluginOrder as any]: (state, payload) => {
       const result = {};
       payload.forEach((pluginName: string, idx: number) => {
-        result[pluginName] = {
+        result[pluginName.toLowerCase()] = {
+          name: pluginName,
           enabled: util.getSafe(state, [pluginName, 'enabled'], true),
           loadOrder: idx,
         };
@@ -36,16 +40,20 @@ export const loadOrderReducer: types.IReducerSpec = {
 
       // put the listed plugins in the specified order
       pluginList.forEach((pluginName: string, idx: number) => {
-        result[pluginName] = {
-          enabled: setEnabled ? true : util.getSafe(state, [pluginName, 'enabled'], true),
+        const id = pluginName.toLowerCase();
+        result[id] = {
+          name: pluginName,
+          enabled: setEnabled ? true : util.getSafe(state, [id, 'enabled'], true),
           loadOrder: idx,
         };
       });
 
+      const pluginListIds = pluginList.map(iter => iter.toLowerCase());
+
       // now deal with the rest, appending them to the list
       let idx = pluginList.length;
       Object.keys(result)
-        .filter(key => pluginList.indexOf(key) === -1)
+        .filter(key => pluginListIds.indexOf(key) === -1)
         .forEach(key => {
           result[key].loadOrder = idx++;
           if (setEnabled) {

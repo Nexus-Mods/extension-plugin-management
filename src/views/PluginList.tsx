@@ -51,6 +51,7 @@ interface IConnectedProps {
   needToDeploy: boolean;
   userlist: ILOOTList;
   masterlist: ILOOTList;
+  deployProgress: string;
   mods: { [id: string]: types.IMod };
 }
 
@@ -233,7 +234,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           ? this.installedNative[plugin.id]
           : plugin.loadOrder;
       },
-      sortFuncRaw: (lhs, rhs) => this.sortByLoadOrder(lhs, rhs),
+      sortFuncRaw: (lhs, rhs) => this.sortByLoadOrder(this.installedNative, lhs, rhs),
       placement: 'table',
     },
     {
@@ -491,10 +492,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, gameMode, needToDeploy } = this.props;
+    const { t, deployProgress, gameMode, needToDeploy } = this.props;
     const { pluginsCombined } = this.state;
     
-    const PanelX: any = Panel;
     return (
       <MainPage>
         <MainPage.Header>
@@ -512,8 +512,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             </FlexLayout.Fixed>
             <FlexLayout.Flex>
               <Panel>
-                <PanelX.Body>
-                  {this.mCachedGameMode === gameMode ? (
+                <Panel.Body>
+                  {(this.mCachedGameMode === gameMode) && (deployProgress === undefined) ? (
                     <Table
                       tableId='gamebryo-plugins'
                       actions={this.actions}
@@ -525,7 +525,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
                       <Spinner />
                     </div>
                   )}
-                </PanelX.Body>
+                </Panel.Body>
               </Panel>
             </FlexLayout.Flex>
             <FlexLayout.Fixed>
@@ -640,7 +640,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           pluginsFlat.find(
             (plugin: IPluginCombined) => name === plugin.id) !== undefined)
       .reduce((prev, name, idx) => {
-        prev[name] = idx;
+            prev[name.toLowerCase()] = idx;
         return prev;
       }, {});
       });
@@ -672,14 +672,19 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     });
   }
 
-  private modIndices(pluginObjects: ILoadOrder[]): { [pluginId: string]: {
+  private modIndices(pluginObjects: IPluginCombined[]): { [pluginId: string]: {
       modIndex: number, eslIndex?: number } } {
+    const { nativePlugins } = this.props;
     // overly complicated?
     // This sorts the whole plugin list by the load order, inserting the installed
     // native plugins at the top in their hard-coded order. Then it assigns
     // the ascending mod index to all enabled plugins.
 
-    const byLO = pluginObjects.slice().sort(this.sortByLoadOrder);
+    const np = nativePlugins.reduce((prev: { [id: string]: number }, id: string, idx: number) => {
+      prev[id] = idx;
+      return prev;
+    }, {});
+    const byLO = pluginObjects.slice().sort((lhs, rhs) => this.sortByLoadOrder(np, lhs, rhs));
 
     let modIndex = 0;
     let eslIndex = 0;
@@ -833,12 +838,12 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private sortByLoadOrder = (lhs: IPluginCombined, rhs: IPluginCombined) => {
+  private sortByLoadOrder = (native: { [id: string]: number }, lhs: IPluginCombined, rhs: IPluginCombined) => {
     if (this.installedNative !== undefined) {
       const lhsLO = lhs.isNative
-        ? this.installedNative[lhs.id] : (lhs.loadOrder | 0) + 1000;
+        ? native[lhs.id] : (lhs.loadOrder | 0) + 1000;
       const rhsLO = rhs.isNative
-        ? this.installedNative[rhs.id] : (rhs.loadOrder | 0) + 1000;
+        ? native[rhs.id] : (rhs.loadOrder | 0) + 1000;
       return lhsLO - rhsLO;
     } else {
       return lhs.loadOrder - rhs.loadOrder;
@@ -883,6 +888,7 @@ function mapStateToProps(state: any): IConnectedProps {
     masterlist: state.masterlist || emptyList,
     autoSort: state.settings.plugins.autoSort,
     activity: state.session.base.activity['plugins'],
+    deployProgress: util.getSafe(state.session.base, ['progress', 'profile', 'deploying', 'text'], undefined),
     needToDeploy: selectors.needToDeploy(state),
     mods: profile !== undefined ? ((state as types.IState).persistent.mods[gameMode] || emptyObj) : emptyObj,
   };

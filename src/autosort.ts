@@ -71,10 +71,11 @@ class LootInterface {
 
         let pluginNames: string[] = Object
           .keys(state.loadOrder)
-          .filter((name: string) => (
-            (pluginList[name] !== undefined)
-            && (pluginList[name].deployed)))
-          .sort((lhs, rhs) => state.loadOrder[lhs].loadOrder - state.loadOrder[rhs].loadOrder);
+          .filter((pluginId: string) => (
+            (pluginList[pluginId] !== undefined)
+            && (pluginList[pluginId].deployed)))
+          .sort((lhs, rhs) => state.loadOrder[lhs].loadOrder - state.loadOrder[rhs].loadOrder)
+          .map((pluginId: string) => state.loadOrder[pluginId].name);
 
         // ensure no other sort is in progress
         try {

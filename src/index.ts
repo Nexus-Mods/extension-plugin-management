@@ -160,6 +160,11 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameI
             if (notDeployed !== undefined) {
               store.dispatch((actions as any).setDeploymentNecessary(gameId, true));
             }
+            const knownPlugins = Object.keys(pluginStates).reduce((prev, pluginId) => {
+              prev[pluginId] = path.basename(pluginStates[pluginId].filePath);
+              return prev;
+            }, {});
+            ipcRenderer.send('gamebryo-set-known-plugins', knownPlugins);
           }
           return Promise.resolve();
         });
@@ -676,6 +681,9 @@ function init(context: IExtensionContextExt) {
         const gameId = selectors.activeGameId(context.api.store.getState());
         masterlistPersistor.loadFiles(gameId);
       }
+    });
+    ipcMain.on('gamebryo-set-known-plugins', (event: Electron.Event, knownPlugins: { [pluginId: string]: string }) => {
+      pluginPersistor.setKnownPlugins(knownPlugins);
     });
   });
 

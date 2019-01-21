@@ -13,7 +13,7 @@ import {fs, log, types, util} from 'vortex-api';
 export type PluginFormat = 'original' | 'fallout4';
 
 interface IPluginMap {
-  [name: string]: ILoadOrder;
+  [id: string]: ILoadOrder;
 }
 
 const retryCount = 3;
@@ -39,6 +39,7 @@ class PluginPersistor implements types.IPersistor {
   private mSerializeQueue: Promise<void> = Promise.resolve();
 
   private mPlugins: IPluginMap;
+  private mKnownPlugins: { [pluginId: string]: string };
   private mRetryCounter: number = retryCount;
   private mLoaded: boolean = false;
   private mFailed: boolean = false;
@@ -81,6 +82,10 @@ class PluginPersistor implements types.IPersistor {
         // start watching for external changes
         .then(() => this.startWatch());
     });
+  }
+
+  public setKnownPlugins(knownPlugins: { [pluginId: string]: string }) {
+    this.mKnownPlugins = knownPlugins;
   }
 
   public setResetCallback(cb: () => void) {
@@ -134,7 +139,7 @@ class PluginPersistor implements types.IPersistor {
     // enabled
     const nativePluginSet = new Set(this.mNativePlugins);
     return input.filter(name =>
-      util.getSafe(this.mPlugins, [name, 'enabled'],
+      util.getSafe(this.mPlugins, [name.toLowerCase(), 'enabled'],
                    nativePluginSet.has(name.toLowerCase())));
   }
 
@@ -144,7 +149,7 @@ class PluginPersistor implements types.IPersistor {
     const nativePluginSet = new Set(this.mNativePlugins);
     return input
       .filter(name => !nativePluginSet.has(name.toLowerCase()))
-      .map(name => util.getSafe(this.mPlugins, [name, 'enabled'], false)
+      .map(name => util.getSafe(this.mPlugins, [name.toLowerCase(), 'enabled'], false)
           ? '*' + name
           : name);
   }
@@ -176,10 +181,18 @@ class PluginPersistor implements types.IPersistor {
     this.mSerializing = true;
     this.mSerializeScheduled = false;
 
-    const sorted: string[] =
+    let sorted: string[] =
         Object.keys(this.mPlugins)
             .sort((lhs: string, rhs: string) => this.mPlugins[lhs].loadOrder -
-                                                this.mPlugins[rhs].loadOrder);
+                                                this.mPlugins[rhs].loadOrder)
+            .filter(pluginId => pluginId !== undefined);
+
+    if (this.mKnownPlugins !== undefined) {
+      sorted = sorted
+        .filter(pluginId => this.mKnownPlugins[pluginId] !== undefined)
+        .map(pluginId => this.mKnownPlugins[pluginId]);
+    }
+
     const loadOrderFile = path.join(destPath, 'loadorder.txt');
     const pluginsFile = path.join(destPath, 'plugins.txt');
     // this ensureDir should not be necessary
@@ -223,8 +236,7 @@ class PluginPersistor implements types.IPersistor {
       })
       .finally(() => {
         this.mSerializing = false;
-      })
-      ;
+      });
   }
 
   private filterFileData(input: string, plugins: boolean): string[] {
@@ -236,15 +248,20 @@ class PluginPersistor implements types.IPersistor {
   }
 
   private initFromKeyList(plugins: IPluginMap, keys: string[], enable: boolean, offset: number) {
+    // plugins identifies files actually on disk, keys is from loadorder.txt or plugins.txt, can't
+    // be sure if those files actually exist on disk
+
     let loadOrderPos = offset;
     const nativePluginSet = new Set<string>(this.mNativePlugins);
-    keys.forEach((key: string) => {
+    // eliminate duplicates
+    const transformedKeys = Array.from(new Set(keys.map(key => key.toLowerCase())));
+    transformedKeys.forEach((key: string) => {
       const keyEnabled = enable && ((this.mPluginFormat === 'original') || (key[0] === '*'));
       if ((this.mPluginFormat === 'fallout4') && (key[0] === '*')) {
         key = key.slice(1);
       }
       // ignore native plugins in newer games
-      if ((this.mPluginFormat === 'fallout4') && nativePluginSet.has(key.toLowerCase())) {
+      if ((this.mPluginFormat === 'fallout4') && nativePluginSet.has(key)) {
         return;
       }
       // ignore files that don't exist on disk
@@ -254,8 +271,7 @@ class PluginPersistor implements types.IPersistor {
           loadOrder: -1,
         };
       }
-
-      plugins[key].enabled = keyEnabled || nativePluginSet.has(key.toLowerCase());
+        plugins[key].enabled = keyEnabled || nativePluginSet.has(key);
       if (plugins[key].loadOrder === -1) {
         plugins[key].loadOrder = loadOrderPos++;
       }
@@ -263,35 +279,16 @@ class PluginPersistor implements types.IPersistor {
     return loadOrderPos;
   }
 
-  private isPlugin = (name: string) => {
-    return ['.esm', '.esp', '.esl'].indexOf(path.extname(name).toLowerCase()) !== -1;
-  }
-
   private deserialize(retry: boolean = false): Promise<void> {
     if (this.mPluginPath === undefined) {
       return Promise.resolve();
     }
 
-    const nativePluginSet = new Set<string>(this.mNativePlugins);
-
     let offset = 0;
 
-    return ((this.mDataPath !== undefined)
-            ? fs.readdirAsync(this.mDataPath).catch(() => []) : Promise.resolve([]))
-      .filter(this.isPlugin)
-      .then((plugins: string[]) => plugins
-          .sort((lhs, rhs) => this.mNativePlugins.indexOf(lhs.toLowerCase())
-                            - this.mNativePlugins.indexOf(rhs.toLowerCase()))
-          .reduce((prev: IPluginMap, name: string) => {
-        const isNative = nativePluginSet.has(name.toLowerCase());
-        prev[name] = {
-          enabled: isNative,
-          loadOrder: isNative ? offset++ : -1,
-        };
-        return prev;
-      }, {}))
-      .then((newPlugins: IPluginMap) => {
         const pluginsFile = path.join(this.mPluginPath, 'plugins.txt');
+
+    const newPlugins: IPluginMap = {};
 
         let phaseOne: Promise<Buffer>;
         // for games with the old format we use the loadorder.txt file as reference for the
@@ -303,8 +300,7 @@ class PluginPersistor implements types.IPersistor {
           log('debug', 'deserialize', { format: this.mPluginFormat, pluginsFile, loadOrderFile });
           phaseOne = fs.readFileAsync(loadOrderFile)
             .then((data: Buffer) => {
-              const keys: string[] =
-                this.filterFileData(data.toString('utf-8'), false);
+              const keys: string[] = this.filterFileData(data.toString('utf-8'), false);
               offset = this.initFromKeyList(newPlugins, keys, false, offset);
               return fs.readFileAsync(pluginsFile);
             });
@@ -346,7 +342,6 @@ class PluginPersistor implements types.IPersistor {
               this.reportError('failed to read plugin list', err);
             }
           });
-      });
   }
 
   private scheduleRefresh(timeout: number) {
