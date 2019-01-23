@@ -75,7 +75,7 @@ class LootInterface {
             (pluginList[pluginId] !== undefined)
             && (pluginList[pluginId].deployed)))
           .sort((lhs, rhs) => state.loadOrder[lhs].loadOrder - state.loadOrder[rhs].loadOrder)
-          .map((pluginId: string) => state.loadOrder[pluginId].name);
+          .map((pluginId: string) => path.basename(pluginList[pluginId].filePath));
 
         // ensure no other sort is in progress
         try {

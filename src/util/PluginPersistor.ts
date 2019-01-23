@@ -271,7 +271,8 @@ class PluginPersistor implements types.IPersistor {
           loadOrder: -1,
         };
       }
-        plugins[key].enabled = keyEnabled || nativePluginSet.has(key);
+
+      plugins[key].enabled = keyEnabled || nativePluginSet.has(key);
       if (plugins[key].loadOrder === -1) {
         plugins[key].loadOrder = loadOrderPos++;
       }

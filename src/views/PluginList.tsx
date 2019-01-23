@@ -230,9 +230,15 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       edit: {},
       isSortable: true,
       calc: (plugin: IPluginCombined) => {
+        // with fallout 4 and skyrimse, native plugins are not listed in plugins.txt and thus
+        // they don't get a load order position. But since we display them with a load order,
+        // we have to offset all other plugins so they don't overlap.
+        let offset = ['fallout4', 'skyrimse'].indexOf(this.props.gameMode) !== -1
+          ? Object.keys(this.installedNative).length
+          : 0;
         return plugin.isNative
           ? this.installedNative[plugin.id]
-          : plugin.loadOrder;
+          : plugin.loadOrder + offset;
       },
       sortFuncRaw: (lhs, rhs) => this.sortByLoadOrder(this.installedNative, lhs, rhs),
       placement: 'table',

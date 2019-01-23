@@ -3,10 +3,6 @@ import {ILoadOrder} from '../types/ILoadOrder';
 
 import {types, util} from 'vortex-api';
 
-interface ILoadOrderMap {
-  [name: string]: ILoadOrder;
-}
-
 /**
  * reducer for changes to the plugin list
  */
