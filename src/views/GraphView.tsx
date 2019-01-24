@@ -83,25 +83,33 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
               .addClass(newProps.elements[id].class);
           }
           // node content changed
-          Object.keys(changed[id].connections || []).forEach(refId => {
-            const from = san(id);
-            const to = san(changed[id].connections[refId]);
-            const connId = `${from}-to-${to}`;
-            if (refId[0] === '-') {
-              this.mGraph.remove('#' + connId);
-            } else if (refId[0] === '+') {
-              this.mGraph.add({
-                data: {
-                  id: connId,
-                  source: to,
-                  sourceOrig: changed[id].connections[refId],
-                  target: from,
-                  targetOrig: id,
-                },
-                classes: newProps.elements[id].class,
-              });
-            }
-          });
+          Object.keys(changed[id].connections || [])
+            .sort((lhs, rhs) => {
+              if (lhs[0] !== rhs[0]) {
+                return lhs[0] === '-' ? -1 : 1;
+              } else {
+                return lhs.localeCompare(rhs);
+              }
+            })
+            .forEach(refId => {
+              const from = san(id);
+              const to = san(changed[id].connections[refId]);
+              const connId = `${from}-to-${to}`;
+              if (refId[0] === '-') {
+                this.mGraph.remove('#' + connId);
+              } else if (refId[0] === '+') {
+                this.mGraph.add({
+                  data: {
+                    id: connId,
+                    source: to,
+                    sourceOrig: changed[id].connections[refId],
+                    target: from,
+                    targetOrig: id,
+                  },
+                  classes: newProps.elements[id].class,
+                });
+              }
+            });
         }
       });
       this.mLayout.run();
