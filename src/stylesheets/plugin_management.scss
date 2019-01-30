@@ -121,6 +121,21 @@
 .loot-message-list .alert {
   max-width: 300px;
   word-wrap: break-word;
+  a {
+    text-shadow: 1px 1px black;
+  }
+
+  &.alert-danger {
+    background-color: rgba($alert-danger-bg, 0.3);
+  }
+
+  &.alert-warning {
+    background-color: rgba($alert-warning-bg, 0.3);
+  }
+
+  &.alert-info {
+    background-color: rgba($alert-info-bg, 0.3);
+  }
 }
 
 .plugin-dependency-connector {
