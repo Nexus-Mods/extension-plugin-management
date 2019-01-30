@@ -727,7 +727,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const pluginIds = Object.keys(plugins);
 
     const pluginObjects: IPluginCombined[] = pluginIds.map((pluginId: string) => {
-      const userlistEntry = userlist.plugins.find(entry => entry.name.toLowerCase() === pluginId);
+
+      const userlistEntry = (userlist.plugins || []).find(entry => entry.name.toLowerCase() === pluginId);
       const res = {
         id: pluginId,
         name: this.safeBasename(plugins[pluginId].filePath),
