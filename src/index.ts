@@ -1,4 +1,4 @@
-import { setPluginEnabled, updatePluginOrder, setPluginOrder } from './actions/loadOrder';
+import { setPluginEnabled, setPluginOrder, updatePluginOrder } from './actions/loadOrder';
 import { setPluginList, updatePluginWarnings } from './actions/plugins';
 import { removeGroupRule, setGroup } from './actions/userlist';
 import { openGroupEditor, setCreateRule } from './actions/userlistEdit';
@@ -71,25 +71,27 @@ function isPlugin(filePath: string, fileName: string): Promise<boolean> {
 /**
  * updates the list of known plugins for the managed game
  */
-function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameId: string): Promise<void> {
+function updatePluginList(store: Redux.Store<any>,
+                          newModList: IModStates,
+                          gameId: string): Promise<void> {
   const state: types.IState = store.getState();
 
   const pluginSources: { [pluginName: string]: string } = {};
   const pluginStates: IPlugins = {};
 
-  const setPluginState = (modPath: string, fileName: string, deployed: boolean) => {
+  const setPluginState = (basePath: string, fileName: string, deployed: boolean) => {
     const modName = pluginSources[fileName] !== undefined
       ? pluginSources[fileName]
       : '';
     pluginStates[fileName.toLowerCase()] = {
       modName,
-      filePath: path.join(modPath, fileName),
+      filePath: path.join(basePath, fileName),
       isNative: isNativePlugin(gameId, fileName),
       warnings: util.getSafe(state, ['session', 'plugins', 'pluginList', fileName, 'warnings'], {}),
       deployed,
     };
     return Promise.resolve();
-  }
+  };
 
   const discovery = (selectors as any).discoveryByGame(state, gameId);
   if ((discovery === undefined) || (discovery.path === undefined)) {
@@ -101,7 +103,8 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameI
   const gameMods = state.persistent.mods[gameId] || {};
   const game = util.getGame(gameId);
   if (game === undefined) {
-    // we may get here if the active game is no longer supported due to the extension being disabled.
+    // we may get here if the active game is no longer supported due to
+    // the extension being disabled.
     return Promise.resolve();
   }
 
@@ -121,7 +124,7 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameI
       log('error', 'mod not found', { gameId, modId });
       return;
     }
-    const modInstPath = path.join(installBasePath, mod.installationPath)
+    const modInstPath = path.join(installBasePath, mod.installationPath);
     return fs.readdirAsync(modInstPath)
       .filter(fileName => isPlugin(modInstPath, fileName))
       .each(fileName => {
@@ -480,8 +483,9 @@ function testMissingGroups(t: I18next.TranslationFunction,
   // all used groups
   const usedGroups = Array.from(new Set([].concat(
     ...userlistGroups.map(group => group.after || []),
-    state.userlist.plugins.filter(plugin => plugin.group !== undefined).map(plugin => plugin.group))));
-
+    state.userlist.plugins
+      .filter(plugin => plugin.group !== undefined)
+      .map(plugin => plugin.group))));
 
   const missing = usedGroups.filter(group => !groups.has(group));
 
@@ -595,7 +599,7 @@ function testUserlistInvalid(t: I18next.TranslationFunction,
 }
 
 function testMissingMasters(t: I18next.TranslationFunction,
-                            store: Redux.Store<any>,): Promise<types.ITestResult> {
+                            store: Redux.Store<any>): Promise<types.ITestResult> {
   const state = store.getState();
   const gameMode = selectors.activeGameId(state);
   if (!gameSupported(gameMode)) {
@@ -630,12 +634,13 @@ function testMissingMasters(t: I18next.TranslationFunction,
   const broken = pluginDetails.reduce((prev, plugin) => {
     const missing = plugin.masterList.filter(
       requiredMaster => !masters.has(requiredMaster.toLowerCase()));
-    const oldWarn = util.getSafe(state, ['session', 'plugins', 'pluginList', plugin.name, 'warnings', 'missing-master'], false);
+    const oldWarn = util.getSafe(state,
+      ['session', 'plugins', 'pluginList', plugin.name, 'warnings', 'missing-master'], false);
     const newWarn = missing.length > 0;
     if (oldWarn !== newWarn) {
       store.dispatch(updatePluginWarnings(plugin.name, 'missing-master', newWarn));
     }
-   
+
     if (missing.length > 0) {
       prev[plugin.name] = missing;
     }
@@ -651,8 +656,11 @@ function testMissingMasters(t: I18next.TranslationFunction,
         long:
         'Some of the enabled plugins depend on others that are not enabled:[table][tbody]' +
         Object.keys(broken).map(plugin => {
-          const missing = broken[plugin].join('[br][/br]')
-          return `[tr][td]${plugin}[/td][td]${t('depends on')}[/td][td]${missing}[/td][/tr][tr][/tr]`;
+          const missing = broken[plugin].join('[br][/br]');
+          return '[tr]'
+            + [plugin, t('depends on'), missing].map(iter => `[td]${iter}[/td]`).join()
+            + '[/tr]'
+            + '[tr][/tr]';
         }).join('\n') + '[/tbody][/table]',
       },
       severity: 'warning' as types.ProblemSeverity,
@@ -685,7 +693,8 @@ function init(context: IExtensionContextExt) {
         masterlistPersistor.loadFiles(gameId);
       }
     });
-    ipcMain.on('gamebryo-set-known-plugins', (event: Electron.Event, knownPlugins: { [pluginId: string]: string }) => {
+    ipcMain.on('gamebryo-set-known-plugins',
+               (event: Electron.Event, knownPlugins: { [pluginId: string]: string }) => {
       pluginPersistor.setKnownPlugins(knownPlugins);
     });
   });
