@@ -1,6 +1,6 @@
 import { setPluginEnabled } from '../actions/loadOrder';
-import { setAutoSortEnabled } from '../actions/settings';
 import { updatePluginWarnings } from '../actions/plugins';
+import { setAutoSortEnabled } from '../actions/settings';
 import { addGroup, addGroupRule, setGroup } from '../actions/userlist';
 import { ILoadOrder } from '../types/ILoadOrder';
 import { ILOOTList, ILOOTPlugin } from '../types/ILOOTList';
@@ -31,12 +31,10 @@ import { connect } from 'react-redux';
 import { Creatable } from 'react-select';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import {ComponentEx, IconBar, ITableRowAction, log, MainPage,
-  selectors, Table, TableTextFilter, ToolbarIcon,
-  types, util, FlexLayout, Spinner,
+import {ComponentEx, FlexLayout, IconBar, ITableRowAction,
+  log, MainPage, selectors, Spinner,
+  Table, TableTextFilter, ToolbarIcon, types, Usage, util,
 } from 'vortex-api';
-
-const { Usage } = require('vortex-api');
 
 interface IBaseProps {
   nativePlugins: string[];
@@ -233,7 +231,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         // with fallout 4 and skyrimse, native plugins are not listed in plugins.txt and thus
         // they don't get a load order position. But since we display them with a load order,
         // we have to offset all other plugins so they don't overlap.
-        let offset = ['fallout4', 'skyrimse'].indexOf(this.props.gameMode) !== -1
+        const offset = ['fallout4', 'skyrimse'].indexOf(this.props.gameMode) !== -1
           ? Object.keys(this.installedNative).length
           : 0;
         return plugin.isNative
@@ -309,7 +307,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       icon: 'plug',
       placement: 'table',
       customRenderer: (plugin: IPluginCombined, detail: boolean,
-        t: I18next.TranslationFunction, props: types.ICustomProps) =>
+                       t: I18next.TranslationFunction, props: types.ICustomProps) =>
         <DependencyIcon plugin={plugin} t={t} onHighlight={props.onHighlight} />,
       calc: () => null,
       isToggleable: true,
@@ -500,7 +498,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   public render(): JSX.Element {
     const { t, deployProgress, gameMode, needToDeploy } = this.props;
     const { pluginsCombined } = this.state;
-    
+
     return (
       <MainPage>
         <MainPage.Header>
@@ -536,7 +534,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             </FlexLayout.Flex>
             <FlexLayout.Fixed>
               <Usage infoId='deployed-plugins' persistent>
-                {t('This screen shows only deployed plugins, if you\'re missing files, try deploying manually.')}
+                {t('This screen shows only deployed plugins, '
+                 + 'if you\'re missing files, try deploying manually.')}
               </Usage>
             </FlexLayout.Fixed>
           </FlexLayout>
@@ -573,8 +572,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       && (flag || (path.extname(filePath).toLowerCase() === '.esl'));
   }
 
-  private updatePlugins(plugins: IPlugins) {
-    const pluginNames: string[] = Object.keys(plugins);
+  private updatePlugins(pluginsIn: IPlugins) {
+    const pluginNames: string[] = Object.keys(pluginsIn);
 
     const pluginsParsed: { [pluginName: string]: IPluginParsed } = {};
     let pluginsLoot;
@@ -582,10 +581,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     return Promise.each(pluginNames, (pluginName: string) =>
       new Promise((resolve, reject) => {
         try {
-          const esp = new ESPFile(plugins[pluginName].filePath);
+          const esp = new ESPFile(pluginsIn[pluginName].filePath);
           pluginsParsed[pluginName] = {
-            isMaster: this.isMaster(plugins[pluginName].filePath, esp.isMaster),
-            isLight: this.isLight(plugins[pluginName].filePath, esp.isLight),
+            isMaster: this.isMaster(pluginsIn[pluginName].filePath, esp.isMaster),
+            isLight: this.isLight(pluginsIn[pluginName].filePath, esp.isLight),
             parseFailed: false,
             description: esp.description,
             author: esp.author,
@@ -597,7 +596,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           //   lib isn't super informative we can't differentiate yet, so not
           //   treating this as a big problem.
           log('info', 'failed to parse esp',
-            { path: plugins[pluginName].filePath, error: err.message });
+            { path: pluginsIn[pluginName].filePath, error: err.message });
           pluginsParsed[pluginName] = {
             isMaster: false,
             isLight: false,
@@ -614,11 +613,12 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           pluginNames, (resolved: { [name: string]: IPluginLoot }) => {
             const { onUpdateWarnings, plugins } = this.props;
             pluginsLoot = resolved;
-            
+
             Object.keys(pluginsLoot).forEach(name => {
               const oldWarn = util.getSafe(plugins, [name, 'warnings', 'loot-messages'], false);
               const newWarn = pluginsLoot[name].messages
-                .find(message => this.translateLootMessageType(message.type) !== 'info') !== undefined;
+                .find(message =>
+                  this.translateLootMessageType(message.type) !== 'info') !== undefined;
               if (oldWarn !== newWarn) {
                 onUpdateWarnings(name, 'loot-messages', newWarn);
               }
@@ -628,7 +628,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           });
       }))
       .then(() => {
-        const pluginsCombined = this.detailedPlugins(plugins, pluginsLoot, pluginsParsed);
+        const pluginsCombined = this.detailedPlugins(pluginsIn, pluginsLoot, pluginsParsed);
 
         if (this.mMounted) {
           this.mCachedGameMode = this.props.gameMode;
@@ -645,10 +645,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         this.installedNative = nativePlugins.filter(name =>
           pluginsFlat.find(
             (plugin: IPluginCombined) => name === plugin.id) !== undefined)
-      .reduce((prev, name, idx) => {
+          .reduce((prev, name, idx) => {
             prev[name.toLowerCase()] = idx;
-        return prev;
-      }, {});
+            return prev;
+          }, {});
       });
   }
 
@@ -719,16 +719,16 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private detailedPlugins(plugins: IPlugins,
-    pluginsLoot: { [pluginId: string]: IPluginLoot },
-    pluginsParsed: { [pluginId: string]: IPluginParsed },
+                          pluginsLoot: { [pluginId: string]: IPluginLoot },
+                          pluginsParsed: { [pluginId: string]: IPluginParsed },
   ): { [id: string]: IPluginCombined } {
     const { loadOrder, userlist } = this.props;
 
     const pluginIds = Object.keys(plugins);
 
     const pluginObjects: IPluginCombined[] = pluginIds.map((pluginId: string) => {
-
-      const userlistEntry = (userlist.plugins || []).find(entry => entry.name.toLowerCase() === pluginId);
+      const userlistEntry =
+        (userlist.plugins || []).find(entry => entry.name.toLowerCase() === pluginId);
       const res = {
         id: pluginId,
         name: this.safeBasename(plugins[pluginId].filePath),
@@ -845,7 +845,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private sortByLoadOrder = (native: { [id: string]: number }, lhs: IPluginCombined, rhs: IPluginCombined) => {
+  private sortByLoadOrder = (native: { [id: string]: number },
+                             lhs: IPluginCombined,
+                             rhs: IPluginCombined) => {
     if (this.installedNative !== undefined) {
       const lhsLO = lhs.isNative
         ? native[lhs.id] : (lhs.loadOrder | 0) + 1000;
@@ -895,9 +897,13 @@ function mapStateToProps(state: any): IConnectedProps {
     masterlist: state.masterlist || emptyList,
     autoSort: state.settings.plugins.autoSort,
     activity: state.session.base.activity['plugins'],
-    deployProgress: util.getSafe(state.session.base, ['progress', 'profile', 'deploying', 'text'], undefined),
+    deployProgress: util.getSafe(state.session.base,
+                                 ['progress', 'profile', 'deploying', 'text'],
+                                 undefined),
     needToDeploy: selectors.needToDeploy(state),
-    mods: profile !== undefined ? ((state as types.IState).persistent.mods[gameMode] || emptyObj) : emptyObj,
+    mods: profile !== undefined
+      ? ((state as types.IState).persistent.mods[gameMode] || emptyObj)
+      : emptyObj,
   };
 }
 
