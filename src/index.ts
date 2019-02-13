@@ -542,6 +542,9 @@ function testUserlistInvalid(t: I18next.TranslationFunction,
 
   // search for duplicate plugin entries
   const duplicate = (userlist.plugins || []).find(iter => {
+    if (iter === null) {
+      return false;
+    }
     const name = iter.name.toUpperCase();
     if (names.has(name)) {
       return true;
