@@ -794,7 +794,7 @@ function init(context: IExtensionContextExt) {
                 if (err.code === 'ENOENT') {
                   context.api.showErrorNotification(
                     'A mod could no longer be found on disk. Please don\'t delete mods manually '
-                    + 'but uninstall them through Vortex.', { id: mod.id }, { allowReport: false });
+                    + 'but uninstall them through Vortex.', err, { allowReport: false });
                   context.api.store.dispatch(actions.removeMod(currentProfile.gameId, modId));
                   return Promise.reject(new util.ProcessCanceled('mod was deleted'));
                 } else {
