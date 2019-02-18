@@ -483,7 +483,7 @@ function testMissingGroups(t: I18next.TranslationFunction,
   // all used groups
   const usedGroups = Array.from(new Set([].concat(
     ...userlistGroups.map(group => group.after || []),
-    state.userlist.plugins
+    (state.userlist.plugins || [])
       .filter(plugin => plugin.group !== undefined)
       .map(plugin => plugin.group))));
 
