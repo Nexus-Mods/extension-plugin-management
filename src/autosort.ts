@@ -302,6 +302,8 @@ class LootInterface {
     } else if (gameMode === 'skyrimvr') {
       // no specific support from skyrim vr yet
       return 'skyrimse';
+    } else if (gameMode === 'enderal') {
+      return 'skyrim';
     }
     return gameMode;
   }

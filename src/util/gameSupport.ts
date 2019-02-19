@@ -17,6 +17,15 @@ const gameSupport = {
       'update.esm',
     ],
   },
+  enderal: {
+    appDataPath: 'Enderal',
+    pluginTXTFormat: 'original',
+    nativePlugins: [
+      'skyrim.esm',
+      'update.esm',
+      'enderal.esm',
+    ],
+  },
   skyrimse: {
     appDataPath: 'Skyrim Special Edition',
     pluginTXTFormat: 'fallout4',
