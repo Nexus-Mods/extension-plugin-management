@@ -266,7 +266,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       description: 'Group',
       icon: 'sort-down',
       placement: 'table',
-      calc: plugin => util.getSafe(plugin, ['group'], ''),
+      calc: plugin => util.getSafe(plugin, ['group'], '') || 'Default',
       edit: {},
       isToggleable: true,
       isDefaultVisible: true,
