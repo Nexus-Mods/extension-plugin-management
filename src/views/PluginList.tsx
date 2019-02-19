@@ -160,17 +160,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       id: 'modName',
       name: 'Mod',
       edit: {},
-      calc: plugin => {
-        if (plugin.modName === undefined) {
-          return '';
-        }
-
-        const mod = util.getSafe(this.props.mods, [plugin.modName], undefined);
-        if (mod === undefined) {
-          return '';
-        }
-        return util.renderModName(mod, { version: false });
-      },
+      calc: plugin => this.pluginModName(plugin),
+      customRenderer: (plugin: IPluginCombined) => (
+        <a data-modid={plugin.modName} onClick={this.highlightMod} >{this.pluginModName(plugin)}</a>
+        ),
       placement: 'both',
       isDefaultVisible: false,
       isSortable: true,
@@ -815,6 +808,25 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         pluginsCombined: updateSet,
       }));
     }
+  }
+
+  private pluginModName = (plugin: IPluginCombined) => {
+    if (plugin.modName === undefined) {
+      return '';
+    }
+
+    const mod = util.getSafe(this.props.mods, [plugin.modName], undefined);
+    if (mod === undefined) {
+      return '';
+    }
+    return util.renderModName(mod, { version: false });
+  }
+
+  private highlightMod = (evt: React.MouseEvent<any>) => {
+    const modId = (util as any).sanitizeCSSId(evt.currentTarget.getAttribute('data-modid'));
+    this.context.api.events.emit('show-main-page', 'Mods');
+    this.context.api.events.emit('mods-scroll-to', modId);
+    this.context.api.highlightControl(`#${modId} > .cell-name`, 4000);
   }
 
   private translateLootMessageType(input: number) {
