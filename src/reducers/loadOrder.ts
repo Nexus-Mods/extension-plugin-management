@@ -1,5 +1,4 @@
 import * as actions from '../actions/loadOrder';
-import {ILoadOrder} from '../types/ILoadOrder';
 
 import {types, util} from 'vortex-api';
 
@@ -47,11 +46,11 @@ export const loadOrderReducer: types.IReducerSpec = {
       const pluginListIds = pluginList.map(iter => iter.toLowerCase());
 
       // now deal with the rest, appending them to the list
-      let idx = pluginList.length;
+      let nextLO = pluginList.length;
       Object.keys(result)
         .filter(key => pluginListIds.indexOf(key) === -1)
         .forEach(key => {
-          result[key].loadOrder = idx++;
+          result[key].loadOrder = nextLO++;
           if (setEnabled) {
             result[key].enabled = false;
           }

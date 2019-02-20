@@ -38,8 +38,11 @@ class PluginPersistor implements types.IPersistor {
   private mSerializeScheduled: boolean = false;
   private mSerializeQueue: Promise<void> = Promise.resolve();
 
+  // "dynamic" plugins for which we store a load order (excluding native)
   private mPlugins: IPluginMap;
+  // deployed plugins, mapping their plugin id to their file name on disk
   private mKnownPlugins: { [pluginId: string]: string };
+  private mInstalledNative: string[];
   private mRetryCounter: number = retryCount;
   private mLoaded: boolean = false;
   private mFailed: boolean = false;
@@ -75,6 +78,7 @@ class PluginPersistor implements types.IPersistor {
       this.mPluginPath = pluginPath(gameMode);
       this.mPluginFormat = pluginFormat(gameMode);
       this.mNativePlugins = nativePlugins(gameMode);
+      this.updateNative();
       // ensure that the native plugins are always included
       log('debug', 'synching plugins', {pluginsPath: this.mPluginPath});
       // read the files now and update the store
@@ -86,6 +90,7 @@ class PluginPersistor implements types.IPersistor {
 
   public setKnownPlugins(knownPlugins: { [pluginId: string]: string }) {
     this.mKnownPlugins = knownPlugins;
+    this.updateNative();
   }
 
   public setResetCallback(cb: () => void) {
@@ -93,11 +98,35 @@ class PluginPersistor implements types.IPersistor {
   }
 
   public getItem(key: string[]): Promise<string> {
-    return Promise.resolve(JSON.stringify(util.getSafe(this.mPlugins, key, undefined)));
+    if (key.length === 1) {
+      // I think right now this branch is always used
+      return Promise.resolve(JSON.stringify({
+        ...util.getSafe(this.mPlugins, key, undefined),
+        loadOrder: this.loadOrder(key[0]),
+      }));
+    } else if ((key.length === 2) && (key[1] === 'loadOrder')) {
+      // This case doesn't actually seem to occur
+      return Promise.resolve(this.loadOrder(key[0]).toString());
+    } else {
+      return Promise.resolve(JSON.stringify(util.getSafe(this.mPlugins, key, undefined)));
+    }
   }
 
   public setItem(key: string[], value: string): Promise<void> {
-    const newValue = JSON.parse(value);
+    let newValue = JSON.parse(value);
+    if ((key.length > 0)
+        && (this.mNativePlugins !== undefined)
+        && (this.mNativePlugins[key[0]] !== undefined)) {
+      // ignore native plugins
+      return Promise.resolve();
+    }
+
+    if (key.length === 1) {
+      newValue.loadOrder -= this.mInstalledNative.length;
+    } else if ((key.length === 2) && (key[1] === 'loadOrder')) {
+      newValue -= this.mInstalledNative.length;
+    }
+
     if (newValue !== util.getSafe(this.mPlugins, key, undefined)) {
       this.mPlugins = util.setSafe(this.mPlugins, key, newValue);
       return this.serialize();
@@ -116,7 +145,7 @@ class PluginPersistor implements types.IPersistor {
   }
 
   public getAllKeys(): Promise<string[][]> {
-    return Promise.resolve(Object.keys(this.mPlugins).map(key => [key]));
+    return Promise.resolve(Object.keys(this.mKnownPlugins || {}).map(key => [key]));
   }
 
   private reportError(message: string, detail: Error, options?: types.IErrorOptions) {
@@ -131,6 +160,19 @@ class PluginPersistor implements types.IPersistor {
       return this.toPluginListOriginal(input);
     } else {
       return this.toPluginListFallout4(input);
+    }
+  }
+
+  private updateNative() {
+    if (this.mKnownPlugins === undefined) {
+      this.mInstalledNative = [];
+    }
+    this.mInstalledNative = (this.mNativePlugins || []).filter(
+      iter => this.mKnownPlugins[iter] !== undefined);
+
+    if (this.mResetCallback) {
+      this.mResetCallback();
+      this.mRetryCounter = retryCount;
     }
   }
 
@@ -172,8 +214,22 @@ class PluginPersistor implements types.IPersistor {
     return Promise.resolve();
   }
 
+  private loadOrder(pluginId: string): number {
+    const nativeIdx = this.mInstalledNative.indexOf(pluginId);
+    if (nativeIdx !== -1) {
+      return nativeIdx;
+    }
+    if (this.mPlugins[pluginId] === undefined) {
+      return -1;
+    }
+    return this.mPlugins[pluginId].loadOrder + this.mInstalledNative.length;
+  }
+
   private doSerialize(): Promise<void> {
     if (this.mPluginPath === undefined) {
+      return;
+    }
+    if (this.mKnownPlugins === undefined) {
       return;
     }
     const destPath = this.mPluginPath;
@@ -181,17 +237,12 @@ class PluginPersistor implements types.IPersistor {
     this.mSerializing = true;
     this.mSerializeScheduled = false;
 
-    let sorted: string[] =
-        Object.keys(this.mPlugins)
-            .sort((lhs: string, rhs: string) => this.mPlugins[lhs].loadOrder -
-                                                this.mPlugins[rhs].loadOrder)
+    // we need a list that includes all deployed plugins and only those,
+    // sorted by their load order
+    // this includes native plugins, which may be filtered out later, depending on the game
+    const sorted: string[] = Object.keys(this.mKnownPlugins)
+            .sort((lhs: string, rhs: string) => this.loadOrder(lhs) - this.loadOrder(rhs))
             .filter(pluginId => pluginId !== undefined);
-
-    if (this.mKnownPlugins !== undefined) {
-      sorted = sorted
-        .filter(pluginId => this.mKnownPlugins[pluginId] !== undefined)
-        .map(pluginId => this.mKnownPlugins[pluginId]);
-    }
 
     const loadOrderFile = path.join(destPath, 'loadorder.txt');
     const pluginsFile = path.join(destPath, 'plugins.txt');
@@ -202,7 +253,8 @@ class PluginPersistor implements types.IPersistor {
       .then(() => {
         const filtered: string[] = this.toPluginList(sorted);
         return fs.writeFileAsync(pluginsFile,
-          '# Automatically generated by Vortex\r\n' + filtered.join('\r\n') + '\r\n', { encoding: 'latin1' });
+          '# Automatically generated by Vortex\r\n' + filtered.join('\r\n') + '\r\n',
+          { encoding: 'latin1' });
       })
       .then(() => {
         if (this.mPluginFormat === 'original') {
@@ -230,7 +282,9 @@ class PluginPersistor implements types.IPersistor {
       .catch(util.UserCanceled, () => null)
       .catch(err => {
         if (err.code !== 'EBUSY') {
-          this.reportError('failed to write plugin list', err, { allowReport: err.code !== 'EPERM' });
+          this.reportError('failed to write plugin list',
+                           err,
+                           { allowReport: err.code !== 'EPERM' });
         } // no point reporting an error if the file is locked by another
           // process (could be the game itself)
       })
@@ -260,8 +314,9 @@ class PluginPersistor implements types.IPersistor {
       if ((this.mPluginFormat === 'fallout4') && (key[0] === '*')) {
         key = key.slice(1);
       }
-      // ignore native plugins in newer games
-      if ((this.mPluginFormat === 'fallout4') && nativePluginSet.has(key)) {
+      // ignore native plugins in all games (we have those in the list of "known" plugins but
+      // for the load order we only store the "dynamic" plugins)
+      if (nativePluginSet.has(key)) {
         return;
       }
       // ignore files that don't exist on disk
@@ -287,62 +342,62 @@ class PluginPersistor implements types.IPersistor {
 
     let offset = 0;
 
-        const pluginsFile = path.join(this.mPluginPath, 'plugins.txt');
+    const pluginsFile = path.join(this.mPluginPath, 'plugins.txt');
 
     const newPlugins: IPluginMap = {};
 
-        let phaseOne: Promise<Buffer>;
-        // for games with the old format we use the loadorder.txt file as reference for the
-        // load order and only use the plugins.txt as "backup".
-        // for newer games, since all plugins are listed, we don't really need the loadorder.txt
-        // at all
-        if (this.mPluginFormat === 'original') {
-          const loadOrderFile = path.join(this.mPluginPath, 'loadorder.txt');
-          log('debug', 'deserialize', { format: this.mPluginFormat, pluginsFile, loadOrderFile });
-          phaseOne = fs.readFileAsync(loadOrderFile)
-            .then((data: Buffer) => {
-              const keys: string[] = this.filterFileData(data.toString('utf-8'), false);
-              offset = this.initFromKeyList(newPlugins, keys, false, offset);
-              return fs.readFileAsync(pluginsFile);
-            });
-        } else {
-          // log('debug', 'deserialize', { format: this.mPluginFormat, pluginsFile });
-          phaseOne = fs.readFileAsync(pluginsFile);
+    let phaseOne: Promise<Buffer>;
+    // for games with the old format we use the loadorder.txt file as reference for the
+    // load order and only use the plugins.txt as "backup".
+    // for newer games, since all plugins are listed, we don't really need the loadorder.txt
+    // at all
+    if (this.mPluginFormat === 'original') {
+      const loadOrderFile = path.join(this.mPluginPath, 'loadorder.txt');
+      log('debug', 'deserialize', { format: this.mPluginFormat, pluginsFile, loadOrderFile });
+      phaseOne = fs.readFileAsync(loadOrderFile)
+        .then((data: Buffer) => {
+          const keys: string[] = this.filterFileData(data.toString('utf-8'), false);
+          offset = this.initFromKeyList(newPlugins, keys, false, offset);
+          return fs.readFileAsync(pluginsFile);
+        });
+    } else {
+      // log('debug', 'deserialize', { format: this.mPluginFormat, pluginsFile });
+      phaseOne = fs.readFileAsync(pluginsFile);
+    }
+    return phaseOne
+      .then((data: Buffer) => {
+        if ((data.length === 0) && !retry) {
+          // not even a header? I don't trust this
+          // TODO: This is just a workaround
+          return this.deserialize(true);
         }
-        return phaseOne
-          .then((data: Buffer) => {
-            if ((data.length === 0) && !retry) {
-              // not even a header? I don't trust this
-              // TODO: This is just a workaround
-              return this.deserialize(true);
-            }
-            const keys: string[] = this.filterFileData(data.toString('latin1'), true);
-            this.initFromKeyList(newPlugins, keys, true, offset);
-            this.mPlugins = newPlugins;
-            this.mLoaded = true;
-            if (this.mResetCallback) {
-              this.mResetCallback();
-              this.mRetryCounter = retryCount;
-            }
-            this.mFailed = false;
-            return Promise.resolve();
-          })
-          .catch((err: any) => {
-            if (err.code === 'ENOENT') {
-              this.mLoaded = true;
-              return;
-            }
-            log('warn', 'failed to read plugin file',
-              { pluginPath: this.mPluginPath, error: require('util').inspect(err) });
-            if (this.mRetryCounter > 0) {
-              --this.mRetryCounter;
-              this.scheduleRefresh(100);
-            } else {
-              // giving up...
-              this.mLoaded = true;
-              this.reportError('failed to read plugin list', err);
-            }
-          });
+        const keys: string[] = this.filterFileData(data.toString('latin1'), true);
+        this.initFromKeyList(newPlugins, keys, true, offset);
+        this.mPlugins = newPlugins;
+        this.mLoaded = true;
+        if (this.mResetCallback) {
+          this.mResetCallback();
+          this.mRetryCounter = retryCount;
+        }
+        this.mFailed = false;
+        return Promise.resolve();
+      })
+      .catch((err: any) => {
+        if (err.code === 'ENOENT') {
+          this.mLoaded = true;
+          return;
+        }
+        log('warn', 'failed to read plugin file',
+          { pluginPath: this.mPluginPath, error: require('util').inspect(err) });
+        if (this.mRetryCounter > 0) {
+          --this.mRetryCounter;
+          this.scheduleRefresh(100);
+        } else {
+          // giving up...
+          this.mLoaded = true;
+          this.reportError('failed to read plugin list', err);
+        }
+      });
   }
 
   private scheduleRefresh(timeout: number) {

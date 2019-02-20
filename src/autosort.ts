@@ -1,6 +1,6 @@
 import {updatePluginOrder} from './actions/loadOrder';
-import {IPluginsLoot, IPlugins} from './types/IPlugins';
-import {gameSupported, pluginPath} from './util/gameSupport';
+import {IPlugins, IPluginsLoot} from './types/IPlugins';
+import {gameSupported, nativePlugins, pluginPath} from './util/gameSupport';
 
 import * as Bluebird from 'bluebird';
 import { remote } from 'electron';
@@ -9,7 +9,7 @@ import * as path from 'path';
 import {} from 'redux-thunk';
 import {actions, fs, log, selectors, types, util} from 'vortex-api';
 
-const LOOT_LIST_REVISION = 'v0.13';
+const LOOT_LIST_REVISION = 'v0.14';
 
 const LootProm: any = Bluebird.promisifyAll(LootAsync);
 
@@ -41,7 +41,7 @@ class LootInterface {
     context.api.events.on('restart-helpers', async () => {
       const { game, loot } = await this.mInitPromise;
       const gameMode = selectors.activeGameId(store.getState());
-      this.startStopLoot(context, gameMode, loot)
+      this.startStopLoot(context, gameMode, loot);
     });
 
     // on demand, re-sort the plugin list
@@ -64,17 +64,24 @@ class LootInterface {
 
         const state = store.getState();
         const gameMode = selectors.activeGameId(state);
-        if ((gameMode !== game) || !gameSupported(gameMode) || (loot === undefined) || loot.isClosed()) {
+        if ((gameMode !== game)
+            || !gameSupported(gameMode)
+            || (loot === undefined)
+            || loot.isClosed()) {
           return;
         }
         const pluginList: IPlugins = state.session.plugins.pluginList;
 
-        let pluginNames: string[] = Object
-          .keys(state.loadOrder)
-          .filter((pluginId: string) => (
-            (pluginList[pluginId] !== undefined)
-            && (pluginList[pluginId].deployed)))
-          .sort((lhs, rhs) => state.loadOrder[lhs].loadOrder - state.loadOrder[rhs].loadOrder)
+        const lo = (pluginKey: string) =>
+          (state.loadOrder[pluginKey] || { loadOrder: -1 }).loadOrder;
+
+        const pluginNames: string[] = Object
+          // from all plugins
+          .keys(pluginList)
+          // sort only the ones that are deployed
+          .filter((pluginId: string) => pluginList[pluginId].deployed)
+          // apply existing ordering (as far as available)
+          .sort((lhs, rhs) => lo(lhs) - lo(rhs))
           .map((pluginId: string) => path.basename(pluginList[pluginId].filePath));
 
         // ensure no other sort is in progress
@@ -127,7 +134,7 @@ class LootInterface {
             message: this.mExtensionApi.translate('Plugins not sorted because: {{msg}}',
               { replace: { msg: err.message }, ns: 'gamebryo-plugin' }),
           });
-        }
+        };
         try {
           await fs.statAsync(path.join(this.gamePath, 'data', pluginName));
           reportErr();
@@ -152,7 +159,8 @@ class LootInterface {
         // loot process terminated, don't really care about the result anyway
       } else {
         this.mExtensionApi.showErrorNotification('LOOT operation failed', err, {
-          id: 'loot-failed', allowReport: true
+          id: 'loot-failed',
+          allowReport: true,
         });
       }
     } finally {
@@ -212,7 +220,8 @@ class LootInterface {
       }
       await loot.loadCurrentLoadOrderStateAsync();
     } catch (err) {
-      this.mExtensionApi.showErrorNotification('There were errors getting plugin information from LOOT',
+      this.mExtensionApi.showErrorNotification(
+        'There were errors getting plugin information from LOOT',
         err, { allowReport: false, id: 'gamebryo-plugins-loot-meta-error' });
       callback({});
       return;
@@ -240,16 +249,18 @@ class LootInterface {
           group: undefined,
         };
         if (err.arg !== undefined) {
-          // invalid parameter. This simply means that loot has no meta data for this plugin so that's
-          // not a problem
+          // invalid parameter. This simply means that loot has no meta data for this plugin
+          // so that's not a problem
         } else {
-          log('error', 'Failed to get plugin meta data from loot', { pluginName, error: err.message });
+          log('error', 'Failed to get plugin meta data from loot',
+              { pluginName, error: err.message });
           error = err;
         }
       }))
     .then(() => {
       if (error !== undefined) {
-        this.mExtensionApi.showErrorNotification('There were errors getting plugin information from LOOT',
+        this.mExtensionApi.showErrorNotification(
+          'There were errors getting plugin information from LOOT',
           error, { allowReport: false, id: 'gamebryo-plugins-loot-details-error' });
       }
       callback(result);
@@ -332,7 +343,7 @@ class LootInterface {
       return { game: gameMode, loot: undefined };
     }
     const masterlistRepoPath = path.join(remote.app.getPath('userData'), gameMode,
-                                     'masterlist');
+                                         'masterlist');
     const masterlistPath = path.join(masterlistRepoPath, 'masterlist.yaml');
     try {
       await fs.ensureDirAsync(path.dirname(masterlistPath));

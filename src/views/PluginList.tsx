@@ -104,7 +104,7 @@ class GroupSelect extends React.PureComponent<IGroupSelectProps, {}> {
       userlist.groups.map(iter => ({ label: iter.name, value: iter.name })),
     );
 
-    let isCustom: boolean = userlist.plugins.find(plugin => {
+    const isCustom: boolean = userlist.plugins.find(plugin => {
         const refPlugin = plugins.find(iter => iter.id === plugin.name.toLowerCase());
         return (refPlugin !== undefined) && (plugin.group !== undefined);
       }) !== undefined;
@@ -220,17 +220,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       isToggleable: true,
       edit: {},
       isSortable: true,
-      calc: (plugin: IPluginCombined) => {
-        // with fallout 4 and skyrimse, native plugins are not listed in plugins.txt and thus
-        // they don't get a load order position. But since we display them with a load order,
-        // we have to offset all other plugins so they don't overlap.
-        const offset = ['fallout4', 'skyrimse'].indexOf(this.props.gameMode) !== -1
-          ? Object.keys(this.installedNative).length
-          : 0;
-        return plugin.isNative
-          ? this.installedNative[plugin.id]
-          : plugin.loadOrder + offset;
-      },
+      calc: (plugin: IPluginCombined) => plugin.loadOrder !== -1 ? plugin.loadOrder : '?',
       sortFuncRaw: (lhs, rhs) => this.sortByLoadOrder(this.installedNative, lhs, rhs),
       placement: 'table',
     },
@@ -259,7 +249,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       description: 'Group',
       icon: 'sort-down',
       placement: 'table',
-      calc: plugin => util.getSafe(plugin, ['group'], '') || 'Default',
+      calc: plugin => util.getSafe(plugin, ['group'], '') || 'default',
       edit: {},
       isToggleable: true,
       isDefaultVisible: true,
