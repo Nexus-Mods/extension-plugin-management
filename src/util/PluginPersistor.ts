@@ -29,7 +29,7 @@ class PluginPersistor implements types.IPersistor {
   private mPluginPath: string;
   private mPluginFormat: PluginFormat;
   private mNativePlugins: string[];
-  private mResetCallback: () => void;
+  private mResetCallback: () => Promise<void>;
 
   private mWatch: fs.FSWatcher;
   private mRefreshTimer: NodeJS.Timer;
@@ -42,7 +42,7 @@ class PluginPersistor implements types.IPersistor {
   private mPlugins: IPluginMap;
   // deployed plugins, mapping their plugin id to their file name on disk
   private mKnownPlugins: { [pluginId: string]: string };
-  private mInstalledNative: string[];
+  private mInstalledNative: string[] = [];
   private mRetryCounter: number = retryCount;
   private mLoaded: boolean = false;
   private mFailed: boolean = false;
@@ -60,12 +60,14 @@ class PluginPersistor implements types.IPersistor {
       this.mPluginFormat = undefined;
       this.mNativePlugins = undefined;
       this.mLoaded = false;
+      let prom = Promise.resolve();
       if (this.mResetCallback) {
-        this.mResetCallback();
-        this.mRetryCounter = retryCount;
+        prom = this.reset();
       }
-      this.stopWatch();
-      resolve();
+      prom.then(() => {
+        this.stopWatch();
+        resolve();
+      });
     }));
   }
 
@@ -93,7 +95,7 @@ class PluginPersistor implements types.IPersistor {
     this.updateNative();
   }
 
-  public setResetCallback(cb: () => void) {
+  public setResetCallback(cb: () => any) {
     this.mResetCallback = cb;
   }
 
@@ -452,6 +454,16 @@ class PluginPersistor implements types.IPersistor {
       this.mWatch.close();
       this.mWatch = undefined;
     }
+  }
+
+  private reset() {
+    return this.mResetCallback()
+      .then(() => {
+        this.mRetryCounter = retryCount;
+      })
+      .catch(err => {
+        this.reportError('failed to reset load order info', err);
+      });
   }
 }
 
