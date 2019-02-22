@@ -813,10 +813,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private highlightMod = (evt: React.MouseEvent<any>) => {
-    const modId = (util as any).sanitizeCSSId(evt.currentTarget.getAttribute('data-modid'));
+    const modId = evt.currentTarget.getAttribute('data-modid');
     this.context.api.events.emit('show-main-page', 'Mods');
-    this.context.api.events.emit('mods-scroll-to', modId);
-    this.context.api.highlightControl(`#${modId} > .cell-name`, 4000);
+    // give it time to transition to the mods page but also this is a workaround
+    // for the fact that the mods page might not be mounted yet
+    setTimeout(() => {
+      this.context.api.events.emit('mods-scroll-to', modId);
+      this.context.api.highlightControl(`#${(util as any).sanitizeCSSId(modId)} > .cell-name`, 4000);
+    }, 200);
   }
 
   private translateLootMessageType(input: number) {
