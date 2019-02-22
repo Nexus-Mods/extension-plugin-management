@@ -22,8 +22,8 @@ const gameSupport = {
     pluginTXTFormat: 'original',
     nativePlugins: [
       'skyrim.esm',
+      'enderal - forgotten stories.esm',
       'update.esm',
-      'enderal.esm',
     ],
   },
   skyrimse: {
