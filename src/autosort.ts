@@ -398,6 +398,7 @@ class LootInterface {
         ELECTRON_RUN_AS_NODE: '1',
       },
     })
+      .catch(util.UserCanceled, () => null)
       .catch(util.ProcessCanceled, () => null)
       .catch(err => this.mExtensionApi.showErrorNotification('Failed to start LOOT', err));
   }
