@@ -19,7 +19,7 @@ export function getPluginFlags(plugin: IPluginCombined, t: I18next.TranslationFu
   if (plugin.isMaster) {
     result.push(t('Master'));
   }
-  
+
   if (plugin.isLight) {
     result.push(t('Light'));
   }
@@ -71,7 +71,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
         tooltip={t('Master')}
       />);
   }
- 
+
   if (plugin.isLight) {
     const key = `ico-light-${plugin.id}`;
     flags.push(
@@ -107,13 +107,14 @@ const PluginFlags = (props: IProps): JSX.Element => {
 
   if (plugin.enabled) {
     const warningKeys = Object.keys(plugin.warnings);
+    const hasWarning = notification => plugin.warnings[notification] !== false;
     if ((warningKeys !== undefined)
       && (warningKeys.length > 0)
-      && (warningKeys.find(notification => plugin.warnings[notification] !== false) !== undefined)) {
+      && (warningKeys.find(hasWarning) !== undefined)) {
 
       const tooltipText = Object.keys(plugin.warnings)
-        .filter(key => plugin.warnings[key])
-        .map(key => `- ${warningText(t, key)}`)
+        .filter(iterKey => plugin.warnings[iterKey])
+        .map(iterKey => `- ${warningText(t, iterKey)}`)
         .join('\n');
 
       const key = `ico-notifications-${plugin.id}`;
@@ -154,8 +155,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
         key={key}
         name='hide'
         tooltip={t('Not deployed', { ns: 'gamebryo-plugin' })}
-      />
-    );
+      />);
   }
 
   return (
