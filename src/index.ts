@@ -140,11 +140,10 @@ function updatePluginList(store: Redux.Store<any>,
     .then(() => {
       if (readErrors.length > 0) {
         util.showError(
-          store.dispatch, 'Failed to read some mods', {
-            text: 'The following mods could not be searched (see log for details):\n'
-              + readErrors.map(error => `"${error}"`).join('\n'),
-            stack: stackErr.stack,
-          }, { allowReport: false });
+          store.dispatch, 'Failed to read some mods',
+          'The following mods could not be searched (see log for details):\n'
+          + readErrors.map(error => `"${error}"`).join('\n')
+          , { allowReport: false });
       }
       if (discovery === undefined) {
         return Promise.resolve([]);
