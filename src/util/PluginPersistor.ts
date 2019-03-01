@@ -244,7 +244,8 @@ class PluginPersistor implements types.IPersistor {
     // this includes native plugins, which may be filtered out later, depending on the game
     const sorted: string[] = Object.keys(this.mKnownPlugins)
             .sort((lhs: string, rhs: string) => this.loadOrder(lhs) - this.loadOrder(rhs))
-            .filter(pluginId => pluginId !== undefined);
+            .filter(pluginId => pluginId !== undefined)
+            .map(pluginId => this.mKnownPlugins[pluginId]);
 
     const loadOrderFile = path.join(destPath, 'loadorder.txt');
     const pluginsFile = path.join(destPath, 'plugins.txt');
