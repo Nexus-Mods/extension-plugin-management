@@ -4,6 +4,7 @@ import {gameSupported, nativePlugins, pluginPath} from './util/gameSupport';
 
 import * as Bluebird from 'bluebird';
 import { remote } from 'electron';
+import getVersion from 'exe-version';
 import { LootAsync } from 'loot';
 import * as path from 'path';
 import {} from 'redux-thunk';
@@ -155,6 +156,49 @@ class LootInterface {
           message: this.mExtensionApi.translate('Plugins not sorted because: {{msg}}',
             { replace: { msg: err.message }, ns: 'gamebryo-plugin' }),
         });
+      } else if (err.message.startsWith('Failed to evaluate condition')) {
+        let match = err.message.match(
+          /Failed to evaluate condition ".*version\("([^"]*\.exe)", .*/);
+        if (match) {
+          let exists = false;
+          let fileSize = 0;
+          let md5sum = '';
+          let version = '';
+          const filePath = path.resolve(this.gamePath, 'data', match[1]);
+
+          const report = () => {
+            this.mExtensionApi.showErrorNotification('LOOT operation failed', {
+              error: err,
+              File: filePath,
+              Exists: exists,
+              Size: fileSize,
+              MD5: md5sum,
+              Version: version,
+            }, {
+                id: 'loot-failed',
+                allowReport: true,
+              });
+          };
+
+          try {
+            const stats = fs.statSync(filePath);
+            exists = true;
+            fileSize = stats.size;
+            version = getVersion(filePath) || 'unknown';
+            (util as any).fileMD5(filePath)
+              .then(hash => md5sum = hash)
+              .finally(() => {
+                report();
+              });
+          } catch (err) {
+            report();
+          }
+        } else {
+          this.mExtensionApi.showErrorNotification('LOOT operation failed', err, {
+            id: 'loot-failed',
+            allowReport: true,
+          });
+        }
       } else if (err.message === 'already closed') {
         // loot process terminated, don't really care about the result anyway
       } else {
