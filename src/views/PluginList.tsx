@@ -21,7 +21,7 @@ import * as Promise from 'bluebird';
 import ESPFile from 'esptk';
 import * as I18next from 'i18next';
 import update from 'immutability-helper';
-import { Message } from 'loot';
+import { Message, PluginCleaningData } from 'loot';
 import * as path from 'path';
 import * as React from 'react';
 import { Alert, Button, ListGroup, ListGroupItem, Panel } from 'react-bootstrap';
@@ -33,8 +33,10 @@ import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import {ComponentEx, FlexLayout, IconBar, ITableRowAction,
   log, MainPage, selectors, Spinner,
-  Table, TableTextFilter, ToolbarIcon, types, Usage, util,
+  Table, TableTextFilter, ToolbarIcon, types, Usage, util, More, Icon,
 } from 'vortex-api';
+
+const CLEANING_GUIDE_LINK = 'https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html';
 
 interface IBaseProps {
   nativePlugins: string[];
@@ -307,8 +309,21 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       placement: 'detail',
     },
     {
+      id: 'cleaning_info',
+      name: 'LOOT cleaning info',
+      edit: {},
+      customRenderer: (plugin: IPluginCombined, detail: boolean, t: I18next.TranslationFunction) => (
+        <ListGroup className='loot-message-list'>
+          {plugin.cleanliness.map((dat, idx) => (<ListGroupItem key={idx}>{this.renderCleaningData(dat)}</ListGroupItem>))}
+          {plugin.dirtyness.map((dat, idx) => (<ListGroupItem key={idx}>{this.renderCleaningData(dat)}</ListGroupItem>))}
+        </ListGroup>
+      ),
+      calc: (plugin: IPluginCombined) => plugin.cleanliness.length + plugin.dirtyness.length,
+      placement: 'detail',
+    },
+    {
       id: 'loot_messages',
-      name: 'Loot Messages (only updates on sort)',
+      name: 'LOOT Messages (only updates on sort)',
       edit: {},
       customRenderer: (plugin: IPluginCombined) => this.renderLootMessages(plugin),
       calc: (plugin: IPluginCombined) => plugin.messages,
@@ -537,6 +552,46 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
               {t('Deploy now')}
             </Button>
           </Alert>
+    );
+  }
+
+  private issueCount(dat: PluginCleaningData) {
+    return dat['itmCount'] + dat.deletedNavmeshCount + dat.deletedReferenceCount;
+  }
+
+  private renderCleaningData(dat: PluginCleaningData) {
+    const { t } = this.props;
+    const things = [];
+    console.log('data', dat);
+    if (dat['itmCount'] > 0) {
+      things.push(t('{{count}} ITM record', { ns: 'gamebryo-plugin', count: dat['itmCount'] }));
+    }
+    if (dat.deletedNavmeshCount > 0) {
+      things.push(t('{{count}} deleted navmesh', { ns: 'gamebryo-plugin', count: dat.deletedNavmeshCount }));
+    }
+    if (dat.deletedReferenceCount > 0) {
+      things.push(t('{{count}} deleted reference', { ns: 'gamebryo-plugin', count: dat.deletedReferenceCount }));
+    }
+    const clean = things.length === 0;
+    if (clean) {
+      things.push(t('nothing! This plugin is clean.'));
+    }
+    const message = t('{{tool}} found {{things}}.', {
+          replace: {
+            tool: dat.cleaningUtility,
+            things: things.join(t(' and ')),
+          }
+        });
+    return (
+      <Alert bsStyle={clean ? 'success' : 'warning'}>
+        <ReactMarkdown source={message}/>
+        {clean ? null : (
+          <a href={CLEANING_GUIDE_LINK}>
+            <Icon name='launch' />
+            {t('Read about mod cleaning')}
+          </a>
+        )}
+      </Alert>
     );
   }
 

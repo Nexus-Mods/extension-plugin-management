@@ -36,6 +36,10 @@ export function getPluginFlags(plugin: IPluginCombined, t: I18next.TranslationFu
     result.push(t('Dirty'));
   }
 
+  if ((plugin.cleanliness !== undefined) && (plugin.cleanliness.length > 0)) {
+    result.push(t('Clean'));
+  }
+
   if (plugin.enabled
       && (plugin.warnings !== undefined)
       && (Object.keys(plugin.warnings).find(key => plugin.warnings[key] !== false) !== undefined)) {
@@ -137,15 +141,15 @@ const PluginFlags = (props: IProps): JSX.Element => {
         name='plugin-clean'
         tooltip={t('Requires cleaning (LOOT)', { ns: 'gamebryo-plugin' })}
       />);
-  }/* else if (plugin.cleanliness === 'do_not_clean') {
+  } else if ((plugin.cleanliness !== undefined) && (plugin.cleanliness.length > 0)) {
     flags.push(
       <tooltip.Icon
         id={cleanKey}
         key={cleanKey}
-        name='plugin-dont-clean'
-        tooltip={t('Must not be cleaned (LOOT)', { ns: 'gamebryo-plugin' })}
+        name='plugin-cleaned'
+        tooltip={t('Verified clean (LOOT)', { ns: 'gamebryo-plugin' })}
       />);
-  }*/
+  }
 
   if (!plugin.deployed) {
     const key = `ico-undeployed-${plugin.id}`;

@@ -136,6 +136,10 @@
   &.alert-info {
     background-color: rgba($alert-info-bg, 0.3);
   }
+
+  &.alert-success {
+    background-color: rgba($alert-success-bg, 0.3);
+  }
 }
 
 .plugin-dependency-connector {
