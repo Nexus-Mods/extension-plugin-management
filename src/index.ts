@@ -108,8 +108,6 @@ function updatePluginList(store: types.ThunkStore<any>,
     return Promise.resolve();
   }
 
-  const stackErr = new Error();
-
   const modPath = game.getModPaths(discovery.path)[''];
 
   const enabledModIds = Object.keys(gameMods).filter(
@@ -143,20 +141,9 @@ function updatePluginList(store: types.ThunkStore<any>,
           store.dispatch, 'Failed to read some mods',
           'The following mods could not be searched (see log for details):\n'
           + readErrors.map(error => `"${error}"`).join('\n')
-          , { allowReport: false });
-      } else if (readErrors.length === 0) {
-        // No read errors - make sure we clear off any outstanding read error notifications.
-        //  The user probably managed to fix the issue, leaving these may confuse the
-        //  user to think that he's still having the problem.
-        const notifications: types.INotification[] = util.getSafe(state,
-          ['session', 'notifications', 'notifications'], []);
-        if (notifications.length > 0) {
-          notifications.forEach(notif => {
-            if (notif.message === 'Failed to read some mods') {
-              store.dispatch(actions.dismissNotification(notif.id));
-            }
-          });
-        }
+          , { allowReport: false, id: 'failed-to-read-mods' });
+      } else {
+        store.dispatch(actions.dismissNotification('failed-to-read-mods'));
       }
 
       if (discovery === undefined) {
