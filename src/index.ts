@@ -71,7 +71,7 @@ function isPlugin(filePath: string, fileName: string): Promise<boolean> {
 /**
  * updates the list of known plugins for the managed game
  */
-function updatePluginList(store: Redux.Store<any>,
+function updatePluginList(store: types.ThunkStore<any>,
                           newModList: IModStates,
                           gameId: string): Promise<void> {
   const state: types.IState = store.getState();
@@ -144,7 +144,21 @@ function updatePluginList(store: Redux.Store<any>,
           'The following mods could not be searched (see log for details):\n'
           + readErrors.map(error => `"${error}"`).join('\n')
           , { allowReport: false });
+      } else if (readErrors.length === 0) {
+        // No read errors - make sure we clear off any outstanding read error notifications.
+        //  The user probably managed to fix the issue, leaving these may confuse the
+        //  user to think that he's still having the problem.
+        const notifications: types.INotification[] = util.getSafe(state,
+          ['session', 'notifications', 'notifications'], []);
+        if (notifications.length > 0) {
+          notifications.forEach(notif => {
+            if (notif.message === 'Failed to read some mods') {
+              store.dispatch(actions.dismissNotification(notif.id));
+            }
+          });
+        }
       }
+
       if (discovery === undefined) {
         return Promise.resolve([]);
       }
