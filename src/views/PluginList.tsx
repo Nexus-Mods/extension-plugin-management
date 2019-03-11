@@ -468,7 +468,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     // Will verify plugins for warning/error loot messages
     //  and notify the user if any are found.
     this.updatePlugins(this.props.plugins)
-      .then(() => this.applyUserlist(this.props.userlist.plugins));
+      .then(() => this.applyUserlist(this.props.userlist.plugins || []));
   }
 
   public componentDidMount() {
@@ -489,7 +489,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     }
 
     if (this.props.userlist !== nextProps.userlist) {
-      this.applyUserlist(nextProps.userlist.plugins);
+      this.applyUserlist(nextProps.userlist.plugins || []);
     }
   }
 
@@ -874,7 +874,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     // for the fact that the mods page might not be mounted yet
     setTimeout(() => {
       this.context.api.events.emit('mods-scroll-to', modId);
-      this.context.api.highlightControl(`#${(util as any).sanitizeCSSId(modId)} > .cell-name`, 4000);
+      this.context.api.highlightControl(
+        `#${(util as any).sanitizeCSSId(modId)} > .cell-name`, 4000);
     }, 200);
   }
 
