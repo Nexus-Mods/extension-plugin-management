@@ -106,7 +106,7 @@ class GroupSelect extends React.PureComponent<IGroupSelectProps, {}> {
       userlist.groups.map(iter => ({ label: iter.name, value: iter.name })),
     );
 
-    const isCustom: boolean = userlist.plugins.find(plugin => {
+    const isCustom: boolean = (userlist.plugins || []).find(plugin => {
         const refPlugin = plugins.find(iter => iter.id === plugin.name.toLowerCase());
         return (refPlugin !== undefined) && (plugin.group !== undefined);
       }) !== undefined;
@@ -574,7 +574,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     }
     const clean = things.length === 0;
     if (clean) {
-      things.push(t('nothing! This plugin is clean.'));
+      things.push(t('nothing! This plugin is clean'));
     }
     const message = t('{{tool}} found {{things}}.', {
           replace: {
