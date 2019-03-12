@@ -6,7 +6,7 @@ import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import { safeDump, safeLoad } from 'js-yaml';
 import * as path from 'path';
-import { fs, types, util } from 'vortex-api';
+import { fs, log, types, util } from 'vortex-api';
 
 const app = appIn || remote.app;
 
@@ -23,7 +23,7 @@ class UserlistPersistor implements types.IPersistor {
   private mSerializeQueue: Promise<void> = Promise.resolve();
   private mLoaded: boolean = false;
   private mFailed: boolean = false;
-  private mOnError: (message: string, details: Error) =>  void;
+  private mOnError: (message: string, details: Error, options?: types.IErrorOptions) =>  void;
   private mMode: 'userlist' | 'masterlist';
 
   constructor(mode: 'userlist' | 'masterlist',
@@ -74,7 +74,20 @@ class UserlistPersistor implements types.IPersistor {
   }
 
   public setItem(key: string[], value: string): Promise<void> {
-    this.mUserlist[key[0]] = JSON.parse(value);
+    try {
+      this.mUserlist[key[0]] = JSON.parse(value);
+    } catch (err) {
+      log('error', 'Corrupt loot list file', this.mUserlistPath);
+      // We can't parse the file, we force the user to quit at this point
+      //  to avoid further corruption, and any uncharted behaviour that may
+      //  arise due to this corruption.
+      util.terminate({
+        message: 'Failed to parse loot list file for this game. '
+                + 'Repair or delete this file and restart Vortex.',
+        path: this.mUserlistPath,
+        details: `Error: ${err.message}`,
+      }, undefined, false);
+    }
     return this.serialize();
   }
 
@@ -92,9 +105,9 @@ class UserlistPersistor implements types.IPersistor {
     return this.mSerializeQueue;
   }
 
-  private reportError(message: string, detail: Error) {
+  private reportError(message: string, detail: Error, options?: types.IErrorOptions) {
     if (!this.mFailed) {
-      this.mOnError(message, detail);
+      this.mOnError(message, detail, options);
       this.mFailed = true;
     }
   }
