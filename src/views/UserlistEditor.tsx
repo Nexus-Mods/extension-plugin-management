@@ -276,12 +276,14 @@ class Editor extends ComponentEx<IProps, IComponentState> {
   }
 }
 
+const emptyList = [];
+
 function mapStateToProps(state: any): IConnectedProps {
   const dialog: IDialog = state.session.pluginDependencies.dialog;
   return {
     dialog,
     plugins: state.session.plugins.pluginList,
-    userlist: state.userlist.plugins,
+    userlist: state.userlist.plugins || emptyList,
   };
 }
 

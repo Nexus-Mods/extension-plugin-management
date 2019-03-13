@@ -56,6 +56,33 @@ class LootInterface {
     await this.mSortPromise;
   }
 
+  public async resetMasterlist(): Promise<string> {
+    const { store } = this.mExtensionApi;
+    const { game, loot } = await this.mInitPromise;
+
+    const state = store.getState();
+    const gameMode = selectors.activeGameId(state);
+
+    if ((gameMode !== game)
+      || !gameSupported(gameMode)
+      || (loot === undefined)
+      || loot.isClosed()) {
+      return 'LOOT not initialised';
+    }
+
+    const masterlistPath = path.join(remote.app.getPath('userData'), gameMode,
+      'masterlist', 'masterlist.yaml');
+
+    await fs.removeAsync(masterlistPath);
+    return await loot.updateMasterlistAsync(
+        masterlistPath,
+        `https://github.com/loot/${this.convertGameId(game, true)}.git`,
+        LOOT_LIST_REVISION)
+      ? null
+      // how would that happen?
+      : 'Masterlist unmodified';
+  }
+
   private onSort = async (manual: boolean, callback?: (err: Error) => void) => {
     const { store } = this.mExtensionApi;
     try {

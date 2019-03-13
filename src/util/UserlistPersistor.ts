@@ -3,12 +3,13 @@ import { ILOOTList } from '../types/ILOOTList';
 import {gameSupported} from './gameSupport';
 
 import * as Promise from 'bluebird';
-import { app as appIn, remote } from 'electron';
+import { app as appIn, dialog as dialogIn, remote } from 'electron';
 import { safeDump, safeLoad } from 'js-yaml';
 import * as path from 'path';
-import { fs, log, types, util } from 'vortex-api';
+import { fs, types, util } from 'vortex-api';
 
 const app = appIn || remote.app;
+const dialog = dialogIn || remote.dialog;
 
 /**
  * persistor syncing to and from the loot userlist.yaml file
@@ -23,7 +24,7 @@ class UserlistPersistor implements types.IPersistor {
   private mSerializeQueue: Promise<void> = Promise.resolve();
   private mLoaded: boolean = false;
   private mFailed: boolean = false;
-  private mOnError: (message: string, details: Error, options?: types.IErrorOptions) =>  void;
+  private mOnError: (message: string, details: Error, options?: types.IErrorOptions) => void;
   private mMode: 'userlist' | 'masterlist';
 
   constructor(mode: 'userlist' | 'masterlist',
@@ -74,20 +75,7 @@ class UserlistPersistor implements types.IPersistor {
   }
 
   public setItem(key: string[], value: string): Promise<void> {
-    try {
-      this.mUserlist[key[0]] = JSON.parse(value);
-    } catch (err) {
-      log('error', 'Corrupt loot list file', this.mUserlistPath);
-      // We can't parse the file, we force the user to quit at this point
-      //  to avoid further corruption, and any uncharted behaviour that may
-      //  arise due to this corruption.
-      util.terminate({
-        message: 'Failed to parse loot list file for this game. '
-                + 'Repair or delete this file and restart Vortex.',
-        path: this.mUserlistPath,
-        details: `Error: ${err.message}`,
-      }, undefined, false);
-    }
+    this.mUserlist[key[0]] = JSON.parse(value);
     return this.serialize();
   }
 
@@ -141,6 +129,41 @@ class UserlistPersistor implements types.IPersistor {
       });
   }
 
+  private handleInvalidList() {
+    if (this.mMode === 'masterlist') {
+      dialog.showMessageBox(null, {
+        title: 'Masterlist invalid',
+        message: 'The masterlist couldn\'t be read. This might have been '
+               + 'caused by network problems. You should go to the plugins '
+               + 'tab and click the "Reset Masterlist" button, until then '
+               + 'plugin sorting will not produce correct results.',
+        buttons: [
+          'Understood',
+        ]
+      });
+    } else {
+      if (dialog.showMessageBox(null, {
+        title: 'Userlist invalid',
+        message: `The LOOT userlist "${this.mUserlistPath}" can\'t be read. `
+               + '\n\n'
+               + 'You should quit vortex now and repair the file.\n'
+               + 'If (and only if!) you\'re certain you didn\'t modify the file yourself, '
+               + 'please send in a bug report with that file attached.'
+               + '\n\n'
+               + 'If you continue now, the userlist will be reset and all your plugin '
+               + 'rules and group assignments will be lost.',
+        noLink: true,
+        defaultId: 1,
+        buttons: [
+          'Reset Userlist',
+          'Quit Vortex'
+        ]
+      })) {
+        app.exit(1);
+      }
+    }
+  }
+
   private deserialize(): Promise<void> {
     if (this.mUserlist === undefined) {
       return Promise.resolve();
@@ -157,7 +180,23 @@ class UserlistPersistor implements types.IPersistor {
         // or contains only "null" or something silly like that
         empty = true;
       }
-      this.mUserlist = safeLoad(data.toString(), { json: true } as any);
+
+      let newList: Partial<ILOOTList> = {};
+      try {
+        newList = safeLoad(data.toString(), { json: true } as any);
+      } catch (err) {
+        this.handleInvalidList();
+      }
+      if (typeof (newList) !== 'object') {
+        this.handleInvalidList();
+      }
+
+      ['globals', 'plugins', 'groups'].forEach(key => {
+        if ([null, undefined].indexOf(newList[key]) !== -1) {
+          newList[key] = [];
+        }
+      });
+      this.mUserlist = newList as ILOOTList;
       if (this.mResetCallback) {
         this.mResetCallback();
         this.mLoaded = true;

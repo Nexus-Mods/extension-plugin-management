@@ -229,6 +229,18 @@ function register(context: IExtensionContextExt) {
       context.api.store.dispatch(openGroupEditor(true));
     });
 
+  context.registerAction('gamebryo-plugin-icons', 110, 'refresh', {}, 'Reset Masterlist',
+    () => {
+      loot.resetMasterlist().then(failReason => {
+        context.api.sendNotification({
+          id: 'masterlist-reset',
+          type: failReason !== null ? 'warning' : 'success',
+          message: failReason || 'Masterlist reset',
+          displayMS: failReason !== undefined ? undefined : 5000,
+        });
+      });
+    });
+
   context.registerActionCheck('ADD_USERLIST_RULE', (state: any, action: any) => {
     const {pluginId, reference, type} = action.payload;
 
@@ -542,7 +554,7 @@ function testUserlistInvalid(t: I18next.TranslationFunction,
 
   // search for duplicate plugin entries
   const duplicate = (userlist.plugins || []).find(iter => {
-    if ((iter === null) || (iter.name === null)) {
+    if ((iter === null) || ([null, undefined].indexOf(iter.name) !== -1)) {
       return false;
     }
     const name = iter.name.toUpperCase();
