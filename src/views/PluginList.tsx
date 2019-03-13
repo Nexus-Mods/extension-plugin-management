@@ -113,8 +113,10 @@ class GroupSelect extends React.PureComponent<IGroupSelectProps, {}> {
 
     return (
       <Creatable
+        // TODO: for some reason the value doesn't actually show - anywhere. Guess
+        //   we have to update react-select at some point...
         value={isCustom ? group : undefined}
-        placeholder={group}
+        placeholder={group || 'default'}
         onChange={this.changeGroup}
         options={options}
         promptTextCreator={this.createPrompt}
@@ -252,6 +254,18 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       icon: 'sort-down',
       placement: 'table',
       calc: plugin => util.getSafe(plugin, ['group'], '') || 'default',
+      customRenderer: (plugin: IPluginCombined) => {
+        const grp = util.getSafe(plugin, ['group'], '') || 'default';
+        const ulEntry = (this.props.userlist.plugins || []).find(iter =>
+          iter.name.toLowerCase() === plugin.id);
+        const isCustom = (ulEntry !== undefined) && (ulEntry.group !== undefined);
+
+        return (
+          <div className={isCustom ? 'plugin-group-custom' : 'plugin-group-default'}>
+            {grp}
+          </div>
+        );
+      },
       edit: {},
       isToggleable: true,
       isDefaultVisible: true,
@@ -562,7 +576,6 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   private renderCleaningData(dat: PluginCleaningData) {
     const { t } = this.props;
     const things = [];
-    console.log('data', dat);
     if (dat['itmCount'] > 0) {
       things.push(t('{{count}} ITM record', { ns: 'gamebryo-plugin', count: dat['itmCount'] }));
     }
