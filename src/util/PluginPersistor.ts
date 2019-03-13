@@ -435,6 +435,7 @@ class PluginPersistor implements types.IPersistor {
               this.scheduleRefresh(500);
             }
           })
+          .catch(util.UserCanceled, () => Promise.resolve())
           .catch(err => (err.code === 'ENOENT')
             ? Promise.resolve()
             : this.mOnError('failed to read fileName', err));
