@@ -900,6 +900,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     }[input];
   }
 
+  private prepareMessage(input: any, plugin: IPluginCombined) {
+    return input.replace(/%1%/g, `"${plugin.name}"`);
+  }
+
   private renderLootMessages(plugin: IPluginCombined) {
     if (plugin.messages === undefined) {
       return null;
@@ -911,7 +915,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           plugin.messages.map((msg: Message, idx: number) => (
             <ListGroupItem key={idx}>
               <Alert bsStyle={this.translateLootMessageType(msg.type)}>
-              <ReactMarkdown source={msg.value as any} />
+              <ReactMarkdown source={this.prepareMessage(msg.value, plugin)} />
               </Alert>
             </ListGroupItem>
           ))
