@@ -131,7 +131,7 @@ class GroupSelect extends React.PureComponent<IGroupSelectProps, {}> {
 
   private changeGroup = (selection: { name: string, value: string }) => {
     const { plugins, onSetGroup } = this.props;
-    plugins.forEach(plugin => onSetGroup(plugin.id,
+    plugins.forEach(plugin => onSetGroup(plugin.name,
       selection ? selection.value : undefined));
   }
 }

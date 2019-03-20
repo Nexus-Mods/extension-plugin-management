@@ -45,7 +45,8 @@ const userlistReducer: types.IReducerSpec = {
     [actions.removeRule as any]: (state, payload) => {
       let existing: number = -1;
       if (state.plugins !== undefined) {
-        existing = state.plugins.findIndex(plug => plug.name === payload.pluginId);
+        existing = state.plugins.findIndex(plug =>
+          plug.name.toUpperCase() === payload.pluginId.toUpperCase());
       }
       const list = listForType(payload.type);
       if (existing !== -1) {
@@ -55,7 +56,7 @@ const userlistReducer: types.IReducerSpec = {
       }
     },
     [actions.addGroup as any]: (state, payload) =>
-      (state.groups.find(group => group.name === payload.group) === undefined)
+      (state.groups.find(group => group.name.toUpperCase() === payload.group.toUpperCase()) === undefined)
         ? util.pushSafe(state, ['groups'], {
           name: payload.group,
           after: [],
@@ -68,17 +69,18 @@ const userlistReducer: types.IReducerSpec = {
       });
 
       state.plugins.forEach((plugin, idx) => {
-        if (plugin.group === payload.group) {
+        if (plugin.group.toUpperCase() === payload.group.toUpperCase()) {
           state = util.setSafe(state, ['plugins', idx, 'group'], 'default');
         }
       });
 
-      return util.removeValueIf(state, ['groups'], group => group.name === payload.group);
+      return util.removeValueIf(state, ['groups'], group => group.name.toUpperCase() === payload.group.toUpperCase());
     },
     [actions.setGroup as any]: (state, payload) => {
       let existing: number = -1;
       if (state.plugins !== undefined) {
-        existing = state.plugins.findIndex(plug => plug.name === payload.pluginId);
+        existing = state.plugins.findIndex(plug =>
+          plug.name.toUpperCase() === payload.pluginId.toUpperCase());
       }
 
       if (payload.group === undefined) {
@@ -95,7 +97,8 @@ const userlistReducer: types.IReducerSpec = {
         });
     },
     [actions.addGroupRule as any]: (state, payload) => {
-      const idx = state.groups.findIndex(group => group.name === payload.groupId);
+      const idx = state.groups.findIndex(group =>
+        group.name.toUpperCase() === payload.groupId.toUpperCase());
       if (idx === -1) {
         return util.pushSafe(state, ['groups'], {
           name: payload.groupId,
@@ -106,7 +109,8 @@ const userlistReducer: types.IReducerSpec = {
       }
     },
     [actions.removeGroupRule as any]: (state, payload) => {
-      const idx = state.groups.findIndex(group => group.name === payload.groupId);
+      const idx = state.groups.findIndex(group =>
+        group.name.toUpperCase() === payload.groupId.toUpperCase());
       if (idx === -1) {
         return state;
       }

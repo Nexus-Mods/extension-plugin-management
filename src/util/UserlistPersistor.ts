@@ -1,10 +1,11 @@
-import { ILOOTList } from '../types/ILOOTList';
+import { ILOOTList, ILOOTPlugin } from '../types/ILOOTList';
 
 import {gameSupported} from './gameSupport';
 
 import * as Promise from 'bluebird';
 import { app as appIn, dialog as dialogIn, remote } from 'electron';
 import { safeDump, safeLoad } from 'js-yaml';
+import * as _ from 'lodash';
 import * as path from 'path';
 import { fs, types, util } from 'vortex-api';
 
@@ -164,6 +165,31 @@ class UserlistPersistor implements types.IPersistor {
     }
   }
 
+  private makeCaseInsensitive<T>(list: ILOOTPlugin[]): ILOOTPlugin[] {
+    const keysU = {};
+
+    const mapKey = (key: string, idx: number): number => {
+      let keyU = key.toUpperCase();
+      let mapped = keysU[keyU];
+      if (mapped === undefined) {
+        keysU[keyU] = idx;
+        return -1;
+      } else {
+        return mapped;
+      }
+    }
+
+    return list.reduce((prev, plugin) => {
+      const mappedIdx = mapKey(plugin.name, prev.length);
+      if (mappedIdx === -1) {
+        prev.push(plugin);
+      } else {
+        prev[mappedIdx] = _.merge(prev[mappedIdx], plugin);
+      }
+      return prev;
+    }, []);
+  }
+
   private deserialize(): Promise<void> {
     if (this.mUserlist === undefined) {
       return Promise.resolve();
@@ -196,10 +222,20 @@ class UserlistPersistor implements types.IPersistor {
           newList[key] = [];
         }
       });
+
+      const newPlugins = this.makeCaseInsensitive(newList.plugins);
+      const didChange = (newPlugins.length !== newList.plugins.length);
+      newList.plugins = newPlugins;
+
       this.mUserlist = newList as ILOOTList;
       if (this.mResetCallback) {
         this.mResetCallback();
         this.mLoaded = true;
+      }
+      if (didChange) {
+        return this.serialize();
+      } else {
+        return Promise.resolve();
       }
     })
     .catch(err => {
