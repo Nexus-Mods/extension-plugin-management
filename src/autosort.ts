@@ -306,8 +306,8 @@ class LootInterface {
         result[pluginName] = {
           messages: meta.messages,
           tags: meta.tags,
-          cleanliness: meta.cleanInfo,
-          dirtyness: meta.dirtyInfo,
+          cleanliness: meta.cleanInfo || [],
+          dirtyness: meta.dirtyInfo || [],
           group: meta.group,
         };
       })
