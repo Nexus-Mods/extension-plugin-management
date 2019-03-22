@@ -58,7 +58,7 @@ class LootInterface {
 
   public async resetMasterlist(): Promise<string> {
     const { store } = this.mExtensionApi;
-    const { game, loot } = await this.mInitPromise;
+    let { game, loot } = await this.mInitPromise;
 
     const state = store.getState();
     const gameMode = selectors.activeGameId(state);
@@ -71,11 +71,15 @@ class LootInterface {
     }
 
     const masterlistPath = path.join(remote.app.getPath('userData'), gameMode,
-      'masterlist', 'masterlist.yaml');
+      'masterlist');
 
     await fs.removeAsync(masterlistPath);
+    // have to restart loot so it does refetch the masterlist
+    this.mInitPromise = this.init(gameMode, this.gamePath);
+    loot = (await this.mInitPromise).loot;
+
     return await loot.updateMasterlistAsync(
-        masterlistPath,
+        path.join(masterlistPath, 'masterlist.yaml'),
         `https://github.com/loot/${this.convertGameId(game, true)}.git`,
         LOOT_LIST_REVISION)
       ? null
