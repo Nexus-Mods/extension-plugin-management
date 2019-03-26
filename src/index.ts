@@ -65,7 +65,8 @@ function isPlugin(filePath: string, fileName: string): Promise<boolean> {
     || (['.esp', '.esm', '.esl'].indexOf(path.extname(fileName).toLowerCase()) === -1)) {
     return Promise.resolve(false);
   }
-  return isFile(path.join(filePath, fileName));
+  return isFile(path.join(filePath, fileName))
+    .catch(util.UserCanceled, () => false);
 }
 
 /**
