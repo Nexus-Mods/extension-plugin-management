@@ -569,10 +569,6 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private issueCount(dat: PluginCleaningData) {
-    return dat['itmCount'] + dat.deletedNavmeshCount + dat.deletedReferenceCount;
-  }
-
   private renderCleaningData(dat: PluginCleaningData) {
     const { t } = this.props;
     const things = [];
@@ -785,6 +781,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         name: this.safeBasename(plugins[pluginId].filePath),
         modIndex: -1,
         enabled: plugins[pluginId].isNative ? undefined : false,
+        cleanliness: [],
+        dirtyness: [],
         ...plugins[pluginId],
         ...loadOrder[pluginId],
         ...pluginsLoot[pluginId],

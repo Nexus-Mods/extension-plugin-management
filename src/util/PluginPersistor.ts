@@ -385,6 +385,10 @@ class PluginPersistor implements types.IPersistor {
         this.mFailed = false;
         return Promise.resolve();
       })
+      .catch(util.UserCanceled, err => {
+        this.mLoaded = true;
+        this.reportError('reading plugin list canceled', err, { allowReport: false });
+      })
       .catch((err: any) => {
         if (err.code === 'ENOENT') {
           this.mLoaded = true;

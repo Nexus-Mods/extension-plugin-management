@@ -207,7 +207,7 @@ class LootInterface {
               Version: version,
             }, {
                 id: 'loot-failed',
-                allowReport: true,
+                allowReport: this.allowReport(err),
               });
           };
 
@@ -227,7 +227,7 @@ class LootInterface {
         } else {
           this.mExtensionApi.showErrorNotification('LOOT operation failed', err, {
             id: 'loot-failed',
-            allowReport: true,
+            allowReport: this.allowReport(err),
           });
         }
       } else if (err.message === 'already closed') {
@@ -235,12 +235,16 @@ class LootInterface {
       } else {
         this.mExtensionApi.showErrorNotification('LOOT operation failed', err, {
           id: 'loot-failed',
-          allowReport: true,
+          allowReport: this.allowReport(err),
         });
       }
     } finally {
       store.dispatch(actions.stopActivity('plugins', 'sorting'));
     }
+  }
+
+  private allowReport(err: Error) {
+    return err.message.indexOf('boost::filesystem') === -1;
   }
 
   private onGameModeChanged = async (context: types.IExtensionContext, gameMode: string) => {
