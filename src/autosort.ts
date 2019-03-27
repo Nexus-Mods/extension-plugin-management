@@ -78,10 +78,17 @@ class LootInterface {
     this.mInitPromise = this.init(gameMode, this.gamePath);
     loot = (await this.mInitPromise).loot;
 
-    return await loot.updateMasterlistAsync(
+    let updated;
+    try {
+      updated = await loot.updateMasterlistAsync(
         path.join(masterlistPath, 'masterlist.yaml'),
         `https://github.com/loot/${this.convertGameId(game, true)}.git`,
-        LOOT_LIST_REVISION)
+        LOOT_LIST_REVISION);
+    } catch (err) {
+      return Promise.reject(err);
+    }
+
+    return (updated)
       ? null
       // how would that happen?
       : 'Masterlist unmodified';
