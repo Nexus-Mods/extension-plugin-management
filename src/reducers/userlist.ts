@@ -69,7 +69,9 @@ const userlistReducer: types.IReducerSpec = {
       });
 
       state.plugins.forEach((plugin, idx) => {
-        if (plugin.group.toUpperCase() === payload.group.toUpperCase()) {
+        if ((plugin.group !== undefined)
+            && (payload.group !== undefined)
+            && (plugin.group.toUpperCase() === payload.group.toUpperCase())) {
           state = util.setSafe(state, ['plugins', idx, 'group'], 'default');
         }
       });
