@@ -3,10 +3,10 @@ import { closeDialog } from '../actions/userlistEdit';
 import { ILOOTPlugin } from '../types/ILOOTList';
 import { IPlugins } from '../types/IPlugins';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as React from 'react';
 import { Button, ListGroup, ListGroupItem, Modal, ModalHeader } from 'react-bootstrap';
-import { translate } from 'react-i18next';
+import { withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import Select from 'react-select';
 import * as Redux from 'redux';
@@ -16,7 +16,7 @@ import { ComponentEx, Icon, tooltip, types } from 'vortex-api';
 type RuleType = 'after' | 'requires' | 'incompatible';
 
 interface IRuleEntryProps {
-  t: I18next.TranslationFunction;
+  t: typeof I18next.t;
   pluginId: string;
   reference: string;
   type: RuleType;
@@ -297,5 +297,5 @@ function mapDispatchToProps(dispatch: ThunkDispatch<types.IState, null, Redux.Ac
   };
 }
 
-export default translate(['common', 'gamebryo-plugin'], { wait: false })(
-  connect(mapStateToProps, mapDispatchToProps)(Editor)) as React.ComponentClass<{}>;
+export default withTranslation(['common', 'gamebryo-plugin'])(
+  connect(mapStateToProps, mapDispatchToProps)(Editor) as any) as React.ComponentClass<{}>;

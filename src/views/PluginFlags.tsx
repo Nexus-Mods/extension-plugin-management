@@ -2,18 +2,20 @@ import { IPluginCombined } from '../types/IPlugins';
 
 import { tooltip } from 'vortex-api';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as React from 'react';
+
+type TranslationFunction = typeof I18next.t;
 
 interface IBaseProps {
   plugin: IPluginCombined;
 }
 
 type IProps = IBaseProps & {
-  t: I18next.TranslationFunction;
+  t: TranslationFunction;
 };
 
-export function getPluginFlags(plugin: IPluginCombined, t: I18next.TranslationFunction): string[] {
+export function getPluginFlags(plugin: IPluginCombined, t: TranslationFunction): string[] {
   const result: string[] = [];
 
   if (plugin.isMaster) {
@@ -53,7 +55,7 @@ export function getPluginFlags(plugin: IPluginCombined, t: I18next.TranslationFu
   return result;
 }
 
-function warningText(t: I18next.TranslationFunction, key: string) {
+function warningText(t: TranslationFunction, key: string) {
   return t({
     'missing-master': 'Plugin has missing masters',
     'loot-messages': 'LOOT warnings',

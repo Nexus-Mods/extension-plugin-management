@@ -7,7 +7,7 @@ import GraphView, { IGraphElement, IGraphSelection } from './GraphView';
 
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
-import { translate } from 'react-i18next';
+import { withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
@@ -321,6 +321,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<types.IState, null, Redux.Ac
   };
 }
 
-export default translate(['common'], {wait: false})(
+export default withTranslation(['common'])(
   connect(mapStateToProps, mapDispatchToProps)(
-    GroupEditor)) as React.ComponentClass<{}>;
+    GroupEditor) as any) as React.ComponentClass<{}>;

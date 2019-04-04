@@ -4,7 +4,7 @@ import { setCreateRule, setQuickEdit, setSource, setTarget } from '../actions/us
 import { ILOOTList, ILOOTPlugin, ILootReference } from '../types/ILOOTList';
 import { IPluginCombined } from '../types/IPlugins';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Button, Overlay, Popover } from 'react-bootstrap';
@@ -14,6 +14,8 @@ import { findDOMNode } from 'react-dom';
 import { connect } from 'react-redux';
 import { Advanced, ComponentEx, log, selectors, tooltip, util } from 'vortex-api';
 
+type TranslationFunction = typeof I18next.t;
+
 function splitOnce(input: string, separator: string): string[] {
   const idx = input.indexOf(separator);
   return [input.slice(0, idx), input.slice(idx + 1)];
@@ -21,7 +23,7 @@ function splitOnce(input: string, separator: string): string[] {
 
 export interface IBaseProps {
   plugin: IPluginCombined;
-  t: I18next.TranslationFunction;
+  t: TranslationFunction;
   onHighlight: (highlight: boolean) => void;
 }
 

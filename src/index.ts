@@ -32,11 +32,13 @@ import * as Promise from 'bluebird';
 import { ipcMain, ipcRenderer, remote } from 'electron';
 import ESPFile from 'esptk';
 import { access, constants } from 'fs';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as path from 'path';
 import * as Redux from 'redux';
 import * as nodeUtil from 'util';
 import { actions, fs, log, selectors, types, util } from 'vortex-api';
+
+type TranslationFunction = typeof I18next.t;
 
 interface IModState {
   enabled: boolean;
@@ -483,7 +485,7 @@ function testPluginsLocked(gameMode: string): Promise<types.ITestResult> {
   });
 }
 
-function testMissingGroups(t: I18next.TranslationFunction,
+function testMissingGroups(t: TranslationFunction,
                            store: Redux.Store<IStateEx>): Promise<types.ITestResult> {
   const state = store.getState();
   const gameMode = selectors.activeGameId(state);
@@ -545,7 +547,7 @@ function testMissingGroups(t: I18next.TranslationFunction,
   return Promise.resolve(res);
 }
 
-function testUserlistInvalid(t: I18next.TranslationFunction,
+function testUserlistInvalid(t: TranslationFunction,
                              state: IStateEx): Promise<types.ITestResult> {
   const gameMode = selectors.activeGameId(state);
   if (!gameSupported(gameMode)) {
@@ -620,7 +622,7 @@ function testUserlistInvalid(t: I18next.TranslationFunction,
   return Promise.resolve(undefined);
 }
 
-function testMissingMasters(t: I18next.TranslationFunction,
+function testMissingMasters(t: TranslationFunction,
                             store: Redux.Store<any>): Promise<types.ITestResult> {
   const state = store.getState();
   const gameMode = selectors.activeGameId(state);

@@ -19,13 +19,13 @@ import PluginStatusFilter from './PluginStatusFilter';
 
 import * as Promise from 'bluebird';
 import ESPFile from 'esptk';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import update from 'immutability-helper';
 import { Message, PluginCleaningData } from 'loot';
 import * as path from 'path';
 import * as React from 'react';
 import { Alert, Button, ListGroup, ListGroupItem, Panel } from 'react-bootstrap';
-import { translate } from 'react-i18next';
+import { withTranslation } from 'react-i18next';
 import * as ReactMarkdown from 'react-markdown';
 import { connect } from 'react-redux';
 import { Creatable } from 'react-select';
@@ -35,6 +35,8 @@ import {ComponentEx, FlexLayout, IconBar, ITableRowAction,
   log, MainPage, selectors, Spinner,
   Table, TableTextFilter, ToolbarIcon, types, Usage, util, More, Icon,
 } from 'vortex-api';
+
+type TranslationFunction = typeof I18next.t;
 
 const CLEANING_GUIDE_LINK = 'https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html';
 
@@ -85,7 +87,7 @@ function toHex(input: number, pad: number) {
 }
 
 interface IGroupSelectProps {
-  t: I18next.TranslationFunction;
+  t: TranslationFunction;
   plugins: IPluginCombined[];
   userlist: ILOOTList;
   masterlist: ILOOTList;
@@ -203,7 +205,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       isToggleable: true,
       edit: {},
       isSortable: true,
-      customRenderer: (plugin: IPluginCombined, detail: boolean, t: I18next.TranslationFunction) =>
+      customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) =>
         (<PluginFlags plugin={plugin} t={t} />),
       calc: (plugin: IPluginCombined, t) => getPluginFlags(plugin, t),
       sortFunc: (lhs: string[], rhs: string[]) => lhs.length - rhs.length,
@@ -306,7 +308,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       icon: 'plug',
       placement: 'table',
       customRenderer: (plugin: IPluginCombined, detail: boolean,
-                       t: I18next.TranslationFunction, props: types.ICustomProps) =>
+                       t: TranslationFunction, props: types.ICustomProps) =>
         <DependencyIcon plugin={plugin} t={t} onHighlight={props.onHighlight} />,
       calc: () => null,
       isToggleable: true,
@@ -317,7 +319,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       id: 'masters',
       name: 'Masters',
       edit: {},
-      customRenderer: (plugin: IPluginCombined, detail: boolean, t: I18next.TranslationFunction) =>
+      customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) =>
         <MasterList masters={plugin.masterList} />,
       calc: (plugin: IPluginCombined) => plugin.masterList,
       placement: 'detail',
@@ -326,7 +328,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       id: 'cleaning_info',
       name: 'LOOT cleaning info',
       edit: {},
-      customRenderer: (plugin: IPluginCombined, detail: boolean, t: I18next.TranslationFunction) => (
+      customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => (
         <ListGroup className='loot-message-list'>
           {plugin.cleanliness.map((dat, idx) => (<ListGroupItem key={idx}>{this.renderCleaningData(dat)}</ListGroupItem>))}
           {plugin.dirtyness.map((dat, idx) => (<ListGroupItem key={idx}>{this.renderCleaningData(dat)}</ListGroupItem>))}
@@ -1001,6 +1003,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 }
 
 export default
-  translate(['common', 'gamebryo-plugin'], { wait: false })(
+  withTranslation(['common', 'gamebryo-plugin'])(
     connect<IConnectedProps, IActionProps, IBaseProps>(mapStateToProps, mapDispatchToProps)(
-      PluginList)) as React.ComponentClass<IBaseProps>;
+      PluginList) as any) as React.ComponentClass<IBaseProps>;
