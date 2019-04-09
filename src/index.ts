@@ -485,8 +485,8 @@ function testPluginsLocked(gameMode: string): Promise<types.ITestResult> {
   });
 }
 
-function testMissingGroups(t: TranslationFunction,
-                           store: Redux.Store<IStateEx>): Promise<types.ITestResult> {
+function testMissingGroupsImpl(t: TranslationFunction,
+                               store: Redux.Store<IStateEx>): Promise<types.ITestResult> {
   const state = store.getState();
   const gameMode = selectors.activeGameId(state);
   if (!gameSupported(gameMode)) {
@@ -545,6 +545,19 @@ function testMissingGroups(t: TranslationFunction,
     },
   };
   return Promise.resolve(res);
+}
+
+function testMissingGroups(t: TranslationFunction,
+                           store: Redux.Store<IStateEx>,
+                           tries: number = 10): Promise<types.ITestResult> {
+  return Promise.delay(100 * (10 - tries)).then(() => {
+    const state = store.getState();
+    return (state.userlist.__isLoaded && state.masterlist.__isLoaded)
+      ? testMissingGroupsImpl(t, store)
+      : (tries > 0)
+        ? testMissingGroups(t, store, tries - 1)
+        : Promise.resolve(undefined);
+  });
 }
 
 function testUserlistInvalid(t: TranslationFunction,

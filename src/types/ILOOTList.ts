@@ -57,4 +57,6 @@ export interface ILOOTList {
   globals: IMessage[];
   plugins: ILOOTPlugin[];
   groups: ILOOTGroup[];
+  // only used in the persistors to determine if the list has been loaded from disk
+  __isLoaded?: boolean;
 }

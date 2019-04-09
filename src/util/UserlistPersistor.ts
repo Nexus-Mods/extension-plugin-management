@@ -25,6 +25,8 @@ class UserlistPersistor implements types.IPersistor {
   private mSerializeQueue: Promise<void> = Promise.resolve();
   private mLoaded: boolean = false;
   private mFailed: boolean = false;
+  private mLoadedPromise: Promise<void>;
+  private mOnLoaded: () => void = () => null;
   private mOnError: (message: string, details: Error, options?: types.IErrorOptions) => void;
   private mMode: 'userlist' | 'masterlist';
 
@@ -37,6 +39,13 @@ class UserlistPersistor implements types.IPersistor {
     };
     this.mOnError = onError;
     this.mMode = mode;
+    this.mLoadedPromise = new Promise((resolve, reject) => {
+      this.mOnLoaded = resolve;
+    });
+  }
+
+  public wait(): Promise<void> {
+    return this.mLoadedPromise;
   }
 
   public disable(): Promise<void> {
@@ -48,6 +57,9 @@ class UserlistPersistor implements types.IPersistor {
       };
       this.mUserlistPath = undefined;
       this.mLoaded = false;
+      this.mLoadedPromise = new Promise((resolve, reject) => {
+        this.mOnLoaded = resolve;
+      });
       if (this.mResetCallback) {
         this.mResetCallback();
       }
@@ -72,6 +84,9 @@ class UserlistPersistor implements types.IPersistor {
   }
 
   public getItem(key: string[]): Promise<string> {
+    if ((key.length === 1) && (key[0] === '__isLoaded')) {
+      return Promise.resolve(this.mLoaded ? 'true' : 'false');
+    }
     return Promise.resolve(JSON.stringify(this.mUserlist[key[0]]));
   }
 
@@ -86,7 +101,7 @@ class UserlistPersistor implements types.IPersistor {
   }
 
   public getAllKeys(): Promise<string[][]> {
-    return Promise.resolve(Object.keys(this.mUserlist).map(key => [key]));
+    return Promise.resolve([].concat(['__isLoaded'], Object.keys(this.mUserlist)).map(key => [key]));
   }
 
   private enqueue(fn: () => Promise<void>): Promise<void> {
@@ -231,6 +246,7 @@ class UserlistPersistor implements types.IPersistor {
       if (this.mResetCallback) {
         this.mResetCallback();
         this.mLoaded = true;
+        this.mOnLoaded();
       }
       if (didChange) {
         return this.serialize();
@@ -246,6 +262,7 @@ class UserlistPersistor implements types.IPersistor {
           groups: [],
         };
         this.mLoaded = true;
+        this.mOnLoaded();
         return this.serialize();
       } else {
         // if we can't read the file but the file is there,
