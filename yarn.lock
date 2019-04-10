@@ -1869,8 +1869,8 @@ loose-envify@^1.0.0, loose-envify@^1.1.0, loose-envify@^1.3.1, loose-envify@^1.4
     js-tokens "^3.0.0 || ^4.0.0"
 
 loot@Nexus-Mods/node-loot:
-  version "2.0.11"
-  resolved "https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/9e2e146abdcd9ee0d09e7d806105cb1180e53f05"
+  version "2.0.12"
+  resolved "https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/d38e33f51467c09a50f4651bf06d31091aaae5dd"
   dependencies:
     autogypi "^0.2.2"
     nbind "^0.3.15"
@@ -2512,6 +2512,16 @@ react-dnd@^7.4.5:
     invariant "^2.1.0"
     shallowequal "^1.1.0"
 
+react-dom@^16.8.6:
+  version "16.8.6"
+  resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-16.8.6.tgz#71d6303f631e8b0097f56165ef608f051ff6e10f"
+  integrity sha512-1nL7PIq9LTL3fthPqwkvr2zY7phIPjYrT0jp4HjyEQrEROnw4dG41VVwi/wfoCneoleqrNX7iAD+pXebJZwrwA==
+  dependencies:
+    loose-envify "^1.1.0"
+    object-assign "^4.1.1"
+    prop-types "^15.6.2"
+    scheduler "^0.13.6"
+
 react-i18next@*, react-i18next@^10.6.1:
   version "10.6.1"
   resolved "https://registry.yarnpkg.com/react-i18next/-/react-i18next-10.6.1.tgz#044c39fb463a8d96cc548509187a1bb316e660fa"
@@ -2539,7 +2549,7 @@ react-select@^1.2.1:
     prop-types "^15.5.8"
     react-input-autosize "^2.1.2"
 
-react@^16.4.2:
+react@^16.8.6:
   version "16.8.6"
   resolved "https://registry.yarnpkg.com/react/-/react-16.8.6.tgz#ad6c3a9614fd3a4e9ef51117f54d888da01f2bbe"
   integrity sha512-pC0uMkhLaHm11ZSJULfOBqV4tIZkx87ZLvbbQYunNixAAvjnC+snJCg0XQXn9VIsttVsbZP/H/ewzgsd5fxKXw==

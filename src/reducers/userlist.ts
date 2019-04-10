@@ -50,7 +50,8 @@ const userlistReducer: types.IReducerSpec = {
       }
       const list = listForType(payload.type);
       if (existing !== -1) {
-        return util.removeValue(state, ['plugins', existing, list], payload.reference);
+        return util.removeValueIf(state, ['plugins', existing, list], ref =>
+          ref.toUpperCase() === payload.reference.toUpperCase());
       } else {
         return state;
       }
