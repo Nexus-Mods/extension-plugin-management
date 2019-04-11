@@ -3,6 +3,7 @@ import { IPluginCombined } from '../types/IPlugins';
 import { tooltip } from 'vortex-api';
 
 import I18next from 'i18next';
+import * as path from 'path';
 import * as React from 'react';
 
 type TranslationFunction = typeof I18next.t;
@@ -24,6 +25,8 @@ export function getPluginFlags(plugin: IPluginCombined, t: TranslationFunction):
 
   if (plugin.isLight) {
     result.push(t('Light'));
+  } else if (plugin.isValidAsLightMaster && (path.extname(plugin.filePath).toLowerCase() === '.esp')) {
+    result.push(t('Could be light'));
   }
 
   if (plugin.parseFailed) {
@@ -32,6 +35,10 @@ export function getPluginFlags(plugin: IPluginCombined, t: TranslationFunction):
 
   if (plugin.isNative) {
     result.push(t('Native'));
+  }
+
+  if (plugin.loadsArchive) {
+    result.push(t('Loads Archive'));
   }
 
   if ((plugin.dirtyness !== undefined) && (plugin.dirtyness.length > 0)) {
@@ -87,6 +94,20 @@ const PluginFlags = (props: IProps): JSX.Element => {
         name='plugin-light'
         tooltip={t('Light')}
       />);
+  } else if (plugin.isValidAsLightMaster
+             && (path.extname(plugin.filePath).toLowerCase() === '.esp')) {
+    const key = `ico-couldbelight-${plugin.id}`;
+    // stroke and hollow props not currently in the api typings atm
+    const IconX: any = tooltip.Icon;
+    flags.push(
+      <IconX
+        id={key}
+        key={key}
+        name='plugin-light'
+        tooltip={t('Could be light')}
+        stroke={true}
+        hollow={true}
+      />);
   }
 
   if (plugin.parseFailed) {
@@ -108,6 +129,17 @@ const PluginFlags = (props: IProps): JSX.Element => {
         key={key}
         name='plugin-native'
         tooltip={t('Loaded by the engine, can\'t be configured', { ns: 'gamebryo-plugin' })}
+      />);
+  }
+
+  if (plugin.loadsArchive) {
+    const key = `ico-archive-${plugin.id}`;
+    flags.push(
+      <tooltip.Icon
+        id={key}
+        key={key}
+        name='archive'
+        tooltip={t('Loads an archive')}
       />);
   }
 

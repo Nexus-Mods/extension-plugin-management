@@ -138,6 +138,22 @@ class GroupSelect extends React.PureComponent<IGroupSelectProps, {}> {
   }
 }
 
+function PluginCount(props: { t: TranslationFunction, plugins: { [pluginId: string]: IPluginCombined } }) {
+  const { t, plugins } = props;
+
+  const regular = Object.keys(plugins).filter(id => plugins[id].enabled && !plugins[id].isLight);
+  const light = Object.keys(plugins).filter(id => plugins[id].enabled && plugins[id].isLight);
+
+  return (
+    <div className='gamebryo-plugin-count'>
+      {t('Active: {{ count }}', { count: regular.length })}
+      {' '}({t('Light: {{ count }}', { count: light.length })})
+    </div>
+  );
+}
+
+function nop() {}
+
 class PluginList extends ComponentEx<IProps, IComponentState> {
   private staticButtons: types.IActionDefinition[];
   private pluginEnabledAttribute: types.ITableAttribute;
@@ -196,6 +212,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       description: 'Author of the plugin',
       placement: 'detail',
       calc: (plugin: IPluginCombined) => plugin.author,
+      edit: {},
+    },
+    {
+      id: 'version',
+      name: 'Version',
+      description: 'Plugin version',
+      placement: 'detail',
+      calc: (plugin: IPluginCombined) => plugin.version,
       edit: {},
     },
     {
@@ -302,6 +326,40 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       supportsMultiple: true,
     },
     {
+      id: 'eslify',
+      name: 'Light',
+      description: 'Can this plugin be turned into a light plugin?',
+      icon: 'plugin-light',
+      placement: 'detail',
+      edit: {},
+      condition: () => ['skyrimse', 'fallout4'].indexOf(this.props.gameMode) !== -1,
+      calc: (plugin: IPluginCombined) => plugin.isValidAsLightMaster,
+      customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => {
+        const ext = path.extname(plugin.name).toLowerCase();
+        const canBeConverted = (plugin.isValidAsLightMaster || plugin.isLight) && (ext === '.esp');
+        return (
+          <Button
+          disabled={!canBeConverted}
+          title={!plugin.isValidAsLightMaster && !plugin.isLight
+            ? t('This plugin can\'t be an esl since it contains form-ids outside the valid range')
+            : ext !== '.esp'
+            ? t('Only plugins with .esp extension can be converted')
+            : plugin.isLight
+            ? t('This plugin already has the light flag set, you can unset it.')
+            : t('This is a regular plugin that could be turned into a light one (also known as an ESPfe). '
+                + 'When you do this, it will no longer take up a spot in the load order while still '
+                + 'working as usual.')}
+          onClick={canBeConverted ? () => {
+            this.eslify(plugin, !plugin.isLight)
+              .then(() =>
+                this.context.api.events.emit('autosort-plugins', true));
+           } : nop}
+        >
+          {plugin.isLight ? 'Mark not light' : 'Mark light'}
+        </Button>);
+      },
+    },
+    {
       id: 'dependencies',
       name: 'Dependencies',
       description: 'Relations to other plugins',
@@ -371,6 +429,33 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         action: this.disableSelected,
         singleRowAction: false,
       },
+      {
+        icon: 'plugin-light',
+        title: 'Mark as Light',
+        action: this.eslifySelected,
+        condition: (instanceIds: string[]) =>
+          ['skyrimse', 'fallout4'].indexOf(this.props.gameMode) !== -1
+          && (instanceIds.find(pluginId => {
+            const plugin = this.state.pluginsCombined[pluginId];
+            return plugin.isValidAsLightMaster
+                && !plugin.isLight
+                && path.extname(pluginId) === '.esp';
+          }) !== undefined),
+        singleRowAction: false,
+      },
+      {
+        icon: 'plugin-light',
+        title: 'Mark as Regular',
+        action: this.uneslifySelected,
+        condition: (instanceIds: string[]) =>
+          ['skyrimse', 'fallout4'].indexOf(this.props.gameMode) !== -1
+          && (instanceIds.find(pluginId => {
+            const plugin = this.state.pluginsCombined[pluginId];
+            return plugin.isLight
+                && path.extname(pluginId) === '.esp';
+          }) !== undefined),
+        singleRowAction: false,
+      },
     ];
 
     this.pluginEnabledAttribute = {
@@ -438,6 +523,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             }),
           };
         },
+      },
+      {
+        position: 1000,
+        component: PluginCount,
+        props: () => ({
+          t: this.props.t,
+          plugins: this.state.pluginsCombined,
+        }),
       },
     ];
   }
@@ -659,7 +752,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       }))
       .then(() => new Promise((resolve, reject) => {
         this.context.api.events.emit('plugin-details',
-          pluginNames, (resolved: { [name: string]: IPluginLoot }) => {
+          this.props.gameMode, pluginNames, (resolved: { [name: string]: IPluginLoot }) => {
             const { onUpdateWarnings, plugins } = this.props;
             pluginsLoot = resolved;
 
@@ -837,6 +930,42 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         pluginsCombined: updateSet,
       }));
     }
+  }
+
+  private eslify(plugin: IPluginCombined, enable: boolean): Promise<void> {
+    const esp = new ESPFile(plugin.filePath);
+    esp.setLightFlag(enable);
+    plugin.isLight = enable;
+    return Promise.resolve();
+  }
+
+  private eslifySelected = (pluginIds: string[]) => {
+    Promise.map(pluginIds
+      .map(pluginId => this.state.pluginsCombined[pluginId])
+      .filter(plugin =>
+        (plugin !== undefined)
+        && plugin.isValidAsLightMaster
+        && !plugin.isLight
+        && path.extname(plugin.id) === '.esp')
+      , plugin => this.eslify(plugin, true))
+    .then(() => null)
+    .catch(err => {
+      this.context.api.showErrorNotification('Failed to mark plugins as light', err);
+    });
+  }
+
+  private uneslifySelected = (pluginIds: string[]) => {
+    Promise.map(pluginIds
+      .map(pluginId => this.state.pluginsCombined[pluginId])
+      .filter(plugin =>
+        (plugin !== undefined)
+        && plugin.isLight
+        && path.extname(plugin.id) === '.esp')
+      , plugin => this.eslify(plugin, false))
+    .then(() => null)
+    .catch(err => {
+      this.context.api.showErrorNotification('Failed to mark plugins as regular', err);
+    });
   }
 
   private applyUserlist(userlist: ILOOTPlugin[]) {

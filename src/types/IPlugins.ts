@@ -72,6 +72,9 @@ export interface IPluginLoot {
   dirtyness: PluginCleaningData[];
   tags: Tag[];
   group: string;
+  isValidAsLightMaster: boolean;
+  loadsArchive: boolean;
+  version: string;
 }
 
 export interface IPluginUserlist {

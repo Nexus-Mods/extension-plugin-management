@@ -68,7 +68,9 @@ class LootInterface {
     // on demand, re-sort the plugin list
     context.api.events.on('autosort-plugins', this.onSort);
 
-    context.api.events.on('plugin-details', this.pluginDetails);
+    context.api.events.on('plugin-details',
+      (gameId: string, plugins: string[], callback: (result: IPluginsLoot) => void) =>
+        this.pluginDetails(context, gameId, plugins, callback));
   }
 
   public async wait(): Promise<void> {
@@ -105,6 +107,14 @@ class LootInterface {
       ? null
       // how would that happen?
       : 'Masterlist unmodified';
+  }
+
+  public sort(): Promise<void> {
+    let error: Error = null;
+    return this.onSort(true, err => error = err)
+      .then(() => (error !== null)
+        ? Promise.reject(error)
+        : Promise.resolve());
   }
 
   private onSort = async (manual: boolean, callback?: (err: Error) => void) => {
@@ -269,12 +279,24 @@ class LootInterface {
   }
 
   private onGameModeChanged = async (context: types.IExtensionContext, gameMode: string) => {
-    const { game, loot }: { game: string, loot: LootAsync } = await this.mInitPromise;
+    const initProm = this.mInitPromise;
+
+    let onRes: (x: { game: string, loot: LootAsync }) => void;
+
+    this.mInitPromise = new Bluebird<{ game: string, loot: LootAsync }>((resolve) => {
+      onRes = resolve;
+    });
+
+    const { game, loot }: { game: string, loot: LootAsync } = await initProm;
     if (gameMode === game) {
+      this.mInitPromise = initProm;
+      onRes({ game, loot });
       // no change
       return;
+    } else {
+      this.startStopLoot(context, gameMode, loot);
+      onRes(await this.mInitPromise);
     }
-    this.startStopLoot(context, gameMode, loot);
   }
 
   private startStopLoot(context: types.IExtensionContext, gameMode: string, loot: LootAsync) {
@@ -303,8 +325,19 @@ class LootInterface {
     }
   }
 
-  private pluginDetails = async (plugins: string[], callback: (result: IPluginsLoot) => void) => {
-    const { game, loot } = await this.mInitPromise;
+  private async getLoot(context: types.IExtensionContext, gameId: string):
+        Promise<{ game: string, loot: typeof LootProm }> {
+    let res = await this.mInitPromise;
+    if (res.game !== gameId) {
+      this.onGameModeChanged(context, gameId);
+      res = await this.mInitPromise;
+    }
+    return res;
+  }
+
+  private pluginDetails = async (context: types.IExtensionContext, gameId: string, plugins: string[],
+                                 callback: (result: IPluginsLoot) => void) => {
+    const { game, loot } = await this.getLoot(context, gameId);
     if ((loot === undefined) || loot.isClosed()) {
       callback({});
       return;
@@ -329,34 +362,66 @@ class LootInterface {
 
     const result: IPluginsLoot = {};
     let error: Error;
-    Bluebird.map(plugins, (pluginName: string) =>
-      loot.getPluginMetadataAsync(pluginName)
-      .then(meta => {
+    let pluginsLoaded = false;
+    const state = this.mExtensionApi.store.getState();
+    const pluginList: IPlugins = state.session.plugins.pluginList;
+
+    try {
+      console.log('load plugins', plugins, this.gamePath);
+      await loot.loadPluginsAsync(plugins
+        .filter(id => (pluginList[id] !== undefined) && pluginList[id].deployed)
+        .map(name => name.toLowerCase()), false);
+      pluginsLoaded = true;
+    } catch (err) {
+      this.mExtensionApi.showErrorNotification(
+        'Failed to parse plugins',
+        err, { allowReport: false });
+    }
+
+    Promise.all(plugins.map(async (pluginName: string) => {
+      try {
+        let meta = await loot.getPluginMetadataAsync(pluginName);
+        let info;
+        try {
+          const id = pluginName.toLowerCase();
+          if ((pluginList[id] !== undefined) && pluginList[id].deployed) {
+            info = await loot.getPluginAsync(pluginName);
+          }
+        } catch (err) {
+          log('error', 'failed to get plugin info', { pluginName });
+        }
+
         result[pluginName] = {
           messages: meta.messages,
           tags: meta.tags,
           cleanliness: meta.cleanInfo || [],
           dirtyness: meta.dirtyInfo || [],
           group: meta.group,
+          isValidAsLightMaster: pluginsLoaded && (info !== undefined) && info.isValidAsLightMaster,
+          loadsArchive: pluginsLoaded && (info !== undefined) && info.loadsArchive,
+          version: (pluginsLoaded && (info !== undefined)) ? info.version : '',
         };
-      })
-      .catch(err => {
+      } catch (err) {
         result[pluginName] = {
           messages: [],
           tags: [],
           cleanliness: [],
           dirtyness: [],
           group: undefined,
+          isValidAsLightMaster: false,
+          loadsArchive: false,
+          version: '',
         };
         if (err.arg !== undefined) {
           // invalid parameter. This simply means that loot has no meta data for this plugin
           // so that's not a problem
         } else {
           log('error', 'Failed to get plugin meta data from loot',
-              { pluginName, error: err.message });
+            { pluginName, error: err.message });
           error = err;
         }
-      }))
+      }
+    }))
     .then(() => {
       if (error !== undefined) {
         this.mExtensionApi.showErrorNotification(
@@ -421,6 +486,7 @@ class LootInterface {
 
   // tslint:disable-next-line:member-ordering
   private init = Bluebird.method(async (gameMode: string, gamePath: string) => {
+    console.log('init autosort', gameMode, gamePath);
     const localPath = pluginPath(gameMode);
     try {
       await fs.ensureDirAsync(localPath);
@@ -433,6 +499,7 @@ class LootInterface {
     let loot: any;
 
     try {
+      console.log('init loot', gameMode, gamePath);
       loot = Bluebird.promisifyAll(
         await LootProm.createAsync(this.convertGameId(gameMode, false), gamePath,
                                    localPath, 'en', this.log, this.fork));
@@ -480,6 +547,7 @@ class LootInterface {
       await fs.statAsync(masterlistPath);
       await loot.loadListsAsync(masterlistPath, mtime !== null ? userlistPath : '');
       await loot.loadCurrentLoadOrderStateAsync();
+      console.log('done init', gameMode, gamePath);
       this.mUserlistTime = mtime;
     } catch (err) {
       this.mExtensionApi.showErrorNotification('Failed to load master-/userlist', err, {

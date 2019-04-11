@@ -199,6 +199,7 @@ function register(context: IExtensionContextExt) {
   ], (activity: string[]) => (activity !== undefined) && (activity.length > 0));
 
   context.registerMainPage('plugins', 'Plugins', PluginList, {
+    id: 'gamebryo-plugins',
     hotkey: 'E',
     group: 'per-game',
     visible: () => gameSupported(selectors.activeGameId(context.api.store.getState())),
