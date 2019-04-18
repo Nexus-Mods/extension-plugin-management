@@ -112,20 +112,22 @@ const dependencySource: DragSourceSpec<IProps, any> = {
     clearTimeout(cursorPosUpdater);
     cursorPosUpdater = undefined;
 
-    const source: string = (monitor.getItem() as any).id;
+    const sourcePlugin: any = monitor.getItem();
+    const source: string = sourcePlugin.id;
     props.onSetSource(source, undefined);
 
     if (monitor.getDropResult() === null) {
       return;
     }
 
-    const dest: string = (monitor.getDropResult() as any).id;
+    const destPlugin: any = monitor.getDropResult();
+    const dest: string = destPlugin.id;
 
     if (source !== dest) {
       if ((component !== null) && (component.context as any).getModifiers().ctrl) {
-        props.onAddRule(source, dest, 'after');
+        props.onAddRule(sourcePlugin.name, destPlugin.name, 'after');
       } else {
-        props.onEditDialog(source, dest, 'after');
+        props.onEditDialog(sourcePlugin.name, destPlugin.name, 'after');
       }
     }
   },

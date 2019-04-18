@@ -96,17 +96,16 @@ interface IGroupSelectProps {
 
 class GroupSelect extends React.PureComponent<IGroupSelectProps, {}> {
   public render(): JSX.Element {
-    const { t, plugins, masterlist, userlist } = this.props;
+    const { plugins, masterlist, userlist } = this.props;
 
     let group = util.getSafe(plugins, [0, 'group'], '');
     if (plugins.find(plugin => plugin.group !== group) !== undefined) {
       group = '';
     }
 
-    const options = [].concat(
-      masterlist.groups.map(iter => ({ label: iter.name, value: iter.name })),
-      userlist.groups.map(iter => ({ label: iter.name, value: iter.name })),
-    );
+    const options = Array.from(new Set(
+          [].concat(masterlist.groups, userlist.groups).map(iter => iter.name)))
+      .map(iter => ({ label: iter, value: iter }));
 
     const isCustom: boolean = (userlist.plugins || []).find(plugin => {
         const refPlugin = plugins.find(iter => iter.id === plugin.name.toLowerCase());
@@ -328,7 +327,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     {
       id: 'eslify',
       name: 'Light',
-      description: 'Can this plugin be turned into a light plugin?',
+      description: 'A light plugin doesn\'t occupy a regular load order slot. Only some plugins can be made light direcly.',
       icon: 'plugin-light',
       placement: 'detail',
       edit: {},
