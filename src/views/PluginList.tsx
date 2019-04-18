@@ -576,7 +576,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     // Will verify plugins for warning/error loot messages
     //  and notify the user if any are found.
     this.updatePlugins(this.props.plugins)
-      .then(() => this.applyUserlist(this.props.userlist.plugins || []));
+      .then(() => this.applyUserlist(this.props.userlist.plugins || [], this.props.masterlist.plugins || []));
   }
 
   public componentDidMount() {
@@ -597,7 +597,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     }
 
     if (this.props.userlist !== nextProps.userlist) {
-      this.applyUserlist(nextProps.userlist.plugins || []);
+      this.applyUserlist(nextProps.userlist.plugins || [], nextProps.masterlist.plugins || []);
     }
   }
 
@@ -967,7 +967,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     });
   }
 
-  private applyUserlist(userlist: ILOOTPlugin[]) {
+  private applyUserlist(userlist: ILOOTPlugin[], masterlist: ILOOTPlugin[]) {
     const { pluginsCombined, pluginsLoot } = this.state;
 
     const updateSet = {};
@@ -977,10 +977,12 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         return;
       }
 
+      const pluginML: any = masterlist.find(iter => iter.name.toLowerCase() === pluginId) || {};
+
       updateSet[pluginId] = {};
 
-      if (plugin.group !== undefined) {
-        updateSet[pluginId]['group'] = { $set: plugin.group };
+      if ((plugin.group || pluginML.group || '') !== (pluginsCombined[pluginId].group || '')) {
+        updateSet[pluginId]['group'] = { $set: plugin.group || pluginML.group };
       } else {
         const loot = pluginsLoot[plugin.name];
         if (loot !== undefined) {
