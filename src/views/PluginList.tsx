@@ -10,6 +10,7 @@ import {
   IPluginParsed,
   IPlugins,
 } from '../types/IPlugins';
+import GroupFilter from '../util/GroupFilter';
 
 import DependencyIcon from './DependencyIcon';
 import MasterList from './MasterList';
@@ -295,6 +296,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       isToggleable: true,
       isDefaultVisible: true,
       isSortable: true,
+      filter: new GroupFilter(),
       sortFunc: (lhs: string, rhs: string, locale: string) =>
         this.getCollator(locale).compare(lhs, rhs),
     },
