@@ -107,6 +107,7 @@ const dependencySource: DragSourceSpec<IProps, any> = {
       id: props.plugin.id,
     };
   },
+
   endDrag(props: IProps, monitor: DragSourceMonitor,
           component: React.Component<IProps, {}>) {
     clearTimeout(cursorPosUpdater);
@@ -125,9 +126,9 @@ const dependencySource: DragSourceSpec<IProps, any> = {
 
     if (source !== dest) {
       if ((component !== null) && (component.context as any).getModifiers().ctrl) {
-        props.onAddRule(sourcePlugin.name, destPlugin.name, 'after');
+        props.onAddRule(sourcePlugin.id, destPlugin.id, 'after');
       } else {
-        props.onEditDialog(sourcePlugin.name, destPlugin.name, 'after');
+        props.onEditDialog(sourcePlugin.id, destPlugin.id, 'after');
       }
     }
   },
