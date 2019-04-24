@@ -138,16 +138,45 @@ class GroupSelect extends React.PureComponent<IGroupSelectProps, {}> {
   }
 }
 
-function PluginCount(props: { t: TranslationFunction, plugins: { [pluginId: string]: IPluginCombined } }) {
-  const { t, plugins } = props;
+interface IPluginCountProps {
+  t: TranslationFunction;
+  gameId: string;
+  plugins: { [pluginId: string]: IPluginCombined };
+}
+
+function PluginCount(props: IPluginCountProps) {
+  const { t, gameId, plugins } = props;
 
   const regular = Object.keys(plugins).filter(id => plugins[id].enabled && !plugins[id].isLight);
   const light = Object.keys(plugins).filter(id => plugins[id].enabled && plugins[id].isLight);
 
+  const eslGame = ['skyrimse', 'fallout4'].indexOf(gameId) !== -1;
+
+  const classes = ['gamebryo-plugin-count'];
+
+  const regLimit = eslGame ? 254 : 255;
+  if ((regular.length > regLimit) || (light.length > 4096)) {
+    classes.push('gamebryo-plugin-limit');
+  }
+
+  let tooltip = t('Plugins shouldn\'t exceed mod index {{maxIndex}} for a total of {{count}} '
+                + 'plugins (including base game and DLCs).', {
+      replace: {
+        maxIndex: eslGame ? '0xFD' : '0xFE',
+        count: eslGame ? 254 : 255,
+      }
+    });
+
+  if (eslGame) {
+    tooltip += '\n' + t('In addition you can have up to 4096 light plugins.');
+  }
+
   return (
-    <div className='gamebryo-plugin-count'>
+    <div className={classes.join(' ')}>
+      <a onClick={nop} className='fake-link' title={tooltip}>
       {t('Active: {{ count }}', { count: regular.length })}
-      {' '}({t('Light: {{ count }}', { count: light.length })})
+      {eslGame ? ' ' + t('Light: {{ count }}', { count: light.length }) : null }
+      </a>
     </div>
   );
 }
@@ -246,6 +275,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     {
       id: 'loadOrder',
       name: 'Load Order',
+      description: 'The order in which plugins are loaded. Plugins with higher number overwrite those with lower ones.',
       icon: 'sort-numeric-asc',
       isToggleable: true,
       edit: {},
@@ -257,6 +287,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     {
       id: 'modIndex',
       name: 'Mod Index',
+      description: 'The Mod index is the first two hexadecimal digits of all ids this plugin adds to the game',
       icon: 'indent',
       isToggleable: true,
       edit: {},
@@ -530,6 +561,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         component: PluginCount,
         props: () => ({
           t: this.props.t,
+          gameId: this.props.gameMode,
           plugins: this.state.pluginsCombined,
         }),
       },

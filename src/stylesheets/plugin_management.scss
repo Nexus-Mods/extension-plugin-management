@@ -206,4 +206,8 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
+
+  &.gamebryo-plugin-limit {
+    color: $brand-warning;
+  }
 }
