@@ -384,7 +384,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           onClick={canBeConverted ? () => {
             this.eslify(plugin, !plugin.isLight)
               .then(() =>
-                this.context.api.events.emit('autosort-plugins', true));
+                this.context.api.events.emit('autosort-plugins', true))
+               .catch(err => {
+                 this.context.api.showErrorNotification('Failed to convert plugin', err);
+               });
            } : nop}
         >
           {plugin.isLight ? 'Mark not light' : 'Mark light'}
@@ -966,10 +969,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private eslify(plugin: IPluginCombined, enable: boolean): Promise<void> {
-    const esp = new ESPFile(plugin.filePath);
-    esp.setLightFlag(enable);
-    plugin.isLight = enable;
-    return Promise.resolve();
+    try {
+      const esp = new ESPFile(plugin.filePath);
+      esp.setLightFlag(enable);
+      plugin.isLight = enable;
+      return Promise.resolve();
+    } catch (err) {
+      return Promise.reject(err);
+    }
   }
 
   private eslifySelected = (pluginIds: string[]) => {
