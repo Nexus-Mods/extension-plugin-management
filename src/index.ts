@@ -870,6 +870,7 @@ function init(context: IExtensionContextExt) {
                 }
               })
               .catch(util.ProcessCanceled, () => undefined)
+              .catch(util.UserCanceled, () => undefined)
               .catch(err => {
                 context.api.showErrorNotification('Failed to read mod', err);
               });
