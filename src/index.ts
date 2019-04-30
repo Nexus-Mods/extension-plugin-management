@@ -367,6 +367,9 @@ function startSyncRemote(api: types.IExtensionApi): Promise<void> {
 
     const gameId = selectors.activeGameId(store.getState());
     const game = util.getGame(gameId);
+    if (game === undefined) {
+      return;
+    }
     const modPath = game.getModPaths(gameDiscovery.path)[''];
     if (modPath === undefined) {
       // can this even happen?
@@ -721,7 +724,7 @@ function init(context: IExtensionContextExt) {
         })
         .catch(err => {
           if (!event.sender.isDestroyed()) {
-            event.sender.send('plugin-sync-ret', err);
+            event.sender.send('plugin-sync-ret', { message: err.message, stack: err.stack });
           }
         });
     });
@@ -790,9 +793,14 @@ function init(context: IExtensionContextExt) {
           (nextProfileId: string, enqueue: (cb: () => Promise<void>) => void) => {
             enqueue(() => {
               return stopSync()
-                .then(() => userlistPersistor.disable())
-                .then(() => masterlistPersistor.disable())
-                .then(() => loot.wait());
+                .then(() => (userlistPersistor !== undefined)
+                              ? userlistPersistor.disable() : Promise.resolve())
+                .then(() => (masterlistPersistor !== undefined)
+                              ? masterlistPersistor.disable() : Promise.resolve())
+                .then(() => loot.wait())
+                .catch(err => {
+                  context.api.showErrorNotification('failed to change profile', err);
+                });
             });
           });
 
@@ -804,7 +812,10 @@ function init(context: IExtensionContextExt) {
         if ((newProfile !== undefined) && gameSupported(newProfile.gameId)) {
           updatePluginList(store, newProfile.modState, newProfile.gameId)
               .then(() => startSync(context.api))
-              .then(() => context.api.events.emit('autosort-plugins', false));
+              .then(() => context.api.events.emit('autosort-plugins', false))
+              .catch(err => {
+                context.api.showErrorNotification('Failed to change profile', err);
+              });
         }
       });
 

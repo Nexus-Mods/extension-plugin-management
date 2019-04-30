@@ -41,7 +41,7 @@ class PluginPersistor implements types.IPersistor {
   // "dynamic" plugins for which we store a load order (excluding native)
   private mPlugins: IPluginMap;
   // deployed plugins, mapping their plugin id to their file name on disk
-  private mKnownPlugins: { [pluginId: string]: string };
+  private mKnownPlugins: { [pluginId: string]: string } = {};
   private mInstalledNative: string[] = [];
   private mRetryCounter: number = retryCount;
   private mLoaded: boolean = false;
@@ -86,7 +86,10 @@ class PluginPersistor implements types.IPersistor {
       // read the files now and update the store
       return this.deserialize()
         // start watching for external changes
-        .then(() => this.startWatch());
+        .then(() => {
+          this.startWatch();
+          return Promise.resolve();
+        });
     });
   }
 
