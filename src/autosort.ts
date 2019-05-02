@@ -218,9 +218,9 @@ class LootInterface {
           message: this.mExtensionApi.translate('Plugins not sorted because: {{msg}}',
             { replace: { msg: err.message }, ns: 'gamebryo-plugin' }),
         });
-      } else if (err.message.startsWith('Failed to evaluate condition')) {
+      } else if (err.message.indexOf('Failed to evaluate condition') !== -1) {
         let match = err.message.match(
-          /Failed to evaluate condition ".*version\("([^"]*\.exe)", .*/);
+          /Failed to evaluate condition ".*version\("([^"]*\.exe)",.*/);
         if (match) {
           let exists = false;
           let fileSize = 0;
