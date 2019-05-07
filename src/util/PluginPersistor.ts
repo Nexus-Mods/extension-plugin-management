@@ -33,7 +33,7 @@ class PluginPersistor implements types.IPersistor {
 
   private mWatch: fs.FSWatcher;
   private mRefreshTimer: NodeJS.Timer;
-  private mLastWriteTime: Date;
+  private mLastWriteTime: Date = new Date();
   private mSerializing: boolean = false;
   private mSerializeScheduled: boolean = false;
   private mSerializeQueue: Promise<void> = Promise.resolve();
