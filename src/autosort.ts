@@ -1,6 +1,6 @@
 import {updatePluginOrder} from './actions/loadOrder';
 import {IPlugins, IPluginsLoot} from './types/IPlugins';
-import {gameSupported, nativePlugins, pluginPath} from './util/gameSupport';
+import {gameSupported, pluginPath} from './util/gameSupport';
 
 import * as Bluebird from 'bluebird';
 import { remote } from 'electron';
@@ -367,15 +367,17 @@ class LootInterface {
     const pluginList: IPlugins = state.session.plugins.pluginList;
 
     try {
-      console.log('load plugins', plugins, this.gamePath);
       await loot.loadPluginsAsync(plugins
         .filter(id => (pluginList[id] !== undefined) && pluginList[id].deployed)
         .map(name => name.toLowerCase()), false);
       pluginsLoaded = true;
     } catch (err) {
-      this.mExtensionApi.showErrorNotification(
-        'Failed to parse plugins',
-        err, { allowReport: false });
+      if (err.message === 'already closed') {
+        return;
+      }
+
+      this.mExtensionApi.showErrorNotification('Failed to parse plugins',
+                                               err, { allowReport: false });
     }
 
     let createEmpty = () => ({
@@ -497,7 +499,6 @@ class LootInterface {
 
   // tslint:disable-next-line:member-ordering
   private init = Bluebird.method(async (gameMode: string, gamePath: string) => {
-    console.log('init autosort', gameMode, gamePath);
     const localPath = pluginPath(gameMode);
     try {
       await fs.ensureDirAsync(localPath);
@@ -510,7 +511,6 @@ class LootInterface {
     let loot: any;
 
     try {
-      console.log('init loot', gameMode, gamePath);
       loot = Bluebird.promisifyAll(
         await LootProm.createAsync(this.convertGameId(gameMode, false), gamePath,
                                    localPath, 'en', this.log, this.fork));
@@ -558,7 +558,6 @@ class LootInterface {
       await fs.statAsync(masterlistPath);
       await loot.loadListsAsync(masterlistPath, mtime !== null ? userlistPath : '');
       await loot.loadCurrentLoadOrderStateAsync();
-      console.log('done init', gameMode, gamePath);
       this.mUserlistTime = mtime;
     } catch (err) {
       this.mExtensionApi.showErrorNotification('Failed to load master-/userlist', err, {
