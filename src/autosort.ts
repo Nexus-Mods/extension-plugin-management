@@ -378,7 +378,23 @@ class LootInterface {
         err, { allowReport: false });
     }
 
+    let createEmpty = () => ({
+      messages: [],
+      tags: [],
+      cleanliness: [],
+      dirtyness: [],
+      group: undefined,
+      isValidAsLightMaster: false,
+      loadsArchive: false,
+      version: '',
+    });
+
+    let closed = loot.isClosed();
     Promise.all(plugins.map(async (pluginName: string) => {
+      if (closed) {
+        result[pluginName] = createEmpty();
+        return;
+      }
       try {
         let meta = await loot.getPluginMetadataAsync(pluginName);
         let info;
@@ -402,20 +418,15 @@ class LootInterface {
           version: (pluginsLoaded && (info !== undefined)) ? info.version : '',
         };
       } catch (err) {
-        result[pluginName] = {
-          messages: [],
-          tags: [],
-          cleanliness: [],
-          dirtyness: [],
-          group: undefined,
-          isValidAsLightMaster: false,
-          loadsArchive: false,
-          version: '',
-        };
+        result[pluginName] = createEmpty();
         if (err.arg !== undefined) {
           // invalid parameter. This simply means that loot has no meta data for this plugin
           // so that's not a problem
         } else {
+          if (err.message === 'already closed') {
+            closed = true;
+            return;
+          }
           log('error', 'Failed to get plugin meta data from loot',
             { pluginName, error: err.message });
           error = err;
@@ -423,7 +434,7 @@ class LootInterface {
       }
     }))
     .then(() => {
-      if (error !== undefined) {
+      if ((error !== undefined) && !closed) {
         this.mExtensionApi.showErrorNotification(
           'There were errors getting plugin information from LOOT',
           error, { allowReport: false, id: 'gamebryo-plugins-loot-details-error' });
