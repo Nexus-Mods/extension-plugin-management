@@ -116,6 +116,8 @@ function updatePluginList(store: types.ThunkStore<any>,
   const enabledModIds = Object.keys(gameMods).filter(
       modId => util.getSafe(newModList, [modId, 'enabled'], false));
 
+  const activator = util.getCurrentActivator(state, gameId, true);
+
   const installBasePath = selectors.installPathForGame(state, gameId);
   // create a cache of all plugins that originate from a mod so we can assign
   // the correct origin further down
@@ -127,6 +129,7 @@ function updatePluginList(store: types.ThunkStore<any>,
     }
     const modInstPath = path.join(installBasePath, mod.installationPath);
     return fs.readdirAsync(modInstPath)
+      .map(fileName => (activator as any).getDeployedPath(fileName))
       .filter(fileName => isPlugin(modInstPath, fileName))
       .each(fileName => {
         pluginSources[fileName] = mod.id;
