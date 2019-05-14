@@ -400,9 +400,10 @@ function startSyncRemote(api: types.IExtensionApi): Promise<void> {
           .then(() => true)
           .catch(() => false)
           .then(exists => {
+            const pluginId = fileName.toLowerCase();
             const state = store.getState();
-            const known = (state.loadOrder[fileName] !== undefined)
-                       && (state.session.plugins.pluginList[fileName] !== undefined);
+            const known = (state.loadOrder[pluginId] !== undefined)
+                       && (state.session.plugins.pluginList[pluginId] !== undefined);
             if (exists !== known) {
               if (refreshTimer !== undefined) {
                 clearTimeout(refreshTimer);
