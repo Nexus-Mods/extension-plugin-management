@@ -129,7 +129,9 @@ function updatePluginList(store: types.ThunkStore<any>,
     }
     const modInstPath = path.join(installBasePath, mod.installationPath);
     return fs.readdirAsync(modInstPath)
-      .map(fileName => (activator as any).getDeployedPath(fileName))
+      .map(fileName => (activator !== undefined)
+         ? (activator as any).getDeployedPath(fileName)
+         : fileName)
       .filter(fileName => isPlugin(modInstPath, fileName))
       .each(fileName => {
         pluginSources[fileName] = mod.id;
