@@ -805,7 +805,7 @@ function init(context: IExtensionContextExt) {
                               ? masterlistPersistor.disable() : Promise.resolve())
                 .then(() => loot.wait())
                 .catch(err => {
-                  context.api.showErrorNotification('failed to change profile', err);
+                  context.api.showErrorNotification('Failed to change profile', err);
                 });
             });
           });

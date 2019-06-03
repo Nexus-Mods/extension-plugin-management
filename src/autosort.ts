@@ -74,8 +74,10 @@ class LootInterface {
   }
 
   public async wait(): Promise<void> {
-    await this.mInitPromise;
-    await this.mSortPromise;
+    try {
+      await this.mInitPromise;
+      await this.mSortPromise;
+    } catch (err) {}
   }
 
   public async resetMasterlist(): Promise<string> {
