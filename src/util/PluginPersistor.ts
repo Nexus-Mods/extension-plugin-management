@@ -231,7 +231,7 @@ class PluginPersistor implements types.IPersistor {
   }
 
   private doSerialize(): Promise<void> {
-    if (this.mPluginPath === undefined) {
+    if ((this.mPluginPath === undefined) || (this.mDataPath === undefined)) {
       return;
     }
     if (this.mKnownPlugins === undefined) {
