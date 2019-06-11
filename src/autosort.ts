@@ -408,7 +408,7 @@ class LootInterface {
             info = await loot.getPluginAsync(pluginName);
           }
         } catch (err) {
-          log('error', 'failed to get plugin info', { pluginName });
+          log('error', 'failed to get plugin info', { pluginName, error: err.message });
         }
 
         result[pluginName] = {
