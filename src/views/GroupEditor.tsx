@@ -180,6 +180,17 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
       input: [
         { id: 'newGroup', value: '', label: 'Group Name' },
       ],
+      condition: (content: types.IDialogContent): types.ConditionResults => {
+        const res = [];
+        if (content.input[0].value.length === 0) {
+          res.push({
+            id: 'newGroup',
+            errorText: 'Name can\'t be empty',
+            actions: ['Add'],
+          });
+        }
+        return res;
+      },
     }, [{ label: 'Cancel' }, { label: 'Add' }])
     .then((result: types.IDialogResult) => {
         if (result.action === 'Add') {

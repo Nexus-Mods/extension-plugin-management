@@ -35,7 +35,12 @@ export interface IGraphViewProps {
 }
 
 function san(input: string): string {
-  return input.replace(/[ &]/g, '_');
+  let res = input.replace(/[ &]/g, '_');
+  if (!res) {
+    // workaround so we can open the dialog even with an empty node name
+    res = '__empty';
+  }
+  return res;
 }
 
 class GraphView extends React.Component<IGraphViewProps, {}> {
@@ -52,7 +57,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
         if (id[0] === '+') {
           // node added
           this.mGraph.add({
-            data: { id: san(id.slice(1)), title: changed[id].title },
+            data: { id: san(id.slice(1)), title: changed[id].title } as any,
             classes: changed[id].class,
             position: this.mMousePos,
           });
@@ -67,7 +72,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
                 sourceOrig: connections[refId],
                 target: from,
                 targetOrig: id.slice(1),
-              },
+              } as any,
               classes: newProps.elements[id].class,
             });
           });
@@ -105,7 +110,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
                     sourceOrig: changed[id].connections[refId],
                     target: from,
                     targetOrig: id,
-                  },
+                  } as any,
                   classes: newProps.elements[id].class,
                 });
               }
