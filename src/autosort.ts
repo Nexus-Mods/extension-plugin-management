@@ -183,7 +183,10 @@ class LootInterface {
       this.mExtensionApi.dismissNotification('loot-cycle-warning');
       store.dispatch(actions.startActivity('plugins', 'sorting'));
       this.mSortPromise = this.readLists(gameMode, loot)
-        .then(() => loot.sortPluginsAsync(pluginNames));
+        .then(() => loot.sortPluginsAsync(pluginNames))
+        .catch(err => (err.message === 'already closed')
+          ? Promise.resolve([])
+          : Promise.reject(err));
       const sorted: string[] = await this.mSortPromise;
       store.dispatch(updatePluginOrder(sorted, false));
     } catch (err) {
