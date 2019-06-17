@@ -268,6 +268,10 @@ class LootInterface {
         }
       } else if (err.message === 'already closed') {
         // loot process terminated, don't really care about the result anyway
+      } else if (err.name === 'RemoteDied') {
+        this.mExtensionApi.showErrorNotification('LOOT process died', err, {
+          allowReport: false,
+        });
       } else {
         this.mExtensionApi.showErrorNotification('LOOT operation failed', err, {
           id: 'loot-failed',
