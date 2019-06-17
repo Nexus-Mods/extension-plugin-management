@@ -280,7 +280,8 @@ class LootInterface {
   }
 
   private allowReport(err: Error) {
-    return err.message.indexOf('boost::filesystem') === -1;
+    return (err.message.indexOf('boost::filesystem') === -1)
+        && (err.message.indexOf('Access is denied') === -1);
   }
 
   private onGameModeChanged = async (context: types.IExtensionContext, gameMode: string) => {
@@ -382,7 +383,10 @@ class LootInterface {
       }
 
       this.mExtensionApi.showErrorNotification('Failed to parse plugins',
-                                               err, { allowReport: false });
+                                               err, {
+                                                 allowReport: false,
+                                                 id: `loot-failed-to-parse`
+                                               });
     }
 
     let createEmpty = () => ({
