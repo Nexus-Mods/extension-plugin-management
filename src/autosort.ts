@@ -126,33 +126,45 @@ class LootInterface {
         // ensure initialisation is done
         const { game, loot } = await this.mInitPromise;
 
-        const state = store.getState();
-        const gameMode = selectors.activeGameId(state);
+        const gameMode = selectors.activeGameId(store.getState());
         if ((gameMode !== game)
             || !gameSupported(gameMode)
             || (loot === undefined)
             || loot.isClosed()) {
           return;
         }
-        const pluginList: IPlugins = state.session.plugins.pluginList;
-
-        const lo = (pluginKey: string) =>
-          (state.loadOrder[pluginKey] || { loadOrder: -1 }).loadOrder;
-
-        const pluginNames: string[] = Object
-          // from all plugins
-          .keys(pluginList)
-          // sort only the ones that are deployed
-          .filter((pluginId: string) => pluginList[pluginId].deployed)
-          // apply existing ordering (as far as available)
-          .sort((lhs, rhs) => lo(lhs) - lo(rhs))
-          .map((pluginId: string) => path.basename(pluginList[pluginId].filePath));
 
         // ensure no other sort is in progress
         try {
           await this.mSortPromise;
         // tslint:disable-next-line:no-empty
         } catch (err) {}
+
+        // work with up-to-date state
+        const state = store.getState();
+
+        const pluginList: IPlugins = state.session.plugins.pluginList;
+
+        const lo = (pluginKey: string) =>
+          (state.loadOrder[pluginKey] || { loadOrder: -1 }).loadOrder;
+
+        let pluginIds: string[] = Object
+          // from all plugins
+          .keys(pluginList)
+          // sort only the ones that are deployed
+          .filter((pluginId: string) => pluginList[pluginId].deployed)
+          // apply existing ordering (as far as available)
+          .sort((lhs, rhs) => lo(lhs) - lo(rhs))
+
+        // make sure we only pass files to loot that really exist on disk (and are accessible)
+        // this should be a waste of time, pluginList should already only contain files
+        // that are really there but loot produces really annoying error messages so I want to
+        // be sure.
+        pluginIds = await Bluebird.filter(pluginIds, pluginId =>
+          fs.statAsync(pluginList[pluginId].filePath).then(() => true).catch(() => false));
+
+        const pluginNames = pluginIds
+          .map((pluginId: string) => path.basename(pluginList[pluginId].filePath));
 
         await this.doSort(pluginNames, gameMode, loot);
       }
