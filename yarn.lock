@@ -917,7 +917,7 @@ cytoscape-cose-bilkent@^4.0.0:
   resolved "https://registry.yarnpkg.com/cytoscape-cose-bilkent/-/cytoscape-cose-bilkent-4.0.0.tgz#5f0afbe5c55a7a026442b756ca388ce77c262967"
   integrity sha1-Xwr75cVaegJkQrdWyjiM53wmKWc=
 
-cytoscape-edgehandles@^3.4.0:
+cytoscape-edgehandles@^3.5.1:
   version "3.5.1"
   resolved "https://registry.yarnpkg.com/cytoscape-edgehandles/-/cytoscape-edgehandles-3.5.1.tgz#d3cf4f6e77a70ec3f593aef0ba895af2e62b3183"
   integrity sha512-c61ZVE3YBKqSNEEiCWzRPxIrNlCjwkVA7zDywgh6IsA7+34nklNNquKL6oayZcwY6f8eWA6nQdm8bzh/Clpspg==

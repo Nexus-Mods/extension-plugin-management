@@ -13,7 +13,7 @@ export default function(rules: CSSStyleRule[]) {
 
   return [
     {
-      selector: 'node',
+      selector: 'node[title]',
       style: {
         'background-color': variables['brand-bg'],
         label: 'data(title)',
