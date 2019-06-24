@@ -246,6 +246,10 @@ class LootInterface {
           const filePath = path.resolve(this.gamePath, 'data', match[1]);
 
           const report = () => {
+            err.message +=
+              '\n\nThis error is usually caused by pirated copies of the game. '
+              + 'If this is definitively not the case for you (and only then!), '
+              + 'please report it.';
             this.mExtensionApi.showErrorNotification('LOOT operation failed', {
               error: err,
               File: filePath,
@@ -255,7 +259,7 @@ class LootInterface {
               Version: version,
             }, {
                 id: 'loot-failed',
-                allowReport: this.allowReport(err),
+                allowReport: false,
               });
           };
 
