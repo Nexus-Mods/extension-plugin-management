@@ -814,8 +814,21 @@ class LootInterface {
   private async reportCycle(err: Error, loot: typeof LootProm) {
     const api = this.mExtensionApi;
     const t = api.translate;
-    const solutions: types.ICheckbox[] = await this.getSolutions(t, (err as any).cycle, loot);
-    const renderedCycle = await this.renderCycle(t, (err as any).cycle, loot);
+
+    let solutions: types.ICheckbox[];
+    let renderedCycle: string;
+    
+    try {
+      solutions = await this.getSolutions(t, (err as any).cycle, loot);
+      renderedCycle = await this.renderCycle(t, (err as any).cycle, loot);
+    } catch (err) {
+      if (err.message === 'already closed') {
+        return;
+      } else {
+        this.mExtensionApi.showErrorNotification('Failed to report plugin cycle', err);
+        return;
+      }
+    }
 
     const errActions: types.IDialogAction[] = [
       {
