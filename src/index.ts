@@ -654,10 +654,10 @@ function testMissingMasters(t: TranslationFunction,
   }
 
   const pluginList = state.session.plugins.pluginList;
-
+  const natives = new Set<string>(nativePlugins(gameMode));
   const loadOrder: { [plugin: string]: ILoadOrder } = state.loadOrder;
   const enabledPlugins = Object.keys(loadOrder).filter(
-    (plugin: string) => loadOrder[plugin].enabled);
+    (plugin: string) => loadOrder[plugin].enabled || natives.has(plugin));
   const pluginDetails =
     enabledPlugins.filter((name: string) => pluginList[name] !== undefined)
       .map((plugin) => {
@@ -672,15 +672,12 @@ function testMissingMasters(t: TranslationFunction,
           return { name: plugin, masterList: [] };
         }
       });
-  // previously this only contained plugins that were marked as masters but apparenly
-  // some plugins reference non-masters as their dependency.
-  const masters = new Set<string>([].concat(
-    pluginDetails.map(plugin => plugin.name),
-    nativePlugins(gameMode)).map(name => name.toLowerCase()));
+
+  const activePlugins = new Set<string>(pluginDetails.map(plugin => plugin.name));
 
   const broken = pluginDetails.reduce((prev, plugin) => {
     const missing = plugin.masterList.filter(
-      requiredMaster => !masters.has(requiredMaster.toLowerCase()));
+      requiredMaster => !activePlugins.has(requiredMaster.toLowerCase()));
     const oldWarn = util.getSafe(state,
       ['session', 'plugins', 'pluginList', plugin.name, 'warnings', 'missing-master'], false);
     const newWarn = missing.length > 0;
