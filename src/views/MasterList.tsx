@@ -3,8 +3,6 @@ import { gameSupported, nativePlugins } from '../util/gameSupport';
 import * as React from 'react';
 import { ListGroup, ListGroupItem } from 'react-bootstrap';
 import { connect } from 'react-redux';
-import { createSelector } from 'reselect';
-import { selectors } from 'vortex-api';
 
 interface IBaseProps {
   masters: string[];
@@ -46,21 +44,11 @@ class MasterList extends React.Component<IProps, {}> {
   }
 }
 
-const loadOrder = (state) => state.loadOrder;
-
-const enabledPlugins = createSelector(loadOrder, selectors.activeGameId, (order, gameId) => {
-  if (!gameSupported(gameId)) {
-    return new Set<string>([]);
-  }
-  return new Set<string>([].concat(nativePlugins(gameId), Object.keys(order)
-    .filter((pluginName: string) => order[pluginName].enabled)
-    .map((pluginName: string) => pluginName.toLowerCase()),
-  ));
-});
-
 function mapStateToProps(state: any): IConnectedProps {
+  const pluginList = state.session.plugins.pluginList || {};
+  const installedPlugins = new Set<string>(Object.keys(pluginList).map(key => key) || []);
   return {
-    installedPlugins: enabledPlugins(state),
+    installedPlugins,
   };
 }
 
