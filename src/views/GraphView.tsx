@@ -191,13 +191,11 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
     let selection;
     if (evt.target.data !== undefined) {
       const data = evt.target.data();
-      if ((data.title === undefined) && (data.source === undefined)) {
-        // an item was hit, but neither a node nor an edge. Probably the edge handle
-        return;
+      if (data.source !== undefined) {
+        selection = { source: data.sourceOrig, target: data.targetOrig, readonly: data.readonly };
+      } else if (data.title !== undefined) {
+        selection = { id: data.title, readonly: data.readonly };
       }
-      selection = (data.source !== undefined)
-        ? { source: data.sourceOrig, target: data.targetOrig, readonly: data.readonly }
-        : { id: data.title, readonly: data.readonly };
     }
     this.mMousePos = evt.position;
     this.props.onContext(evt.renderedPosition.x, evt.renderedPosition.y, selection);
