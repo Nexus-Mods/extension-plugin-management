@@ -1123,12 +1123,12 @@ esprima@^4.0.0:
   integrity sha512-eGuFFw7Upda+g4p+QHvnW0RyTX/SVeJBDM/gCtMARO0cLuT2HcEKnTPvhjV6aGeqrCB/sbNop0Kszm0jsaWU4A==
 
 esptk@Nexus-Mods/node-esptk:
-  version "1.3.2"
-  resolved "https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/75f9d039fad9f7a6c8fb168bd10be12736aece75"
+  version "1.3.3"
+  resolved "https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/88aa261fa2ac7facf391914711b6d37a060b50d4"
   dependencies:
     autogypi "^0.2.2"
     nbind "^0.3.15"
-    node-gyp "^3.8.0"
+    node-gyp "^5.0.0"
 
 esrecurse@^4.1.0:
   version "4.2.1"
