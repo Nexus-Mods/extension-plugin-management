@@ -117,7 +117,6 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
             });
         }
       });
-      this.mLayout.run();
     }
   }
 
