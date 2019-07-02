@@ -1,4 +1,5 @@
 import { IPluginCombined } from '../types/IPlugins';
+import { supportsESL } from '../util/gameSupport';
 
 import { tooltip } from 'vortex-api';
 
@@ -10,23 +11,26 @@ type TranslationFunction = typeof I18next.t;
 
 interface IBaseProps {
   plugin: IPluginCombined;
+  gameMode: string;
 }
 
 type IProps = IBaseProps & {
   t: TranslationFunction;
 };
 
-export function getPluginFlags(plugin: IPluginCombined, t: TranslationFunction): string[] {
+export function getPluginFlags(plugin: IPluginCombined, t: TranslationFunction, gameMode: string): string[] {
   const result: string[] = [];
 
   if (plugin.isMaster) {
     result.push(t('Master'));
   }
 
-  if (plugin.isLight) {
-    result.push(t('Light'));
-  } else if (plugin.isValidAsLightMaster && (path.extname(plugin.filePath).toLowerCase() === '.esp')) {
-    result.push(t('Could be light'));
+  if (supportsESL(gameMode)) {
+    if (plugin.isLight) {
+      result.push(t('Light'));
+    } else if (plugin.isValidAsLightMaster && (path.extname(plugin.filePath).toLowerCase() === '.esp')) {
+      result.push(t('Could be light'));
+    }
   }
 
   if (plugin.parseFailed) {
@@ -70,7 +74,7 @@ function warningText(t: TranslationFunction, key: string) {
 }
 
 const PluginFlags = (props: IProps): JSX.Element => {
-  const { plugin, t } = props;
+  const { plugin, gameMode, t } = props;
 
   const flags: JSX.Element[] = [];
 
@@ -85,29 +89,31 @@ const PluginFlags = (props: IProps): JSX.Element => {
       />);
   }
 
-  if (plugin.isLight) {
-    const key = `ico-light-${plugin.id}`;
-    flags.push(
-      <tooltip.Icon
-        id={key}
-        key={key}
-        name='plugin-light'
-        tooltip={t('Light')}
-      />);
-  } else if (plugin.isValidAsLightMaster
-             && (path.extname(plugin.filePath).toLowerCase() === '.esp')) {
-    const key = `ico-couldbelight-${plugin.id}`;
-    // stroke and hollow props not currently in the api typings atm
-    const IconX: any = tooltip.Icon;
-    flags.push(
-      <IconX
-        id={key}
-        key={key}
-        name='plugin-light'
-        tooltip={t('Could be light')}
-        stroke={true}
-        hollow={true}
-      />);
+  if (supportsESL(gameMode)) {
+    if (plugin.isLight) {
+      const key = `ico-light-${plugin.id}`;
+      flags.push(
+        <tooltip.Icon
+          id={key}
+          key={key}
+          name='plugin-light'
+          tooltip={t('Light')}
+        />);
+    } else if (plugin.isValidAsLightMaster
+      && (path.extname(plugin.filePath).toLowerCase() === '.esp')) {
+      const key = `ico-couldbelight-${plugin.id}`;
+      // stroke and hollow props not currently in the api typings atm
+      const IconX: any = tooltip.Icon;
+      flags.push(
+        <IconX
+          id={key}
+          key={key}
+          name='plugin-light'
+          tooltip={t('Could be light')}
+          stroke={true}
+          hollow={true}
+        />);
+    }
   }
 
   if (plugin.parseFailed) {

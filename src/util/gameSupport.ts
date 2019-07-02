@@ -47,6 +47,7 @@ const gameSupport = {
       'ccTWBSSE001-PuzzleDungeon.esm',
       'ccEEJSSE001-Hstead.esl',
     ],
+    supportsESL: true,
   },
   skyrimvr: {
     appDataPath: 'Skyrim VR',
@@ -59,6 +60,8 @@ const gameSupport = {
       'dragonborn.esm',
       'skyrimvr.esm',
     ],
+    // skyrim vr does *not* support esls, it's based on an older version of the engine
+    supportsESL: false,
   },
   fallout3: {
     appDataPath: 'Fallout3',
@@ -110,6 +113,7 @@ const gameSupport = {
       'ccfrsfo4001-handmadeshotgun.esl',
       'cceejfo4001-decorationpack.esl',
     ],
+    supportsESL: true,
   },
   fallout4vr: {
     appDataPath: 'Fallout4VR',
@@ -188,4 +192,14 @@ export function isNativePlugin(gameMode: string, pluginName: string): boolean {
 
 export function nativePlugins(gameMode: string): string[] {
   return gameSupport[gameMode].nativePlugins;
+}
+
+export function supportsESL(gameMode: string): boolean {
+  return gameSupport[gameMode].supportsESL || false;
+}
+
+export function pluginExtensions(gameMode: string): string[] {
+  return gameSupport[gameMode].supportsESL
+    ? ['.esm', '.esp', '.esl']
+    : ['.esm', '.esp'];
 }

@@ -18,6 +18,7 @@ import {
   nativePlugins,
   pluginPath,
   supportedGames,
+  pluginExtensions,
 } from './util/gameSupport';
 import PluginPersistor from './util/PluginPersistor';
 import UserlistPersistor from './util/UserlistPersistor';
@@ -62,9 +63,9 @@ function isFile(fileName: string): Promise<boolean> {
       : Promise.reject(err));
 }
 
-function isPlugin(filePath: string, fileName: string): Promise<boolean> {
+function isPlugin(filePath: string, fileName: string, gameMode: string): Promise<boolean> {
   if (!fileName
-    || (['.esp', '.esm', '.esl'].indexOf(path.extname(fileName).toLowerCase()) === -1)) {
+    || (pluginExtensions(gameMode).indexOf(path.extname(fileName).toLowerCase()) === -1)) {
     return Promise.resolve(false);
   }
   return isFile(path.join(filePath, fileName))
@@ -132,7 +133,7 @@ function updatePluginList(store: types.ThunkStore<any>,
       .map(fileName => (activator !== undefined)
          ? (activator as any).getDeployedPath(fileName)
          : fileName)
-      .filter(fileName => isPlugin(modInstPath, fileName))
+      .filter(fileName => isPlugin(modInstPath, fileName, gameId))
       .each(fileName => {
         pluginSources[fileName] = mod.id;
         setPluginState(modInstPath, fileName, false);
@@ -164,7 +165,7 @@ function updatePluginList(store: types.ThunkStore<any>,
     })
     .then((fileNames: string[]) => {
       return Promise
-        .filter(fileNames, val => isPlugin(modPath, val))
+        .filter(fileNames, val => isPlugin(modPath, val, gameId))
         .each(fileName => setPluginState(modPath, fileName, true))
         .then(() => {
           if (Object.keys(pluginStates).length > 0) {
@@ -393,7 +394,7 @@ function startSyncRemote(api: types.IExtensionApi): Promise<void> {
           return;
         }
 
-        if (['.esp', '.esm', '.esl'].indexOf(path.extname(fileName).toLowerCase()) === -1) {
+        if (pluginExtensions(gameId).indexOf(path.extname(fileName).toLowerCase()) === -1) {
           // ignore non-plugins
           return;
         }
@@ -855,7 +856,7 @@ function init(context: IExtensionContextExt) {
               })
               .then(files => {
                 const plugins = files.filter(
-                    fileName => ['.esp', '.esm', '.esl'].indexOf(
+                    fileName => pluginExtensions(currentProfile.gameId).indexOf(
                                     path.extname(fileName).toLowerCase()) !== -1);
                 if (plugins.length === 1) {
                   context.api.store.dispatch(setPluginEnabled(plugins[0], true));

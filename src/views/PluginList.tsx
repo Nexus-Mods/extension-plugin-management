@@ -10,6 +10,7 @@ import {
   IPluginParsed,
   IPlugins,
 } from '../types/IPlugins';
+import { supportsESL } from '../util/gameSupport';
 import GroupFilter from '../util/GroupFilter';
 
 import DependencyIcon from './DependencyIcon';
@@ -150,7 +151,7 @@ function PluginCount(props: IPluginCountProps) {
   const regular = Object.keys(plugins).filter(id => plugins[id].enabled && !plugins[id].isLight);
   const light = Object.keys(plugins).filter(id => plugins[id].enabled && plugins[id].isLight);
 
-  const eslGame = ['skyrimse', 'fallout4'].indexOf(gameId) !== -1;
+  const eslGame = supportsESL(gameId);
 
   const classes = ['gamebryo-plugin-count'];
 
@@ -194,251 +195,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
   private installedNative: { [name: string]: number } = {};
 
-  private pluginAttributes: Array<types.ITableAttribute<IPluginCombined>> = [
-    {
-      id: 'name',
-      name: 'Name',
-      isToggleable: false,
-      edit: {},
-      isSortable: true,
-      calc: (plugin: IPluginCombined) => plugin.name,
-      placement: 'both',
-      filter: new TableTextFilter(true),
-      sortFunc: (lhs: string, rhs: string, locale: string) =>
-        this.getCollator(locale).compare(lhs, rhs),
-    },
-    {
-      id: 'modName',
-      name: 'Mod',
-      edit: {},
-      calc: plugin => this.pluginModName(plugin),
-      customRenderer: (plugin: IPluginCombined) => (
-        <a data-modid={plugin.modName} onClick={this.highlightMod} >{this.pluginModName(plugin)}</a>
-        ),
-      placement: 'both',
-      isDefaultVisible: false,
-      isSortable: true,
-      isToggleable: true,
-      filter: new TableTextFilter(true),
-      sortFunc: (lhs: string, rhs: string, locale: string) =>
-        this.getCollator(locale).compare(lhs, rhs),
-    },
-    {
-      id: 'category',
-      name: 'Mod Category',
-      edit: {},
-      calc: plugin => util.resolveCategoryName(
-        util.getSafe(this.props.mods, [plugin.modName, 'attributes', 'category'], undefined),
-        this.context.api.store.getState()),
-      placement: 'both',
-      isDefaultVisible: false,
-      isSortable: true,
-      isToggleable: true,
-    },
-    {
-      id: 'author',
-      name: 'Author',
-      description: 'Author of the plugin',
-      placement: 'detail',
-      calc: (plugin: IPluginCombined) => plugin.author,
-      edit: {},
-    },
-    {
-      id: 'version',
-      name: 'Version',
-      description: 'Plugin version',
-      placement: 'detail',
-      calc: (plugin: IPluginCombined) => plugin.version,
-      edit: {},
-    },
-    {
-      id: 'flags',
-      name: 'Flags',
-      icon: 'flag',
-      isToggleable: true,
-      edit: {},
-      isSortable: true,
-      customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) =>
-        (<PluginFlags plugin={plugin} t={t} />),
-      calc: (plugin: IPluginCombined, t) => getPluginFlags(plugin, t),
-      sortFunc: (lhs: string[], rhs: string[]) => lhs.length - rhs.length,
-      filter: new PluginFlagsFilter(),
-      placement: 'table',
-    },
-    {
-      id: 'flagsDetail',
-      name: 'Flags',
-      edit: {},
-      calc: (plugin: IPluginCombined, t) => getPluginFlags(plugin, t),
-      placement: 'detail',
-    },
-    {
-      id: 'loadOrder',
-      name: 'Load Order',
-      description: 'The order in which plugins are loaded. Plugins with higher number overwrite those with lower ones.',
-      icon: 'sort-numeric-asc',
-      isToggleable: true,
-      edit: {},
-      isSortable: true,
-      calc: (plugin: IPluginCombined) => plugin.loadOrder !== -1 ? plugin.loadOrder : '?',
-      sortFuncRaw: (lhs, rhs) => this.sortByLoadOrder(this.installedNative, lhs, rhs),
-      placement: 'table',
-    },
-    {
-      id: 'modIndex',
-      name: 'Mod Index',
-      description: 'The Mod index is the first two hexadecimal digits of all ids this plugin adds to the game',
-      icon: 'indent',
-      isToggleable: true,
-      edit: {},
-      isSortable: true,
-      calc: (plugin: IPluginCombined) => {
-        if (!plugin.enabled && !plugin.isNative) {
-          return undefined;
-        }
-        if (plugin.eslIndex === undefined) {
-          return toHex(plugin.modIndex, 2);
-        } else {
-          return `${toHex(plugin.modIndex, 2)} (${toHex(plugin.eslIndex, 3)})`;
-        }
-      },
-      placement: 'table',
-    },
-    {
-      id: 'group',
-      name: 'Group',
-      description: 'Group',
-      icon: 'sort-down',
-      placement: 'table',
-      calc: plugin => util.getSafe(plugin, ['group'], '') || 'default',
-      customRenderer: (plugin: IPluginCombined) => {
-        const grp = util.getSafe(plugin, ['group'], '') || 'default';
-        const ulEntry = (this.props.userlist.plugins || []).find(iter =>
-          iter.name.toLowerCase() === plugin.id);
-        const isCustom = (ulEntry !== undefined) && (ulEntry.group !== undefined);
-
-        return (
-          <div className={isCustom ? 'plugin-group-custom' : 'plugin-group-default'}>
-            {grp}
-          </div>
-        );
-      },
-      edit: {},
-      isToggleable: true,
-      isDefaultVisible: true,
-      isSortable: true,
-      filter: new GroupFilter(),
-      sortFunc: (lhs: string, rhs: string, locale: string) =>
-        this.getCollator(locale).compare(lhs, rhs),
-    },
-    {
-      id: 'groupdetail',
-      name: 'Group',
-      description: 'Group',
-      placement: 'detail',
-      calc: plugin => util.getSafe(plugin, ['group'], '') || '',
-      customRenderer: plugins => {
-        const { masterlist, userlist } = this.props;
-        if (!Array.isArray(plugins)) {
-          plugins = (plugins === undefined)
-            ? []
-            : [plugins];
-        }
-        return (
-          <GroupSelect
-            t={this.props.t}
-            plugins={plugins}
-            masterlist={masterlist}
-            userlist={userlist}
-            onSetGroup={this.setGroup}
-          />
-        );
-      },
-      edit: {},
-      supportsMultiple: true,
-    },
-    {
-      id: 'eslify',
-      name: 'Light',
-      description: 'A light plugin doesn\'t occupy a regular load order slot. Only some plugins can be made light direcly.',
-      icon: 'plugin-light',
-      placement: 'detail',
-      edit: {},
-      condition: () => ['skyrimse', 'fallout4'].indexOf(this.props.gameMode) !== -1,
-      calc: (plugin: IPluginCombined) => plugin.isValidAsLightMaster,
-      customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => {
-        const ext = path.extname(plugin.name).toLowerCase();
-        const canBeConverted = (plugin.isValidAsLightMaster || plugin.isLight) && (ext === '.esp');
-        return (
-          <Button
-          disabled={!canBeConverted}
-          title={!plugin.isValidAsLightMaster && !plugin.isLight
-            ? t('This plugin can\'t be an esl since it contains form-ids outside the valid range')
-            : ext !== '.esp'
-            ? t('Only plugins with .esp extension can be converted')
-            : plugin.isLight
-            ? t('This plugin already has the light flag set, you can unset it.')
-            : t('This is a regular plugin that could be turned into a light one (also known as an ESPfe). '
-                + 'When you do this, it will no longer take up a spot in the load order while still '
-                + 'working as usual.')}
-          onClick={canBeConverted ? () => {
-            this.eslify(plugin, !plugin.isLight)
-              .then(() =>
-                this.context.api.events.emit('autosort-plugins', true))
-               .catch(err => {
-                 this.context.api.showErrorNotification('Failed to convert plugin', err);
-               });
-           } : nop}
-        >
-          {plugin.isLight ? 'Mark not light' : 'Mark light'}
-        </Button>);
-      },
-    },
-    {
-      id: 'dependencies',
-      name: 'Dependencies',
-      description: 'Relations to other plugins',
-      icon: 'plug',
-      placement: 'table',
-      customRenderer: (plugin: IPluginCombined, detail: boolean,
-                       t: TranslationFunction, props: types.ICustomProps) =>
-        <DependencyIcon plugin={plugin} t={t} onHighlight={props.onHighlight} />,
-      calc: () => null,
-      isToggleable: true,
-      edit: {},
-      isSortable: false,
-    },
-    {
-      id: 'masters',
-      name: 'Masters',
-      edit: {},
-      customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) =>
-        <MasterList masters={plugin.masterList} />,
-      calc: (plugin: IPluginCombined) => plugin.masterList,
-      placement: 'detail',
-    },
-    {
-      id: 'cleaning_info',
-      name: 'LOOT cleaning info',
-      edit: {},
-      customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => (
-        <ListGroup className='loot-message-list'>
-          {plugin.cleanliness.map((dat, idx) => (<ListGroupItem key={idx}>{this.renderCleaningData(dat)}</ListGroupItem>))}
-          {plugin.dirtyness.map((dat, idx) => (<ListGroupItem key={idx}>{this.renderCleaningData(dat)}</ListGroupItem>))}
-        </ListGroup>
-      ),
-      calc: (plugin: IPluginCombined) => plugin.cleanliness.length + plugin.dirtyness.length,
-      placement: 'detail',
-    },
-    {
-      id: 'loot_messages',
-      name: 'LOOT Messages (only updates on sort)',
-      edit: {},
-      customRenderer: (plugin: IPluginCombined) => this.renderLootMessages(plugin),
-      calc: (plugin: IPluginCombined) => plugin.messages,
-      placement: 'detail',
-    },
-  ];
+  private pluginAttributes: Array<types.ITableAttribute<IPluginCombined>> = [];
 
   constructor(props) {
     super(props);
@@ -450,6 +207,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     };
 
     const { t, onSetAutoSortEnabled } = props;
+
+    this.pluginAttributes = this.makeAttributes();
 
     this.actions = [
       {
@@ -469,7 +228,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         title: 'Mark as Light',
         action: this.eslifySelected,
         condition: (instanceIds: string[]) =>
-          ['skyrimse', 'fallout4'].indexOf(this.props.gameMode) !== -1
+          supportsESL(this.props.gameMode)
           && (instanceIds.find(pluginId => {
             const plugin = this.state.pluginsCombined[pluginId];
             return plugin.isValidAsLightMaster
@@ -483,7 +242,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         title: 'Mark as Regular',
         action: this.uneslifySelected,
         condition: (instanceIds: string[]) =>
-          ['skyrimse', 'fallout4'].indexOf(this.props.gameMode) !== -1
+          supportsESL(this.props.gameMode)
           && (instanceIds.find(pluginId => {
             const plugin = this.state.pluginsCombined[pluginId];
             return plugin.isLight
@@ -739,15 +498,18 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     this.context.api.events.emit('deploy-mods', () => undefined);
   }
 
-  private isMaster(filePath: string, flag: boolean) {
-    return flag
-      || ((['fallout4', 'skyrimse'].indexOf(this.props.gameMode) !== -1)
-        && ['.esm', '.esl'].indexOf(path.extname(filePath).toLowerCase()) !== -1);
+  private isMaster(filePath: string, flag: boolean): boolean {
+    const masterExts = supportsESL(this.props.gameMode)
+      ? ['.esm', '.esl']
+      : ['.esm'];
+    return flag || (masterExts.indexOf(path.extname(filePath).toLowerCase()) !== -1);
   }
 
   private isLight(filePath: string, flag: boolean) {
-    return (['fallout4', 'skyrimse'].indexOf(this.props.gameMode) !== -1)
-      && (flag || (path.extname(filePath).toLowerCase() === '.esl'));
+    if (!supportsESL(this.props.gameMode)) {
+      return false;
+    }
+    return flag || (path.extname(filePath).toLowerCase() === '.esl');
   }
 
   private updatePlugins(pluginsIn: IPlugins) {
@@ -1126,6 +888,254 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       this.mCollator = new Intl.Collator(locale, { sensitivity: 'base' });
     }
     return this.mCollator;
+  }
+
+  private makeAttributes(): Array<types.ITableAttribute<IPluginCombined>> {
+    return [
+      {
+        id: 'name',
+        name: 'Name',
+        isToggleable: false,
+        edit: {},
+        isSortable: true,
+        calc: (plugin: IPluginCombined) => plugin.name,
+        placement: 'both',
+        filter: new TableTextFilter(true),
+        sortFunc: (lhs: string, rhs: string, locale: string) =>
+          this.getCollator(locale).compare(lhs, rhs),
+      },
+      {
+        id: 'modName',
+        name: 'Mod',
+        edit: {},
+        calc: plugin => this.pluginModName(plugin),
+        customRenderer: (plugin: IPluginCombined) => (
+          <a data-modid={plugin.modName} onClick={this.highlightMod} >{this.pluginModName(plugin)}</a>
+        ),
+        placement: 'both',
+        isDefaultVisible: false,
+        isSortable: true,
+        isToggleable: true,
+        filter: new TableTextFilter(true),
+        sortFunc: (lhs: string, rhs: string, locale: string) =>
+          this.getCollator(locale).compare(lhs, rhs),
+      },
+      {
+        id: 'category',
+        name: 'Mod Category',
+        edit: {},
+        calc: plugin => util.resolveCategoryName(
+          util.getSafe(this.props.mods, [plugin.modName, 'attributes', 'category'], undefined),
+          this.context.api.store.getState()),
+        placement: 'both',
+        isDefaultVisible: false,
+        isSortable: true,
+        isToggleable: true,
+      },
+      {
+        id: 'author',
+        name: 'Author',
+        description: 'Author of the plugin',
+        placement: 'detail',
+        calc: (plugin: IPluginCombined) => plugin.author,
+        edit: {},
+      },
+      {
+        id: 'version',
+        name: 'Version',
+        description: 'Plugin version',
+        placement: 'detail',
+        calc: (plugin: IPluginCombined) => plugin.version,
+        edit: {},
+      },
+      {
+        id: 'flags',
+        name: 'Flags',
+        icon: 'flag',
+        isToggleable: true,
+        edit: {},
+        isSortable: true,
+        customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) =>
+          (<PluginFlags plugin={plugin} gameMode={this.props.gameMode} t={t} />),
+        calc: (plugin: IPluginCombined, t) => getPluginFlags(plugin, t, this.props.gameMode),
+        sortFunc: (lhs: string[], rhs: string[]) => lhs.length - rhs.length,
+        filter: new PluginFlagsFilter(),
+        placement: 'table',
+      },
+      {
+        id: 'flagsDetail',
+        name: 'Flags',
+        edit: {},
+        calc: (plugin: IPluginCombined, t) => getPluginFlags(plugin, t, this.props.gameMode),
+        placement: 'detail',
+      },
+      {
+        id: 'loadOrder',
+        name: 'Load Order',
+        description: 'The order in which plugins are loaded. Plugins with higher number overwrite those with lower ones.',
+        icon: 'sort-numeric-asc',
+        isToggleable: true,
+        edit: {},
+        isSortable: true,
+        calc: (plugin: IPluginCombined) => plugin.loadOrder !== -1 ? plugin.loadOrder : '?',
+        sortFuncRaw: (lhs, rhs) => this.sortByLoadOrder(this.installedNative, lhs, rhs),
+        placement: 'table',
+      },
+      {
+        id: 'modIndex',
+        name: 'Mod Index',
+        description: 'The Mod index is the first two hexadecimal digits of all ids this plugin adds to the game',
+        icon: 'indent',
+        isToggleable: true,
+        edit: {},
+        isSortable: true,
+        calc: (plugin: IPluginCombined) => {
+          if (!plugin.enabled && !plugin.isNative) {
+            return undefined;
+          }
+          if (plugin.eslIndex === undefined) {
+            return toHex(plugin.modIndex, 2);
+          } else {
+            return `${toHex(plugin.modIndex, 2)} (${toHex(plugin.eslIndex, 3)})`;
+          }
+        },
+        placement: 'table',
+      },
+      {
+        id: 'group',
+        name: 'Group',
+        description: 'Group',
+        icon: 'sort-down',
+        placement: 'table',
+        calc: plugin => util.getSafe(plugin, ['group'], '') || 'default',
+        customRenderer: (plugin: IPluginCombined) => {
+          const grp = util.getSafe(plugin, ['group'], '') || 'default';
+          const ulEntry = (this.props.userlist.plugins || []).find(iter =>
+            iter.name.toLowerCase() === plugin.id);
+          const isCustom = (ulEntry !== undefined) && (ulEntry.group !== undefined);
+
+          return (
+            <div className={isCustom ? 'plugin-group-custom' : 'plugin-group-default'}>
+              {grp}
+            </div>
+          );
+        },
+        edit: {},
+        isToggleable: true,
+        isDefaultVisible: true,
+        isSortable: true,
+        filter: new GroupFilter(),
+        sortFunc: (lhs: string, rhs: string, locale: string) =>
+          this.getCollator(locale).compare(lhs, rhs),
+      },
+      {
+        id: 'groupdetail',
+        name: 'Group',
+        description: 'Group',
+        placement: 'detail',
+        calc: plugin => util.getSafe(plugin, ['group'], '') || '',
+        customRenderer: plugins => {
+          const { masterlist, userlist } = this.props;
+          if (!Array.isArray(plugins)) {
+            plugins = (plugins === undefined)
+              ? []
+              : [plugins];
+          }
+          return (
+            <GroupSelect
+              t={this.props.t}
+              plugins={plugins}
+              masterlist={masterlist}
+              userlist={userlist}
+              onSetGroup={this.setGroup}
+            />
+          );
+        },
+        edit: {},
+        supportsMultiple: true,
+      },
+      {
+        id: 'eslify',
+        name: 'Light',
+        description: 'A light plugin doesn\'t occupy a regular load order slot. Only some plugins can be made light direcly.',
+        icon: 'plugin-light',
+        placement: 'detail',
+        edit: {},
+        condition: () => supportsESL(this.props.gameMode),
+        calc: (plugin: IPluginCombined) => plugin.isValidAsLightMaster,
+        customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => {
+          const ext = path.extname(plugin.name).toLowerCase();
+          const canBeConverted = (plugin.isValidAsLightMaster || plugin.isLight) && (ext === '.esp');
+          return (
+            <Button
+              disabled={!canBeConverted}
+              title={!plugin.isValidAsLightMaster && !plugin.isLight
+                ? t('This plugin can\'t be an esl since it contains form-ids outside the valid range')
+                : ext !== '.esp'
+                  ? t('Only plugins with .esp extension can be converted')
+                  : plugin.isLight
+                    ? t('This plugin already has the light flag set, you can unset it.')
+                    : t('This is a regular plugin that could be turned into a light one (also known as an ESPfe). '
+                      + 'When you do this, it will no longer take up a spot in the load order while still '
+                      + 'working as usual.')}
+              onClick={canBeConverted ? () => {
+                this.eslify(plugin, !plugin.isLight)
+                  .then(() =>
+                    this.context.api.events.emit('autosort-plugins', true))
+                  .catch(err => {
+                    this.context.api.showErrorNotification('Failed to convert plugin', err);
+                  });
+              } : nop}
+            >
+              {plugin.isLight ? 'Mark not light' : 'Mark light'}
+            </Button>);
+        },
+      },
+      {
+        id: 'dependencies',
+        name: 'Dependencies',
+        description: 'Relations to other plugins',
+        icon: 'plug',
+        placement: 'table',
+        customRenderer: (plugin: IPluginCombined, detail: boolean,
+          t: TranslationFunction, props: types.ICustomProps) =>
+          <DependencyIcon plugin={plugin} t={t} onHighlight={props.onHighlight} />,
+        calc: () => null,
+        isToggleable: true,
+        edit: {},
+        isSortable: false,
+      },
+      {
+        id: 'masters',
+        name: 'Masters',
+        edit: {},
+        customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) =>
+          <MasterList masters={plugin.masterList} />,
+        calc: (plugin: IPluginCombined) => plugin.masterList,
+        placement: 'detail',
+      },
+      {
+        id: 'cleaning_info',
+        name: 'LOOT cleaning info',
+        edit: {},
+        customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => (
+          <ListGroup className='loot-message-list'>
+            {plugin.cleanliness.map((dat, idx) => (<ListGroupItem key={idx}>{this.renderCleaningData(dat)}</ListGroupItem>))}
+            {plugin.dirtyness.map((dat, idx) => (<ListGroupItem key={idx}>{this.renderCleaningData(dat)}</ListGroupItem>))}
+          </ListGroup>
+        ),
+        calc: (plugin: IPluginCombined) => plugin.cleanliness.length + plugin.dirtyness.length,
+        placement: 'detail',
+      },
+      {
+        id: 'loot_messages',
+        name: 'LOOT Messages (only updates on sort)',
+        edit: {},
+        customRenderer: (plugin: IPluginCombined) => this.renderLootMessages(plugin),
+        calc: (plugin: IPluginCombined) => plugin.messages,
+        placement: 'detail',
+      },
+    ];
   }
 }
 
