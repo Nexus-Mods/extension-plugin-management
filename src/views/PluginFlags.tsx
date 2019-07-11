@@ -1,5 +1,5 @@
 import { IPluginCombined } from '../types/IPlugins';
-import { supportsESL } from '../util/gameSupport';
+import { gameSupported, supportsESL } from '../util/gameSupport';
 
 import { tooltip } from 'vortex-api';
 
@@ -18,8 +18,14 @@ type IProps = IBaseProps & {
   t: TranslationFunction;
 };
 
-export function getPluginFlags(plugin: IPluginCombined, t: TranslationFunction, gameMode: string): string[] {
+export function getPluginFlags(plugin: IPluginCombined,
+                               t: TranslationFunction,
+                               gameMode: string): string[] {
   const result: string[] = [];
+
+  if (!gameSupported(gameMode)) {
+    return result;
+  }
 
   if (plugin.isMaster) {
     result.push(t('Master'));
@@ -28,7 +34,8 @@ export function getPluginFlags(plugin: IPluginCombined, t: TranslationFunction, 
   if (supportsESL(gameMode)) {
     if (plugin.isLight) {
       result.push(t('Light'));
-    } else if (plugin.isValidAsLightMaster && (path.extname(plugin.filePath).toLowerCase() === '.esp')) {
+    } else if (plugin.isValidAsLightMaster
+               && (path.extname(plugin.filePath).toLowerCase() === '.esp')) {
       result.push(t('Could be light'));
     }
   }
@@ -77,6 +84,10 @@ const PluginFlags = (props: IProps): JSX.Element => {
   const { plugin, gameMode, t } = props;
 
   const flags: JSX.Element[] = [];
+
+  if (!gameSupported(gameMode)) {
+    return null;
+  }
 
   if (plugin.isMaster) {
     const key = `ico-master-${plugin.id}`;

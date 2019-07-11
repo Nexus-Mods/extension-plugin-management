@@ -10,7 +10,7 @@ import {
   IPluginParsed,
   IPlugins,
 } from '../types/IPlugins';
-import { supportsESL } from '../util/gameSupport';
+import { gameSupported, supportsESL } from '../util/gameSupport';
 import GroupFilter from '../util/GroupFilter';
 
 import DependencyIcon from './DependencyIcon';
@@ -33,14 +33,15 @@ import { connect } from 'react-redux';
 import { Creatable } from 'react-select';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import {ComponentEx, FlexLayout, IconBar, ITableRowAction,
+import {ComponentEx, FlexLayout, Icon, IconBar, ITableRowAction,
   log, MainPage, selectors, Spinner,
-  Table, TableTextFilter, ToolbarIcon, types, Usage, util, More, Icon,
+  Table, TableTextFilter, ToolbarIcon, types, Usage, util,
 } from 'vortex-api';
 
 type TranslationFunction = typeof I18next.t;
 
-const CLEANING_GUIDE_LINK = 'https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html';
+const CLEANING_GUIDE_LINK =
+  'https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html';
 
 interface IBaseProps {
   nativePlugins: string[];
@@ -151,7 +152,7 @@ function PluginCount(props: IPluginCountProps) {
   const regular = Object.keys(plugins).filter(id => plugins[id].enabled && !plugins[id].isLight);
   const light = Object.keys(plugins).filter(id => plugins[id].enabled && plugins[id].isLight);
 
-  const eslGame = supportsESL(gameId);
+  const eslGame = gameSupported(gameId) && supportsESL(gameId);
 
   const classes = ['gamebryo-plugin-count'];
 
@@ -165,7 +166,7 @@ function PluginCount(props: IPluginCountProps) {
       replace: {
         maxIndex: eslGame ? '0xFD' : '0xFE',
         count: eslGame ? 254 : 255,
-      }
+      },
     });
 
   if (eslGame) {
@@ -176,13 +177,15 @@ function PluginCount(props: IPluginCountProps) {
     <div className={classes.join(' ')}>
       <a onClick={nop} className='fake-link' title={tooltip}>
       {t('Active: {{ count }}', { count: regular.length })}
-      {eslGame ? ' ' + t('Light: {{ count }}', { count: light.length }) : null }
+      {eslGame ? ' ' + t('Light: {{ count }}', { count: light.length }) : null}
       </a>
     </div>
   );
 }
 
-function nop() {}
+function nop() {
+  // nop
+}
 
 class PluginList extends ComponentEx<IProps, IComponentState> {
   private staticButtons: types.IActionDefinition[];
@@ -372,7 +375,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     // Will verify plugins for warning/error loot messages
     //  and notify the user if any are found.
     this.updatePlugins(this.props.plugins)
-      .then(() => this.applyUserlist(this.props.userlist.plugins || [], this.props.masterlist.plugins || []));
+      .then(() => this.applyUserlist(this.props.userlist.plugins || [],
+                                     this.props.masterlist.plugins || []));
   }
 
   public componentDidMount() {
@@ -466,10 +470,12 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       things.push(t('{{count}} ITM record', { ns: 'gamebryo-plugin', count: dat['itmCount'] }));
     }
     if (dat.deletedNavmeshCount > 0) {
-      things.push(t('{{count}} deleted navmesh', { ns: 'gamebryo-plugin', count: dat.deletedNavmeshCount }));
+      things.push(t('{{count}} deleted navmesh',
+                    { ns: 'gamebryo-plugin', count: dat.deletedNavmeshCount }));
     }
     if (dat.deletedReferenceCount > 0) {
-      things.push(t('{{count}} deleted reference', { ns: 'gamebryo-plugin', count: dat.deletedReferenceCount }));
+      things.push(t('{{count}} deleted reference',
+                    { ns: 'gamebryo-plugin', count: dat.deletedReferenceCount }));
     }
     const clean = things.length === 0;
     if (clean) {
@@ -479,7 +485,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           replace: {
             tool: dat.cleaningUtility,
             things: things.join(t(' and ')),
-          }
+          },
         });
     return (
       <Alert bsStyle={clean ? 'success' : 'warning'}>
@@ -910,7 +916,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         edit: {},
         calc: plugin => this.pluginModName(plugin),
         customRenderer: (plugin: IPluginCombined) => (
-          <a data-modid={plugin.modName} onClick={this.highlightMod} >{this.pluginModName(plugin)}</a>
+          <a data-modid={plugin.modName} onClick={this.highlightMod} >
+            {this.pluginModName(plugin)}
+          </a>
         ),
         placement: 'both',
         isDefaultVisible: false,
@@ -972,7 +980,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       {
         id: 'loadOrder',
         name: 'Load Order',
-        description: 'The order in which plugins are loaded. Plugins with higher number overwrite those with lower ones.',
+        description: 'The order in which plugins are loaded. '
+                   + 'Plugins with higher number overwrite those with lower ones.',
         icon: 'sort-numeric-asc',
         isToggleable: true,
         edit: {},
@@ -984,7 +993,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       {
         id: 'modIndex',
         name: 'Mod Index',
-        description: 'The Mod index is the first two hexadecimal digits of all ids this plugin adds to the game',
+        description: 'The Mod index is the first two hexadecimal digits of all ids '
+                   + 'this plugin adds to the game',
         icon: 'indent',
         isToggleable: true,
         edit: {},
@@ -1057,7 +1067,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       {
         id: 'eslify',
         name: 'Light',
-        description: 'A light plugin doesn\'t occupy a regular load order slot. Only some plugins can be made light direcly.',
+        description: 'A light plugin doesn\'t occupy a regular load order slot. '
+                    + 'Only some plugins can be made light direcly.',
         icon: 'plugin-light',
         placement: 'detail',
         edit: {},
@@ -1065,19 +1076,22 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         calc: (plugin: IPluginCombined) => plugin.isValidAsLightMaster,
         customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => {
           const ext = path.extname(plugin.name).toLowerCase();
-          const canBeConverted = (plugin.isValidAsLightMaster || plugin.isLight) && (ext === '.esp');
+          const canBeConverted = (plugin.isValidAsLightMaster || plugin.isLight)
+                              && (ext === '.esp');
           return (
             <Button
               disabled={!canBeConverted}
               title={!plugin.isValidAsLightMaster && !plugin.isLight
-                ? t('This plugin can\'t be an esl since it contains form-ids outside the valid range')
+                ? t('This plugin can\'t be an esl since it contains form-ids '
+                    + 'outside the valid range')
                 : ext !== '.esp'
                   ? t('Only plugins with .esp extension can be converted')
                   : plugin.isLight
                     ? t('This plugin already has the light flag set, you can unset it.')
-                    : t('This is a regular plugin that could be turned into a light one (also known as an ESPfe). '
-                      + 'When you do this, it will no longer take up a spot in the load order while still '
-                      + 'working as usual.')}
+                    : t('This is a regular plugin that could be turned into a light one '
+                      + '(also known as an ESPfe). '
+                      + 'When you do this, it will no longer take up a spot in the load '
+                      + 'order while still working as usual.')}
               onClick={canBeConverted ? () => {
                 this.eslify(plugin, !plugin.isLight)
                   .then(() =>
@@ -1098,7 +1112,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         icon: 'plug',
         placement: 'table',
         customRenderer: (plugin: IPluginCombined, detail: boolean,
-          t: TranslationFunction, props: types.ICustomProps) =>
+                         t: I18next.TFunction, props: types.ICustomProps) =>
           <DependencyIcon plugin={plugin} t={t} onHighlight={props.onHighlight} />,
         calc: () => null,
         isToggleable: true,
@@ -1120,8 +1134,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         edit: {},
         customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => (
           <ListGroup className='loot-message-list'>
-            {plugin.cleanliness.map((dat, idx) => (<ListGroupItem key={idx}>{this.renderCleaningData(dat)}</ListGroupItem>))}
-            {plugin.dirtyness.map((dat, idx) => (<ListGroupItem key={idx}>{this.renderCleaningData(dat)}</ListGroupItem>))}
+            {plugin.cleanliness.map((dat, idx) => (
+              <ListGroupItem key={idx}>{this.renderCleaningData(dat)}</ListGroupItem>))}
+            {plugin.dirtyness.map((dat, idx) => (
+              <ListGroupItem key={idx}>{this.renderCleaningData(dat)}</ListGroupItem>))}
           </ListGroup>
         ),
         calc: (plugin: IPluginCombined) => plugin.cleanliness.length + plugin.dirtyness.length,
