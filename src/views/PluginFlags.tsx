@@ -1,5 +1,5 @@
 import { IPluginCombined } from '../types/IPlugins';
-import { gameSupported, supportsESL } from '../util/gameSupport';
+import { gameSupported, minRevision, supportsESL } from '../util/gameSupport';
 
 import { tooltip } from 'vortex-api';
 
@@ -210,6 +210,17 @@ const PluginFlags = (props: IProps): JSX.Element => {
         key={key}
         name='hide'
         tooltip={t('Not deployed', { ns: 'gamebryo-plugin' })}
+      />);
+  }
+
+  if (plugin.revision < minRevision(gameMode)) {
+    const key = `ico-revision-${plugin.id}`;
+    flags.push(
+      <tooltip.Icon
+        id={key}
+        key={key}
+        name='incompatible'
+        tooltip={t('Incompatible plugin', { ns: 'gamebryo-plugin' })}
       />);
   }
 

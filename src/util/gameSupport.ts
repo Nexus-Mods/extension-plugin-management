@@ -48,6 +48,7 @@ const gameSupport = {
       'ccEEJSSE001-Hstead.esl',
     ],
     supportsESL: true,
+    minRevision: 44,
   },
   skyrimvr: {
     appDataPath: 'Skyrim VR',
@@ -202,4 +203,17 @@ export function pluginExtensions(gameMode: string): string[] {
   return gameSupport[gameMode].supportsESL
     ? ['.esm', '.esp', '.esl']
     : ['.esm', '.esp'];
+}
+
+export function minRevision(gameMode: string): number {
+  return gameSupport[gameMode].minRevision || 0;
+}
+
+export function revisionText(gameMode: string): string {
+  if (gameMode === 'skyrimse') {
+    return 'This plugin was created for the original Skyrim and may be incompatible '
+         + 'with Skyrim Special Edition. This can cause unforseen problems during gameplay.';
+  } else {
+    return 'Plugin not compatible with this game';
+  }
 }

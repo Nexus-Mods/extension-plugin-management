@@ -45,8 +45,8 @@ export interface IPlugin {
 }
 
 export interface IPluginNotification {
-  description?: string,
-  notify: boolean,
+  description?: string;
+  notify: boolean;
 }
 
 export interface IPlugins { [key: string]: IPlugin; }
@@ -64,6 +64,7 @@ export interface IPluginParsed {
   masterList: string[];
   author: string;
   description: string;
+  revision: number;
 }
 
 export interface IPluginLoot {

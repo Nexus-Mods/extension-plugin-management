@@ -46,6 +46,9 @@
     .icon-notifications {
       fill: $brand-warning;
     }
+    .icon-incompatible {
+      fill: $brand-warning;
+    }
   }
 }
 
@@ -118,7 +121,7 @@
   }
 }
 
-.loot-message-list .alert {
+#table-gamebryo-plugins .alert {
   max-width: 300px;
   word-wrap: break-word;
   a {

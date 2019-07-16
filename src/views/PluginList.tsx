@@ -10,7 +10,7 @@ import {
   IPluginParsed,
   IPlugins,
 } from '../types/IPlugins';
-import { gameSupported, supportsESL } from '../util/gameSupport';
+import { gameSupported, minRevision, revisionText, supportsESL } from '../util/gameSupport';
 import GroupFilter from '../util/GroupFilter';
 
 import DependencyIcon from './DependencyIcon';
@@ -342,6 +342,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         masterList: [],
         author: '',
         description: '',
+        revision: 0,
       };
       return prev;
     }, {});
@@ -535,6 +536,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             description: esp.description,
             author: esp.author,
             masterList: esp.masterList,
+            revision: (esp as any).revision,
           };
         } catch (err) {
           // TODO: there is a time window where this is called on a file that
@@ -550,6 +552,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             description: '',
             author: '',
             masterList: [],
+            revision: 0,
           };
         }
         resolve();
@@ -946,6 +949,22 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         description: 'Author of the plugin',
         placement: 'detail',
         calc: (plugin: IPluginCombined) => plugin.author,
+        edit: {},
+      },
+      {
+        id: 'revision',
+        name: 'Revision',
+        description: 'Revision of the plugin',
+        placement: 'detail',
+        calc: (plugin: IPluginCombined) => plugin.revision,
+        customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) =>
+          plugin.revision < minRevision(this.props.gameMode)
+            ? (
+              <Alert bsStyle='warning'>
+                {t(revisionText(this.props.gameMode), { ns: 'gamebryo-plugin' })}
+              </Alert>
+            )
+            : null,
         edit: {},
       },
       {
