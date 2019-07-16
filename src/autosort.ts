@@ -5,29 +5,29 @@ import {gameSupported, pluginPath} from './util/gameSupport';
 import * as Bluebird from 'bluebird';
 import { remote } from 'electron';
 import getVersion from 'exe-version';
+import i18next from 'i18next';
 import { LootAsync } from 'loot';
 import * as path from 'path';
 import {} from 'redux-thunk';
 import {actions, fs, log, selectors, types, util} from 'vortex-api';
-import i18next from 'i18next';
-import { setGroup, removeRule, removeGroupRule } from './actions/userlist';
+import { removeGroupRule, removeRule, setGroup } from './actions/userlist';
 
 const LOOT_LIST_REVISION = 'v0.14';
 
 const LootProm: any = Bluebird.promisifyAll(LootAsync);
 
 enum EdgeType {
-  group = "group",
-  hardcoded = "hardcoded",
-  master = "master",
-  masterFlag = "masterFlag",
-  masterlistLoadAfter = "masterlistLoadAfter",
-  masterlistRequirement = "masterlistRequirement",
-  userLoadAfter = "userlistLoadAfter",
-  userRequirement = "userlistRequirement",
-  overlap = "overlap",
-  tieBreak = "tieBreak",
-};
+  group = 'group',
+  hardcoded = 'hardcoded',
+  master = 'master',
+  masterFlag = 'masterFlag',
+  masterlistLoadAfter = 'masterlistLoadAfter',
+  masterlistRequirement = 'masterlistRequirement',
+  userLoadAfter = 'userlistLoadAfter',
+  userRequirement = 'userlistRequirement',
+  overlap = 'overlap',
+  tieBreak = 'tieBreak',
+}
 
 interface ICycleEdge {
   name: string;
@@ -77,11 +77,14 @@ class LootInterface {
     try {
       await this.mInitPromise;
       await this.mSortPromise;
-    } catch (err) {}
+    } catch (err) {
+      // nop
+    }
   }
 
   public async resetMasterlist(): Promise<string> {
     const { store } = this.mExtensionApi;
+    // tslint:disable-next-line:prefer-const
     let { game, loot } = await this.mInitPromise;
 
     const state = store.getState();
@@ -154,7 +157,7 @@ class LootInterface {
           // sort only the ones that are deployed
           .filter((pluginId: string) => pluginList[pluginId].deployed)
           // apply existing ordering (as far as available)
-          .sort((lhs, rhs) => lo(lhs) - lo(rhs))
+          .sort((lhs, rhs) => lo(lhs) - lo(rhs));
 
         // make sure we only pass files to loot that really exist on disk (and are accessible)
         // this should be a waste of time, pluginList should already only contain files
@@ -236,7 +239,7 @@ class LootInterface {
             { replace: { msg: err.message }, ns: 'gamebryo-plugin' }),
         });
       } else if (err.message.indexOf('Failed to evaluate condition') !== -1) {
-        let match = err.message.match(
+        const match = err.message.match(
           /Failed to evaluate condition ".*version\("([^"]*\.exe)",.*/);
         if (match) {
           let exists = false;
@@ -361,8 +364,8 @@ class LootInterface {
     return res;
   }
 
-  private pluginDetails = async (context: types.IExtensionContext, gameId: string, plugins: string[],
-                                 callback: (result: IPluginsLoot) => void) => {
+  private pluginDetails = async (context: types.IExtensionContext, gameId: string,
+                                 plugins: string[], callback: (result: IPluginsLoot) => void) => {
     const { game, loot } = await this.getLoot(context, gameId);
     if ((loot === undefined) || loot.isClosed()) {
       callback({});
@@ -405,11 +408,11 @@ class LootInterface {
       this.mExtensionApi.showErrorNotification('Failed to parse plugins',
                                                err, {
                                                  allowReport: false,
-                                                 id: `loot-failed-to-parse`
+                                                 id: `loot-failed-to-parse`,
                                                });
     }
 
-    let createEmpty = () => ({
+    const createEmpty = () => ({
       messages: [],
       tags: [],
       cleanliness: [],
@@ -427,7 +430,7 @@ class LootInterface {
         return;
       }
       try {
-        let meta = await loot.getPluginMetadataAsync(pluginName);
+        const meta = await loot.getPluginMetadataAsync(pluginName);
         let info;
         try {
           const id = pluginName.toLowerCase();
@@ -601,13 +604,14 @@ class LootInterface {
     (this.mExtensionApi as any).runExecutable(process.execPath, [modulePath].concat(args || []), {
       detach: false,
       suggestDeploy: false,
+      expectSuccess: true,
       env: {
         ELECTRON_RUN_AS_NODE: '1',
       },
     })
       .catch(util.UserCanceled, () => null)
       .catch(util.ProcessCanceled, () => null)
-      .catch(err => this.mExtensionApi.showErrorNotification('Failed to start LOOT', err));
+      .catch(err => this.mExtensionApi.showErrorNotification('Failed to run LOOT', err));
   }
 
   private log = (level: number, message: string) => {
@@ -671,22 +675,24 @@ class LootInterface {
           await loot.getGroupsPathAsync(edgeGroup || 'default', nextGroup || 'default');
         return t('groups are connected like this: {{path}}', { replace: {
           path: groupPath.map(grp => {
-            let connection = grp.typeOfEdgeToNextVertex === 'hardcoded'
+            const connection = grp.typeOfEdgeToNextVertex === 'hardcoded'
               ? ''
               : ` --(${this.renderEdge(t, grp)})->`;
             return `${grp.name}${connection}`;
           }).join(' '),
         } });
-      };
+      }
     }
   }
 
   private getGroup(state: any, pluginName: string): { group: string, custom: boolean } {
-    let ulEdge = state.userlist.plugins.find(iter => iter.name.toLowerCase() === pluginName.toLowerCase());
+    const ulEdge = state.userlist.plugins.find(
+      iter => iter.name.toLowerCase() === pluginName.toLowerCase());
     if ((ulEdge !== undefined) && (ulEdge.group !== undefined)) {
       return { group: ulEdge.group, custom: true };
     }
-    let mlEdge = state.masterlist.plugins.find(iter => iter.name.toLowerCase() === pluginName.toLowerCase());
+    const mlEdge = state.masterlist.plugins.find(
+      iter => iter.name.toLowerCase() === pluginName.toLowerCase());
     if ((mlEdge !== undefined) && (mlEdge.group !== undefined)) {
       return { group: mlEdge.group, custom: false };
     }
@@ -699,19 +705,21 @@ class LootInterface {
     const state = this.mExtensionApi.store.getState();
     const lines = await Promise.all(cycle.map(async (edge: ICycleEdge, idx: number) => {
       const next = cycle[(idx + 1) % cycle.length];
-      let edgeGroup = this.getGroup(state, edge.name);
-      let nextGroup = this.getGroup(state, next.name);
+      const edgeGroup = this.getGroup(state, edge.name);
+      const nextGroup = this.getGroup(state, next.name);
 
-      let groupDescription = edgeGroup.custom
-        ? `[tooltip="${t('This group was manually assigned')}"]${edgeGroup.group || 'default'}[/tooltip]`
+      const groupDescription = edgeGroup.custom
+        ? `[tooltip="${t('This group was manually assigned')}"]`
+          + `${edgeGroup.group || 'default'}[/tooltip]`
         : (edgeGroup.group || 'default');
-      let edgeDescription = await this.describeEdge(t, edge, edgeGroup.group, next, nextGroup.group, loot);
+      const edgeDescription =
+        await this.describeEdge(t, edge, edgeGroup.group, next, nextGroup.group, loot);
 
-      let connection = `[tooltip="${edgeDescription}"]-->[/tooltip]`;
+      const connection = `[tooltip="${edgeDescription}"]-->[/tooltip]`;
 
       return `${edge.name}@[i]${groupDescription}[/i] ${connection}`;
     }));
-    let firstGroup = this.getGroup(state, cycle[0].name);
+    const firstGroup = this.getGroup(state, cycle[0].name);
     return lines.join(' ') + ` ${cycle[0].name}@[i]${firstGroup.group || 'default'}[/i]`;
   }
 
@@ -737,8 +745,8 @@ class LootInterface {
         });
       } else if (edge.typeOfEdgeToNextVertex === EdgeType.group) {
         const state = this.mExtensionApi.store.getState();
-        let edgeGroup = this.getGroup(state, edge.name);
-        let nextGroup = this.getGroup(state, next.name);
+        const edgeGroup = this.getGroup(state, edge.name);
+        const nextGroup = this.getGroup(state, next.name);
         if (edgeGroup.custom) {
           result.push({
             id: `unassign:${edge.name}`,
@@ -759,7 +767,7 @@ class LootInterface {
         }
         const groupPath: ICycleEdge[] =
           await loot.getGroupsPathAsync(edgeGroup.group || 'default', nextGroup.group || 'default');
-        if (groupPath.find(edge => user.indexOf(edge.typeOfEdgeToNextVertex) !== -1)) {
+        if (groupPath.find(iter => user.indexOf(iter.typeOfEdgeToNextVertex) !== -1)) {
           result.push({
             // Storing the plugin names here instead of the group directly because the plugin names
             //   are file names on disk and thus won't contain colons, meaning we can cleanly
@@ -792,17 +800,18 @@ class LootInterface {
       api.store.dispatch(setGroup(args[1], undefined));
     } else if (args[0] === 'resetgroups') {
       const state = api.store.getState();
-      let edgeGroup = this.getGroup(state, args[1]);
-      let nextGroup = this.getGroup(state, args[2]);
+      const edgeGroup = this.getGroup(state, args[1]);
+      const nextGroup = this.getGroup(state, args[2]);
 
-      let path: ICycleEdge[] =
+      const cyclePath: ICycleEdge[] =
         await loot.getGroupsPathAsync(edgeGroup.group || 'default', nextGroup.group || 'default');
 
-      path.forEach((pathEdge, idx) => {
+      cyclePath.forEach((pathEdge, idx) => {
         if ((pathEdge.typeOfEdgeToNextVertex === EdgeType.userLoadAfter)
             || (pathEdge.typeOfEdgeToNextVertex === EdgeType.userRequirement)) {
-          const pathNext = path[(idx + 1) % path.length];
-          api.store.dispatch(removeGroupRule(pathNext.name || 'default', pathEdge.name || 'default'))
+          const pathNext = cyclePath[(idx + 1) % cyclePath.length];
+          api.store.dispatch(
+            removeGroupRule(pathNext.name || 'default', pathEdge.name || 'default'));
         }
       });
 
@@ -817,7 +826,7 @@ class LootInterface {
 
     let solutions: types.ICheckbox[];
     let renderedCycle: string;
-    
+
     try {
       solutions = await this.getSolutions(t, (err as any).cycle, loot);
       renderedCycle = await this.renderCycle(t, (err as any).cycle, loot);
@@ -833,12 +842,12 @@ class LootInterface {
     const errActions: types.IDialogAction[] = [
       {
         label: 'Close',
-      }
+      },
     ];
     if (solutions.length > 0) {
       errActions.push({
         label: 'Apply Selected',
-      })
+      });
     }
 
     this.mExtensionApi.sendNotification({
@@ -865,7 +874,7 @@ class LootInterface {
                 if (result.action === 'Apply Selected') {
                   const selected = Object.keys(result.input)
                     .filter(key => result.input[key]);
-                  
+
                   selected.sort((lhs, rhs) => {
                       // reset groups first because if one of the other commands changes the
                       // groups those might not work any more or reset a different list of groups
@@ -877,7 +886,7 @@ class LootInterface {
                         return lhs.localeCompare(rhs);
                       }
                     })
-                    .forEach(key => this.applyFix(key, loot))
+                    .forEach(key => this.applyFix(key, loot));
 
                   if (selected.length > 0) {
                     // sort again

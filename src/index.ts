@@ -16,9 +16,9 @@ import {
   initGameSupport,
   isNativePlugin,
   nativePlugins,
+  pluginExtensions,
   pluginPath,
   supportedGames,
-  pluginExtensions,
 } from './util/gameSupport';
 import PluginPersistor from './util/PluginPersistor';
 import UserlistPersistor from './util/UserlistPersistor';
