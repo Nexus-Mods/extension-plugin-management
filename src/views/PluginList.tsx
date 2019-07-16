@@ -342,7 +342,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         masterList: [],
         author: '',
         description: '',
-        revision: 0,
+        revision: 999,
       };
       return prev;
     }, {});
@@ -405,6 +405,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   public render(): JSX.Element {
     const { t, deployProgress, gameMode, needToDeploy } = this.props;
     const { pluginsCombined } = this.state;
+
+    if (!gameSupported(gameMode)) {
+      return null;
+    }
 
     return (
       <MainPage>
@@ -552,7 +556,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             description: '',
             author: '',
             masterList: [],
-            revision: 0,
+            revision: 999,
           };
         }
         resolve();
