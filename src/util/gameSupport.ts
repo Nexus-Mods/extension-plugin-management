@@ -195,6 +195,9 @@ export function nativePlugins(gameMode: string): string[] {
 }
 
 export function supportsESL(gameMode: string): boolean {
+  if (gameSupport[gameMode] === undefined) {
+    return false;
+  }
   return gameSupport[gameMode].supportsESL || false;
 }
 

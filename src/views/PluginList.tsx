@@ -405,6 +405,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const { t, deployProgress, gameMode, needToDeploy } = this.props;
     const { pluginsCombined } = this.state;
 
+    if (!gameSupported(gameMode)) {
+      return null;
+    }
+
     return (
       <MainPage>
         <MainPage.Header>
