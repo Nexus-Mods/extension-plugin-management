@@ -30,7 +30,7 @@
     "@types/redux": "^3.6.0",
     "@types/redux-thunk": "^2.1.0",
     "bluebird": "^3.5.1",
-    "copyfiles": "^2.0.0",
+    "copyfiles": "^2.1.1",
     "cytoscape": "^3.2.16",
     "cytoscape-cose-bilkent": "^4.0.0",
     "cytoscape-edgehandles": "^3.5.1",
