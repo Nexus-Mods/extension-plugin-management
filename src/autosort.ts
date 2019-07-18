@@ -831,7 +831,7 @@ class LootInterface {
       solutions = await this.getSolutions(t, (err as any).cycle, loot);
       renderedCycle = await this.renderCycle(t, (err as any).cycle, loot);
     } catch (err) {
-      if (err.message === 'already closed') {
+      if (err.message === 'Already closed') {
         return;
       } else {
         this.mExtensionApi.showErrorNotification('Failed to report plugin cycle', err);
