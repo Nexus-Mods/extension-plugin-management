@@ -13,6 +13,7 @@ import {actions, fs, log, selectors, types, util} from 'vortex-api';
 import { removeGroupRule, removeRule, setGroup } from './actions/userlist';
 
 const LOOT_LIST_REVISION = 'v0.14';
+const MAX_RESTARTS = 3;
 
 const LootProm: any = Bluebird.promisifyAll(LootAsync);
 
@@ -41,6 +42,7 @@ class LootInterface {
   private mSortPromise: Bluebird<string[]> = Bluebird.resolve([]);
 
   private mUserlistTime: Date;
+  private mRestarts: number = MAX_RESTARTS;
 
   constructor(context: types.IExtensionContext) {
     const store = context.api.store;
@@ -203,6 +205,7 @@ class LootInterface {
           ? Promise.resolve([])
           : Promise.reject(err));
       const sorted: string[] = await this.mSortPromise;
+      this.mRestarts = MAX_RESTARTS;
       store.dispatch(updatePluginOrder(sorted, false));
     } catch (err) {
       log('info', 'loot failed', { error: err.message });
@@ -611,7 +614,16 @@ class LootInterface {
     })
       .catch(util.UserCanceled, () => null)
       .catch(util.ProcessCanceled, () => null)
-      .catch(err => this.mExtensionApi.showErrorNotification('Failed to run LOOT', err));
+      .catch(err => {
+        log('warn', 'LOOT process died', { error: err.message });
+        if (this.mRestarts > 0) {
+          const gameMode = selectors.activeGameId(this.mExtensionApi.store.getState());
+          --this.mRestarts;
+          this.mInitPromise = this.init(gameMode, this.gamePath);
+        } else {
+          this.mExtensionApi.showErrorNotification('LOOT process died', err);
+        }
+      });
   }
 
   private log = (level: number, message: string) => {
