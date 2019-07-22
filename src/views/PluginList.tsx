@@ -1,5 +1,5 @@
 import { setPluginEnabled } from '../actions/loadOrder';
-import { updatePluginWarnings } from '../actions/plugins';
+import { setPluginInfo, updatePluginWarnings } from '../actions/plugins';
 import { setAutoSortEnabled } from '../actions/settings';
 import { addGroup, addGroupRule, setGroup } from '../actions/userlist';
 import { ILoadOrder } from '../types/ILoadOrder';
@@ -23,6 +23,7 @@ import * as Promise from 'bluebird';
 import ESPFile from 'esptk';
 import I18next from 'i18next';
 import update from 'immutability-helper';
+import * as _ from 'lodash';
 import { Message, PluginCleaningData } from 'loot';
 import * as path from 'path';
 import * as React from 'react';
@@ -67,6 +68,7 @@ interface IActionProps {
   onAddGroupRule: (group: string, reference: string) => void;
   onSetGroup: (pluginName: string, group: string) => void;
   onUpdateWarnings: (id: string, warning: string, value: boolean) => void;
+  onUpdatePluginInfo: (info: { [id: string]: IPluginCombined }) => void;
 }
 
 interface IComponentState {
@@ -362,10 +364,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentWillMount() {
-    const { plugins } = this.props;
+    const { plugins, onUpdatePluginInfo } = this.props;
     const parsed = this.emptyPluginParsed();
     const loot = this.emptyPluginLOOT();
     const combined = this.detailedPlugins(plugins, loot, parsed);
+    onUpdatePluginInfo(_.cloneDeep(combined));
     this.mCachedGameMode = this.props.gameMode;
     this.setState(update(this.state, {
       pluginsParsed: { $set: parsed },
@@ -602,6 +605,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             prev[name.toLowerCase()] = idx;
             return prev;
           }, {});
+
+        this.props.onUpdatePluginInfo(_.cloneDeep(pluginsCombined));
       });
   }
 
@@ -1219,6 +1224,8 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
       dispatch(setGroup(pluginName, group)),
     onUpdateWarnings: (pluginName: string, notificationId: string, value: boolean) =>
       dispatch(updatePluginWarnings(pluginName, notificationId, value)),
+    onUpdatePluginInfo: (info: { [id: string]: IPluginCombined }) =>
+      dispatch(setPluginInfo(info)),
   };
 }
 
