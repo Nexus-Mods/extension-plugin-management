@@ -1,4 +1,5 @@
-import { addGroup, addGroupRule, removeGroup, removeGroupRule, setGroup } from '../actions/userlist';
+import { addGroup, addGroupRule, removeGroup,
+         removeGroupRule, setGroup } from '../actions/userlist';
 import { openGroupEditor } from '../actions/userlistEdit';
 import { ILOOTList } from '../types/ILOOTList';
 
@@ -13,6 +14,7 @@ import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { actions, ComponentEx, ContextMenu, Modal, types } from 'vortex-api';
 
+// tslint:disable-next-line:no-var-requires
 const { Usage } = require('vortex-api');
 
 interface IConnectedProps {
@@ -70,7 +72,7 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
       title: 'Reset...',
       show: true,
       action: () => this.reset(),
-    }
+    },
   ];
 
   constructor(props: IProps) {
@@ -200,13 +202,14 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
   }
 
   private reset = () => {
-    const { onRemoveGroup, onRemoveGroupRule, onSetGroup, onShowDialog, masterlist, userlist } = this.props;
+    const { onRemoveGroup, onRemoveGroupRule, onSetGroup,
+            onShowDialog, masterlist, userlist } = this.props;
     onShowDialog('question', 'Reset Customisations', {
       text: 'This will remove customizations you have made to groups. This can\'t be undone!',
       checkboxes: [
         { id: 'default_groups', text: 'Revert pre-configured groups to default', value: true },
         { id: 'custom_groups', text: 'Remove custom groups', value: true },
-      ]
+      ],
     }, [ { label: 'Cancel' }, { label: 'Continue' } ])
     .then((result: types.IDialogResult) => {
       if (result.action === 'Cancel') {
@@ -229,8 +232,8 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
               .filter(after => !masterlistGroups.has(after))
               .forEach(after => {
                 onRemoveGroupRule(group.name, after);
-              })
-          })
+              });
+          });
         // remove all custom groups
         userlist.groups
           .filter(group => !masterlistGroups.has(group.name))
@@ -288,11 +291,17 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
     const { masterlist, userlist } = props;
 
     return [].concat(
-      masterlist.groups.map(group =>
-        ({ title: group.name, connections: group.after,
-           class: `masterlist group-${group.name.replace(/[^A-Za-z0-9]/g, '_')}`, readonly: true })),
-      userlist.groups.map(group =>
-        ({ title: group.name, connections: group.after, class: `userlist group-${group.name.replace(/[^A-Za-z0-9]/g, '_')}` })),
+      (masterlist.groups || []).map(group => ({
+        title: group.name,
+        connections: group.after,
+        class: `masterlist group-${group.name.replace(/[^A-Za-z0-9]/g, '_')}`,
+        readonly: true,
+      })),
+      (userlist.groups || []).map(group => ({
+        title: group.name,
+        connections: group.after,
+        class: `userlist group-${group.name.replace(/[^A-Za-z0-9]/g, '_')}`,
+      })),
     ).reduce((prev, ele) => {
       prev[ele.title] = ele;
       return prev;
@@ -314,7 +323,9 @@ function mapStateToProps(state): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<types.IState, null, Redux.Action>): IActionProps {
+type DispatchFunc = ThunkDispatch<types.IState, null, Redux.Action>;
+
+function mapDispatchToProps(dispatch: DispatchFunc): IActionProps {
   return {
     onOpen: (open: boolean) => dispatch(openGroupEditor(open)),
     onAddGroup: (groupId: string) =>

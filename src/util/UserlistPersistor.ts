@@ -26,9 +26,8 @@ class UserlistPersistor implements types.IPersistor {
   private mLoaded: boolean = false;
   private mFailed: boolean = false;
   private mLoadedPromise: Promise<void>;
-  private mOnLoaded: () => void = () => null;
-  private mOnError: (message: string, details: Error, options?: types.IErrorOptions) => void;
   private mMode: 'userlist' | 'masterlist';
+  private mOnError: (message: string, details: Error, options?: types.IErrorOptions) => void;
 
   constructor(mode: 'userlist' | 'masterlist',
               onError: (message: string, details: Error) => void) {
@@ -42,7 +41,7 @@ class UserlistPersistor implements types.IPersistor {
     this.mLoadedPromise = new Promise((resolve, reject) => {
       this.mOnLoaded = resolve;
     });
-  }
+}
 
   public wait(): Promise<void> {
     return this.mLoadedPromise;
@@ -57,8 +56,8 @@ class UserlistPersistor implements types.IPersistor {
       };
       this.mUserlistPath = undefined;
       this.mLoaded = false;
-      this.mLoadedPromise = new Promise((resolve, reject) => {
-        this.mOnLoaded = resolve;
+      this.mLoadedPromise = new Promise((loadResolve, reject) => {
+        this.mOnLoaded = loadResolve;
       });
       if (this.mResetCallback) {
         this.mResetCallback();
@@ -101,8 +100,11 @@ class UserlistPersistor implements types.IPersistor {
   }
 
   public getAllKeys(): Promise<string[][]> {
-    return Promise.resolve([].concat(['__isLoaded'], Object.keys(this.mUserlist)).map(key => [key]));
+    return Promise.resolve([].concat(['__isLoaded'], Object.keys(this.mUserlist))
+                             .map(key => [key]));
   }
+
+  private mOnLoaded: () => void = () => null;
 
   private enqueue(fn: () => Promise<void>): Promise<void> {
     this.mSerializeQueue = this.mSerializeQueue.then(fn);
@@ -155,7 +157,7 @@ class UserlistPersistor implements types.IPersistor {
                + 'plugin sorting will not produce correct results.',
         buttons: [
           'Understood',
-        ]
+        ],
       });
     } else {
       if (dialog.showMessageBox(null, {
@@ -172,8 +174,8 @@ class UserlistPersistor implements types.IPersistor {
         defaultId: 1,
         buttons: [
           'Reset Userlist',
-          'Quit Vortex'
-        ]
+          'Quit Vortex',
+        ],
       })) {
         app.exit(1);
       }
@@ -184,15 +186,15 @@ class UserlistPersistor implements types.IPersistor {
     const keysU = {};
 
     const mapKey = (key: string, idx: number): number => {
-      let keyU = key.toUpperCase();
-      let mapped = keysU[keyU];
+      const keyU = key.toUpperCase();
+      const mapped = keysU[keyU];
       if (mapped === undefined) {
         keysU[keyU] = idx;
         return -1;
       } else {
         return mapped;
       }
-    }
+    };
 
     return list.reduce((prev, plugin) => {
       const mappedIdx = mapKey(plugin.name, prev.length);
