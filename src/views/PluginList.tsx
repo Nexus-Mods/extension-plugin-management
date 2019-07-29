@@ -1126,7 +1126,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
                     this.context.api.events.emit('autosort-plugins', true))
                   .catch(err => {
                     this.context.api.showErrorNotification('Failed to convert plugin', err,
-                    { allowReport: err.message.indexOf('rename: Access is denied.') === -1 });
+                    { allowReport: err.message.indexOf('Access is denied.') === -1 });
                   });
               } : nop}
             >
