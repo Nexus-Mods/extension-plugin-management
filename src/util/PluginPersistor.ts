@@ -288,9 +288,14 @@ class PluginPersistor implements types.IPersistor {
       .catch(util.UserCanceled, () => null)
       .catch(err => {
         if (err.code !== 'EBUSY') {
-          this.reportError('failed to write plugin list',
-                           err,
-                           { allowReport: err.code !== 'EPERM' });
+          // Disallow error reports for:
+          //  - Permissions related issues
+          //  - Missing plugins.txt file as we're literally creating/writing
+          //    to it at the beginning of this chain; if it's missing that's
+          //    guaranteed to be due to an external application removing it (AV or something else).
+          const missingPluginsFile = ((err.code === 'ENOENT') && (err.path === pluginsFile));
+          const allowReport = ((err.code !== 'EPERM') && !missingPluginsFile);
+          this.reportError('failed to write plugin list', err, { allowReport });
         } // no point reporting an error if the file is locked by another
           // process (could be the game itself)
       })
