@@ -150,13 +150,7 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
     const masterExisting = masterlist.groups.find(grp => grp.name === target);
     if ((masterExisting !== undefined)
         && (userlist.groups.find(grp => grp.name === target) === undefined)) {
-      // if the group is from the masterlist and doesn't exist in the userlist yet,
-      // we have to transfer the existing rules, otherwise they will disappear, with
-      // no good reason from the user perspective
       onAddGroup(target);
-      (masterExisting.after || []).forEach(after => {
-        onAddGroupRule(target, after);
-      });
     }
     onAddGroupRule(target, source);
   }
@@ -293,17 +287,25 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
     return [].concat(
       (masterlist.groups || []).map(group => ({
         title: group.name,
-        connections: group.after,
+        connections: [ { class: 'masterlist', connections: group.after || [] } ],
         class: `masterlist group-${group.name.replace(/[^A-Za-z0-9]/g, '_')}`,
         readonly: true,
       })),
       (userlist.groups || []).map(group => ({
         title: group.name,
-        connections: group.after,
+        connections: [ { class: 'userlist', connections: group.after || [] } ],
         class: `userlist group-${group.name.replace(/[^A-Za-z0-9]/g, '_')}`,
       })),
     ).reduce((prev, ele) => {
-      prev[ele.title] = ele;
+      if (prev[ele.title] !== undefined) {
+        // masterlist entries are listed first, don't overwrite the class
+        // or readonly flag
+        prev[ele.title].connections =
+          [].concat(prev[ele.title].connections, ele.connections);
+        prev[ele.title].readonly = false;
+      } else {
+        prev[ele.title] = ele;
+      }
       return prev;
     }, {});
   }

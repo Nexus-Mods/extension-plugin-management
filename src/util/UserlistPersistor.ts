@@ -138,7 +138,8 @@ class UserlistPersistor implements types.IPersistor {
 
     const userlistPath = this.mUserlistPath;
 
-    return fs.writeFileAsync(userlistPath + '.tmp', safeDump(this.mUserlist))
+    return fs.writeFileAsync(userlistPath + '.tmp',
+                             safeDump(_.omit(this.mUserlist, ['__isLoaded'])))
       .then(() => fs.renameAsync(userlistPath + '.tmp', userlistPath))
       .then(() => { this.mFailed = false; })
       .catch(util.UserCanceled, () => undefined)

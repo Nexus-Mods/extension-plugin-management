@@ -9,10 +9,15 @@ import { util } from 'vortex-api';
 
 const MAX_COLUMNS = 10;
 
+export interface IConnectionGroup {
+  class: string;
+  connections: string[];
+}
+
 export interface IGraphElement {
   title: string;
   class: string;
-  connections: string[];
+  connections: IConnectionGroup[];
   readonly?: boolean;
 }
 
@@ -51,7 +56,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
 
   public componentWillReceiveProps(newProps: IGraphViewProps) {
     if (newProps.elements !== this.props.elements) {
-      const changed = (util as any).objDiff(this.props.elements, newProps.elements);
+      const changed = util.objDiff(this.props.elements, newProps.elements);
 
       Object.keys(changed).forEach(id => {
         if (id[0] === '+') {
@@ -61,19 +66,21 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
             classes: changed[id].class,
             position: this.mMousePos,
           });
-          const connections = changed[id].connections;
-          Object.keys(connections || []).forEach(refId => {
-            const from = san(id.slice(1));
-            const to = san(connections[refId]);
-            this.mGraph.add({
-              data: {
-                id: `${from}-to-${to}`,
-                source: to,
-                sourceOrig: connections[refId],
-                target: from,
-                targetOrig: id.slice(1),
-              } as any,
-              classes: newProps.elements[id].class,
+
+          changed[id].connections.forEach(connGroup => {
+            connGroup.connections.forEach(conn => {
+              const from = san(id.slice(1));
+              const to = san(conn);
+              this.mGraph.add({
+                data: {
+                  id: `${from}-to-${to}`,
+                  source: to,
+                  sourceOrig: conn,
+                  target: from,
+                  targetOrig: id.slice(1),
+                } as any,
+                classes: connGroup.class,
+              });
             });
           });
         } else if (id[0] === '-') {
@@ -88,33 +95,33 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
               .addClass(newProps.elements[id].class);
           }
           // node content changed
-          Object.keys(changed[id].connections || [])
-            .sort((lhs, rhs) => {
-              if (lhs[0] !== rhs[0]) {
-                return lhs[0] === '-' ? -1 : 1;
-              } else {
-                return lhs.localeCompare(rhs);
-              }
-            })
-            .forEach(refId => {
-              const from = san(id);
-              const to = san(changed[id].connections[refId]);
-              const connId = `${from}-to-${to}`;
-              if (refId[0] === '-') {
-                this.mGraph.remove('#' + connId);
-              } else if (refId[0] === '+') {
-                this.mGraph.add({
-                  data: {
-                    id: connId,
-                    source: to,
-                    sourceOrig: changed[id].connections[refId],
-                    target: from,
-                    targetOrig: id,
-                  } as any,
-                  classes: newProps.elements[id].class,
-                });
-              }
-            });
+          Object.keys(changed[id].connections).forEach((connGroupIdx: string) => {
+            const connGroup = changed[id].connections[connGroupIdx];
+            Object.keys(connGroup.connections)
+              .sort((lhs, rhs) => (lhs[0] !== rhs[0])
+                ? lhs[0] === '-' ? -1 : 1
+                : lhs.localeCompare(rhs))
+              .forEach(refId => {
+                const conn = connGroup.connections[refId];
+                const from = san(id);
+                const to = san(conn);
+                const connId = `${from}-to-${to}`;
+                if (refId[0] === '-') {
+                  this.mGraph.remove('#' + connId);
+                } else {
+                  this.mGraph.add({
+                    data: {
+                      id: connId,
+                      source: to,
+                      sourceOrig: conn,
+                      target: from,
+                      targetOrig: id,
+                    } as any,
+                    classes: newProps.elements[id].connections[parseInt(connGroupIdx, 10)].class,
+                  });
+                }
+              });
+          });
         }
       });
     }
@@ -221,19 +228,25 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
           classes: ele.class,
           position: { x: pos * distance, y: row * distance },
         });
-        (ele.connections || []).forEach(conn => {
-          prev.push({
-            data: {
-              id: san(`${id}-to-${san(conn)}`),
-              target: san(id),
-              source: san(conn),
-              targetOrig: id,
-              sourceOrig: conn,
-              readonly: ele.readonly,
-            },
-            classes: ele.class,
+
+        (ele.connections || []).forEach(connGroup => {
+          (connGroup.connections || []).forEach(conn => {
+            const from = san(id);
+            const to = san(conn);
+            prev.push({
+              data: {
+                id: `${from}-to-${to}`,
+                source: to,
+                sourceOrig: conn,
+                target: from,
+                targetOrig: id,
+                readonly: ele.readonly,
+              } as any,
+              classes: connGroup.class,
+            });
           });
         });
+
         return prev;
       }, []));
   }
