@@ -4,7 +4,7 @@ import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';
-import { fs, types, util } from 'vortex-api';
+import { fs, log, types, util } from 'vortex-api';
 
 const app = appIn || remote.app;
 
@@ -141,7 +141,7 @@ const gameSupport = {
 };
 
 export function initGameSupport(store: Redux.Store<any>): Promise<void> {
-  let res = Promise.resolve(undefined);
+  let res = Promise.resolve();
 
   const state: types.IState = store.getState();
 
@@ -152,8 +152,12 @@ export function initGameSupport(store: Redux.Store<any>): Promise<void> {
       .then(() => fs.readFileAsync(path.join(discovered['skyrimse'].path, 'Skyrim.ccc'))
         .then(data => data.toString().split('\r\n').filter(plugin => plugin !== '').forEach(
           plugin => skyrimsecc.add(plugin.toLowerCase())))
-        .catch(err => undefined)
-        .then(() => gameSupport['skyrimse'].nativePlugins = Array.from(skyrimsecc)));
+        .catch(err => {
+          log('info', 'failed to read Skyrim.ccc', err.message);
+        })
+        .then(() => {
+          gameSupport['skyrimse'].nativePlugins = Array.from(skyrimsecc);
+        }));
   }
   if (util.getSafe(discovered, ['fallout4', 'path'], undefined) !== undefined) {
     const fallout4cc = new Set(gameSupport['fallout4'].nativePlugins);
@@ -161,8 +165,12 @@ export function initGameSupport(store: Redux.Store<any>): Promise<void> {
       .then(() => fs.readFileAsync(path.join(discovered['fallout4'].path, 'Fallout4.ccc'))
         .then(data => data.toString().split('\r\n').filter(plugin => plugin !== '').forEach(
           plugin => fallout4cc.add(plugin.toLowerCase())))
-        .catch(err => undefined)
-        .then(() => gameSupport['fallout4'].nativePlugins = Array.from(fallout4cc)));
+        .catch(err => {
+          log('info', 'failed to read Fallout4.ccc', err.message);
+        })
+        .then(() => {
+          gameSupport['fallout4'].nativePlugins = Array.from(fallout4cc);
+        }));
   }
 
   return res;
