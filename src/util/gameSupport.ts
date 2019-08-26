@@ -212,7 +212,7 @@ export function supportsESL(gameMode: string): boolean {
 }
 
 export function pluginExtensions(gameMode: string): string[] {
-  return gameSupport[gameMode].supportsESL
+  return supportsESL(gameMode)
     ? ['.esm', '.esp', '.esl']
     : ['.esm', '.esp'];
 }
