@@ -5,8 +5,6 @@ export const setPluginEnabled = createAction('SET_PLUGIN_ENABLED',
 
 /**
  * completely replace the load order (not changing the enabled state of plugins)
- * unless additive is true, plugins that were in the load order but not specified
- * in this call get removed
  */
 export const setPluginOrder = createAction('SET_PLUGIN_ORDER');
 

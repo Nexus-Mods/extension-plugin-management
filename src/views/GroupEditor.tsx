@@ -12,10 +12,7 @@ import { withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import { actions, ComponentEx, ContextMenu, Modal, types } from 'vortex-api';
-
-// tslint:disable-next-line:no-var-requires
-const { Usage } = require('vortex-api');
+import { actions, ComponentEx, ContextMenu, Modal, types, Usage } from 'vortex-api';
 
 interface IConnectedProps {
   open: boolean;
