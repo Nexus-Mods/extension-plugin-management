@@ -863,6 +863,7 @@ function init(context: IExtensionContextExt) {
                 } else if (plugins.length > 1) {
                   const t = context.api.translate;
                   context.api.sendNotification({
+                    id: `multiple-plugins-${mod.id}`,
                     type: 'info',
                     message: t('The mod "{{ modName }}" contains multiple plugins',
                               {
