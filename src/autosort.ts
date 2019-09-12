@@ -276,6 +276,7 @@ class LootInterface {
             version = getVersion(filePath) || 'unknown';
             (util as any).fileMD5(filePath)
               .then(hash => md5sum = hash)
+              .catch(() => null)
               .finally(() => {
                 report();
               });
