@@ -620,7 +620,9 @@ class LootInterface {
         if (this.mRestarts > 0) {
           const gameMode = selectors.activeGameId(this.mExtensionApi.store.getState());
           --this.mRestarts;
-          this.mInitPromise = this.init(gameMode, this.gamePath);
+          if (gameSupported(gameMode)) {
+            this.mInitPromise = this.init(gameMode, this.gamePath);
+          }
         } else {
           this.mExtensionApi.showErrorNotification('LOOT process died', err);
         }
