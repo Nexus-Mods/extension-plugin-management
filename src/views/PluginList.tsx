@@ -287,9 +287,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           }
         },
       },
-      isSortable: false,
+      isSortable: true,
+      isGroupable: true,
       filter: new PluginStatusFilter(),
-    };
+    } as any;
 
     this.staticButtons = [
       {
@@ -936,10 +937,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         isDefaultVisible: false,
         isSortable: true,
         isToggleable: true,
+        isGroupable: true,
         filter: new TableTextFilter(true),
         sortFunc: (lhs: string, rhs: string, locale: string) =>
           this.getCollator(locale).compare(lhs, rhs),
-      },
+      } as any,
       {
         id: 'category',
         name: 'Mod Category',
@@ -951,7 +953,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         isDefaultVisible: false,
         isSortable: true,
         isToggleable: true,
-      },
+        isGroupable: true,
+      } as any,
       {
         id: 'author',
         name: 'Author',
@@ -1062,6 +1065,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         isToggleable: true,
         isDefaultVisible: true,
         isSortable: true,
+        isGroupable: true,
         filter: new GroupFilter(),
         sortFunc: (lhs: string, rhs: string, locale: string) =>
           this.getCollator(locale).compare(lhs, rhs),
