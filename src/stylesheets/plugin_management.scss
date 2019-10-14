@@ -40,6 +40,9 @@
 
   .cell-modName {
     white-space: nowrap;
+    max-width: 40em;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   
   .cell-flags {
