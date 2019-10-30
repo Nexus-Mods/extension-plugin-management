@@ -3,6 +3,10 @@ import { types } from 'vortex-api';
 import * as React from 'react';
 import Select from 'react-select';
 
+function nop() {
+  return '';
+}
+
 export class PluginStatusFilterComponent extends React.Component<types.IFilterProps, {}> {
   public render(): JSX.Element {
     const { filter } = this.props;
@@ -20,8 +24,8 @@ export class PluginStatusFilterComponent extends React.Component<types.IFilterPr
       value={filter || ''}
       onChange={this.changeFilter}
       searchable={false}
-      onInputChange={() => null}
-    />);;
+      onInputChange={nop}
+    />);
   }
 
   private changeFilter = (value: { value: string, label: string }) => {

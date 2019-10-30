@@ -4,11 +4,17 @@ import { setCreateRule, setQuickEdit, setSource, setTarget } from '../actions/us
 import { ILOOTList, ILOOTPlugin, ILootReference } from '../types/ILOOTList';
 import { IPluginCombined } from '../types/IPlugins';
 
+import { NAMESPACE } from '../statics';
+
 import I18next from 'i18next';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Button, Overlay, Popover } from 'react-bootstrap';
-import { DragSource, DropTarget, ConnectDragPreview, ConnectDragSource, ConnectDropTarget, DragSourceMonitor, DragSourceSpec, DropTargetSpec, DropTargetMonitor, DragSourceConnector, DropTargetConnector } from 'react-dnd';
+import {
+  ConnectDragPreview, ConnectDragSource, ConnectDropTarget,
+  DragSource, DragSourceConnector, DragSourceMonitor, DragSourceSpec,
+  DropTarget, DropTargetConnector, DropTargetMonitor, DropTargetSpec,
+} from 'react-dnd';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 import { findDOMNode } from 'react-dom';
 import { connect } from 'react-redux';
@@ -241,7 +247,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
           name: plugin.name,
           reference: quickEdit.plugin,
         },
-        ns: 'gamebryo-plugin',
+        ns: NAMESPACE,
       });
     return (
       <div style={{ textAlign: 'center', width: '100%' }}>
@@ -285,7 +291,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
         || (lootRules.rw.after && (lootRules.rw.after.length > 0))) {
       popoverBlocks.push((
         <div key='after'>
-          {t('Loads after:', { ns: 'gamebryo-plugin' })}
+          {t('Loads after:', { ns: NAMESPACE })}
           <ul>
             {Array.from(util.getSafe(lootRules, ['ro', 'after'], []).map(
               ref => this.renderRule(ref, 'after', true)))}
@@ -300,7 +306,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
         || (lootRules.rw.req && (lootRules.rw.req.length > 0))) {
       popoverBlocks.push((
         <div key='requires'>
-        {t('Requires:', { ns: 'gamebryo-plugin' })}
+        {t('Requires:', { ns: NAMESPACE })}
         <ul>
           {Array.from(util.getSafe(lootRules, ['ro', 'req'], []).map(
             ref => this.renderRule(ref, 'requires', true)))}
@@ -315,7 +321,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       || (lootRules.rw.inc && (lootRules.rw.inc.length > 0))) {
       popoverBlocks.push((
         <div key='incompatible'>
-        {t('Incompatible:', { ns: 'gamebryo-plugin' })}
+        {t('Incompatible:', { ns: NAMESPACE })}
         <ul>
           {Array.from(util.getSafe(lootRules, ['ro', 'inc'], []).map(
             ref => this.renderRule(ref, 'incompatible', true)))}
@@ -356,7 +362,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
             id={`btn-meta-data-${plugin.id}`}
             className={classes.join(' ')}
             key={`rules-${plugin.id}`}
-            tooltip={t('Drag to another plugin to set userlist rule', { ns: 'gamebryo-plugin' })}
+            tooltip={t('Drag to another plugin to set userlist rule', { ns: NAMESPACE })}
             icon='connection'
             ref={this.setRef}
             onClick={this.toggleOverlay}

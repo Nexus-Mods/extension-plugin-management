@@ -9,7 +9,8 @@
     "copy_esptk": "copyfiles -f ./node_modules/esptk/build/Release/nbind.node ./dist/esptk",
     "copy_loot": "copyfiles -f ./node_modules/loot/build/Release/nbind.node ./dist/loot && copyfiles -f ./node_modules/loot/loot_api/loot.dll ./dist/loot",
     "copy_async": "copyfiles -f ./node_modules/loot/async.js ./dist && copyfiles -f ./node_modules/loot/bindings.js ./dist",
-    "build": "npm run webpack && npm run copy_esptk && npm run copy_loot && npm run copy_async && copyfiles -f src/stylesheets/plugin_management.scss dist && extractInfo",
+    "copy_assets": "copyfiles -f src/stylesheets/plugin_management.scss dist && copyfiles -f src/language.json dist",
+    "build": "npm run webpack && npm run copy_esptk && npm run copy_loot && npm run copy_async && npm run copy_assets && extractInfo",
     "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/gamebryo-plugin-management",
     "buildDev": "npm run build && npm run installDev"
   },

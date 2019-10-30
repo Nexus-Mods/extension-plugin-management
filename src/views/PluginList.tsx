@@ -13,6 +13,8 @@ import {
 import { gameSupported, minRevision, revisionText, supportsESL } from '../util/gameSupport';
 import GroupFilter from '../util/GroupFilter';
 
+import { NAMESPACE } from '../statics';
+
 import DependencyIcon from './DependencyIcon';
 import MasterList from './MasterList';
 import PluginFlags, { getPluginFlags } from './PluginFlags';
@@ -301,8 +303,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             id: 'btn-autosort-loot',
             key: 'btn-autosort-loot',
             icon: autoSort ? 'locked' : 'unlocked',
-            text: autoSort ? t('Autosort Enabled', { ns: 'gamebryo-plugin' })
-              : t('Autosort Disabled', { ns: 'gamebryo-plugin' }),
+            text: autoSort ? t('Autosort Enabled', { ns: NAMESPACE })
+              : t('Autosort Disabled', { ns: NAMESPACE }),
             state: autoSort,
             onClick: () => onSetAutoSortEnabled(!autoSort),
           };
@@ -317,7 +319,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             id: 'btn-sort',
             key: 'btn-sort',
             icon: sorting ? 'spinner' : 'loot-sort',
-            text: t('Sort Now', { ns: 'gamebryo-plugin' }),
+            text: t('Sort Now', { ns: NAMESPACE }),
             onClick: () => this.context.api.events.emit('autosort-plugins', true, () => {
               this.updatePlugins(this.props.plugins);
             }),
@@ -476,15 +478,15 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
     const things = [];
     if (dat['itmCount'] > 0) {
-      things.push(t('{{count}} ITM record', { ns: 'gamebryo-plugin', count: dat['itmCount'] }));
+      things.push(t('{{count}} ITM record', { ns: NAMESPACE, count: dat['itmCount'] }));
     }
     if (dat.deletedNavmeshCount > 0) {
       things.push(t('{{count}} deleted navmesh',
-                    { ns: 'gamebryo-plugin', count: dat.deletedNavmeshCount }));
+                    { ns: NAMESPACE, count: dat.deletedNavmeshCount }));
     }
     if (dat.deletedReferenceCount > 0) {
       things.push(t('{{count}} deleted reference',
-                    { ns: 'gamebryo-plugin', count: dat.deletedReferenceCount }));
+                    { ns: NAMESPACE, count: dat.deletedReferenceCount }));
     }
     const clean = things.length === 0;
     if (clean) {
@@ -493,7 +495,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const message = t('{{tool}} found {{things}}.', {
           replace: {
             tool: dat.cleaningUtility,
-            things: things.join(t(' and ')),
+            things: things.join(` ${t('and')} `),
           },
         });
     return (
@@ -973,7 +975,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           plugin.revision < minRevision(this.props.gameMode)
             ? (
               <Alert bsStyle='warning'>
-                {t(revisionText(this.props.gameMode), { ns: 'gamebryo-plugin' })}
+                {t(revisionText(this.props.gameMode), { ns: NAMESPACE })}
               </Alert>
             )
             : null,
@@ -1235,6 +1237,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 }
 
 export default
-  withTranslation(['common', 'gamebryo-plugin'])(
+  withTranslation(['common', NAMESPACE])(
     connect<IConnectedProps, IActionProps, IBaseProps>(mapStateToProps, mapDispatchToProps)(
       PluginList) as any) as React.ComponentClass<IBaseProps>;

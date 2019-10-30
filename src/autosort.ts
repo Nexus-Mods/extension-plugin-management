@@ -1,6 +1,9 @@
 import {updatePluginOrder} from './actions/loadOrder';
+import { removeGroupRule, removeRule, setGroup } from './actions/userlist';
 import {IPlugins, IPluginsLoot} from './types/IPlugins';
 import {gameSupported, pluginPath} from './util/gameSupport';
+
+import { NAMESPACE } from './statics';
 
 import * as Bluebird from 'bluebird';
 import { remote } from 'electron';
@@ -10,7 +13,6 @@ import { LootAsync } from 'loot';
 import * as path from 'path';
 import {} from 'redux-thunk';
 import {actions, fs, log, selectors, types, util} from 'vortex-api';
-import { removeGroupRule, removeRule, setGroup } from './actions/userlist';
 
 const LOOT_LIST_REVISION = 'v0.14';
 const MAX_RESTARTS = 3;
@@ -218,7 +220,7 @@ class LootInterface {
             id: 'loot-failed',
             type: 'warning',
             message: this.mExtensionApi.translate('Plugins not sorted because: {{msg}}',
-              { replace: { msg: err.message }, ns: 'gamebryo-plugin' }),
+              { replace: { msg: err.message }, ns: NAMESPACE }),
           });
         };
         try {
@@ -239,7 +241,7 @@ class LootInterface {
           id: 'loot-failed',
           type: 'warning',
           message: this.mExtensionApi.translate('Plugins not sorted because: {{msg}}',
-            { replace: { msg: err.message }, ns: 'gamebryo-plugin' }),
+            { replace: { msg: err.message }, ns: NAMESPACE }),
         });
       } else if (err.message.indexOf('Failed to evaluate condition') !== -1) {
         const match = err.message.match(
@@ -879,7 +881,7 @@ class LootInterface {
               + '[i]"A needs to load after B"[/i] and [i]"B needs to load after A"[/i] '
               + 'but it can be more complicated, involving multiple plugins and groups and '
               + '[i]their[/i] order.<br />',
-              { ns: 'gamebryo-plugin' })
+              { ns: NAMESPACE })
               + '<br />' + renderedCycle;
             this.mExtensionApi.showDialog('info', 'Cyclic interaction', {
                   bbcode,

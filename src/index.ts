@@ -28,6 +28,7 @@ import PluginList from './views/PluginList';
 import UserlistEditor from './views/UserlistEditor';
 
 import LootInterface from './autosort';
+import { NAMESPACE } from './statics';
 
 import * as Promise from 'bluebird';
 import { ipcMain, ipcRenderer, remote } from 'electron';
@@ -870,7 +871,7 @@ function init(context: IExtensionContextExt) {
                                 replace: {
                                   modName: util.renderModName(mod, { version: false }),
                                 },
-                                ns: 'gamebryo-plugin',
+                                ns: NAMESPACE,
                               }),
                     actions: [
                       {

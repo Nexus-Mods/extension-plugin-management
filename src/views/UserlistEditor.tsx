@@ -287,7 +287,9 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<types.IState, null, Redux.Action>): IActionProps {
+type Dispatch = ThunkDispatch<types.IState, null, Redux.Action>;
+
+function mapDispatchToProps(dispatch: Dispatch): IActionProps {
   return {
     onCloseDialog: () => dispatch(closeDialog()),
     onAddRule: (pluginId, referenceId, type) =>
@@ -297,5 +299,5 @@ function mapDispatchToProps(dispatch: ThunkDispatch<types.IState, null, Redux.Ac
   };
 }
 
-export default withTranslation(['common', 'gamebryo-plugin'])(
+export default withTranslation(['common', 'gamebryo-plugin-management'])(
   connect(mapStateToProps, mapDispatchToProps)(Editor) as any) as React.ComponentClass<{}>;

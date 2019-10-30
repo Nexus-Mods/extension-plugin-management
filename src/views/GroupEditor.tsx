@@ -4,6 +4,9 @@ import { openGroupEditor } from '../actions/userlistEdit';
 import { ILOOTList } from '../types/ILOOTList';
 
 import genGraphStyle from '../util/genGraphStyle';
+
+import { NAMESPACE } from '../statics';
+
 import GraphView, { IGraphElement, IGraphSelection } from './GraphView';
 
 import * as React from 'react';
@@ -342,6 +345,6 @@ function mapDispatchToProps(dispatch: DispatchFunc): IActionProps {
   };
 }
 
-export default withTranslation(['common'])(
+export default withTranslation(['common', NAMESPACE])(
   connect(mapStateToProps, mapDispatchToProps)(
     GroupEditor) as any) as React.ComponentClass<{}>;

@@ -1,6 +1,8 @@
 import { IPluginCombined } from '../types/IPlugins';
 import { gameSupported, minRevision, supportsESL } from '../util/gameSupport';
 
+import { NAMESPACE } from '../statics';
+
 import { tooltip } from 'vortex-api';
 
 import I18next from 'i18next';
@@ -134,7 +136,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
         id={key}
         key={key}
         name='parse-failed'
-        tooltip={t('Failed to parse this plugin', { ns: 'gamebryo-plugin' })}
+        tooltip={t('Failed to parse this plugin', { ns: NAMESPACE })}
       />);
   }
 
@@ -145,7 +147,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
         id={key}
         key={key}
         name='plugin-native'
-        tooltip={t('Loaded by the engine, can\'t be configured', { ns: 'gamebryo-plugin' })}
+        tooltip={t('Loaded by the engine, can\'t be configured', { ns: NAMESPACE })}
       />);
   }
 
@@ -178,7 +180,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
           id={key}
           key={key}
           name='notifications'
-          tooltip={t(tooltipText, { ns: 'gamebryo-plugin' })}
+          tooltip={t(tooltipText, { ns: NAMESPACE })}
         />);
     }
   }
@@ -190,7 +192,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
         id={cleanKey}
         key={cleanKey}
         name='plugin-clean'
-        tooltip={t('Requires cleaning (LOOT)', { ns: 'gamebryo-plugin' })}
+        tooltip={t('Requires cleaning (LOOT)', { ns: NAMESPACE })}
       />);
   } else if ((plugin.cleanliness !== undefined) && (plugin.cleanliness.length > 0)) {
     flags.push(
@@ -198,7 +200,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
         id={cleanKey}
         key={cleanKey}
         name='plugin-cleaned'
-        tooltip={t('Verified clean (LOOT)', { ns: 'gamebryo-plugin' })}
+        tooltip={t('Verified clean (LOOT)', { ns: NAMESPACE })}
       />);
   }
 
@@ -209,7 +211,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
         id={key}
         key={key}
         name='hide'
-        tooltip={t('Not deployed', { ns: 'gamebryo-plugin' })}
+        tooltip={t('Not deployed', { ns: NAMESPACE })}
       />);
   }
 
@@ -220,7 +222,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
         id={key}
         key={key}
         name='incompatible'
-        tooltip={t('Incompatible plugin', { ns: 'gamebryo-plugin' })}
+        tooltip={t('Incompatible plugin', { ns: NAMESPACE })}
       />);
   }
 
