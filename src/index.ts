@@ -796,6 +796,12 @@ function init(context: IExtensionContextExt) {
       context.api.events.on(
           'profile-will-change',
           (nextProfileId: string, enqueue: (cb: () => Promise<void>) => void) => {
+            const state = context.api.store.getState();
+            const gameMode = selectors.activeGameId(state);
+            const nextProfile = selectors.profileById(state, nextProfileId);
+            if (nextProfile.gameId !== gameMode) {
+              context.api.store.dispatch(setPluginList([]));
+            }
             enqueue(() => {
               return stopSync()
                 .then(() => (userlistPersistor !== undefined)

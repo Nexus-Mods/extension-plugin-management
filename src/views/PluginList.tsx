@@ -36,6 +36,7 @@ import { connect } from 'react-redux';
 import { Creatable } from 'react-select';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { generate as shortid } from 'shortid';
 import {ComponentEx, FlexLayout, Icon, IconBar, ITableRowAction,
   log, MainPage, selectors, Spinner,
   Table, TableTextFilter, ToolbarIcon, types, Usage, util,
@@ -199,6 +200,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   private mCollator: Intl.Collator;
   private mMounted: boolean = false;
   private mCachedGameMode: string;
+  private mUpdateId: string;
 
   private installedNative: { [name: string]: number } = {};
 
@@ -321,7 +323,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             icon: sorting ? 'spinner' : 'loot-sort',
             text: t('Sort Now', { ns: NAMESPACE }),
             onClick: () => this.context.api.events.emit('autosort-plugins', true, () => {
-              this.updatePlugins(this.props.plugins);
+              this.updatePlugins(this.props.plugins, this.props.gameMode)
+              .catch(util.ProcessCanceled, () => null)
+              .catch(err => {
+                log('warn', 'failed to update plugins', { error: err.message });
+              });
             }),
           };
         },
@@ -366,13 +372,13 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     }, {});
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
+    this.mMounted = true;
     const { plugins, onUpdatePluginInfo } = this.props;
     const parsed = this.emptyPluginParsed();
     const loot = this.emptyPluginLOOT();
     const combined = this.detailedPlugins(plugins, loot, parsed);
     onUpdatePluginInfo(_.cloneDeep(combined));
-    this.mCachedGameMode = this.props.gameMode;
     this.setState(update(this.state, {
       pluginsParsed: { $set: parsed },
       pluginsLoot: { $set: loot },
@@ -381,22 +387,26 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     // Will verify plugins for warning/error loot messages
     //  and notify the user if any are found.
-    this.updatePlugins(this.props.plugins)
+    this.updatePlugins(this.props.plugins, this.props.gameMode)
       .then(() => this.applyUserlist(this.props.userlist.plugins || [],
-                                     this.props.masterlist.plugins || []));
-  }
-
-  public componentDidMount() {
-    this.mMounted = true;
+                                     this.props.masterlist.plugins || []))
+      .catch(util.ProcessCanceled, () => null)
+      .catch(err => {
+        log('warn', 'failed to update plugins', { error: err.message });
+      });
   }
 
   public componentWillUnmount() {
-    this.mMounted = true;
+    this.mMounted = false;
   }
 
   public componentWillReceiveProps(nextProps: IProps) {
-    if (this.props.plugins !== nextProps.plugins) {
-      this.updatePlugins(nextProps.plugins);
+    if (!_.isEqual(Object.keys(this.props.plugins), Object.keys(nextProps.plugins))) {
+      this.updatePlugins(nextProps.plugins, nextProps.gameMode)
+        .catch(util.ProcessCanceled, () => null)
+        .catch(err => {
+          log('warn', 'failed to update plugins', { error: err.message });
+        });
     }
 
     if (this.props.loadOrder !== nextProps.loadOrder) {
@@ -529,14 +539,18 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     return flag || (path.extname(filePath).toLowerCase() === '.esl');
   }
 
-  private updatePlugins(pluginsIn: IPlugins) {
+  private updatePlugins(pluginsIn: IPlugins, gameMode: string) {
+    const updateId = this.mUpdateId = shortid();
     const pluginNames: string[] = Object.keys(pluginsIn);
 
     const pluginsParsed: { [pluginName: string]: IPluginParsed } = {};
     let pluginsLoot;
 
-    return Promise.each(pluginNames, (pluginName: string) =>
-      new Promise((resolve, reject) => {
+    return Promise.each(pluginNames, (pluginName: string) => {
+      if (updateId !== this.mUpdateId) {
+        return Promise.reject(new util.ProcessCanceled('new update started'));
+      }
+      return new Promise((resolve, reject) => {
         try {
           const esp = new ESPFile(pluginsIn[pluginName].filePath);
           pluginsParsed[pluginName] = {
@@ -566,7 +580,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           };
         }
         resolve();
-      }))
+      });
+    })
       .then(() => new Promise((resolve, reject) => {
         this.context.api.events.emit('plugin-details',
           this.props.gameMode, pluginNames, (resolved: { [name: string]: IPluginLoot }) => {
@@ -587,6 +602,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           });
       }))
       .then(() => {
+        if (updateId !== this.mUpdateId) {
+          return Promise.reject(new util.ProcessCanceled('new update started'));
+        }
+
         const pluginsCombined = this.detailedPlugins(pluginsIn, pluginsLoot, pluginsParsed);
 
         if (this.mMounted) {
@@ -610,6 +629,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           }, {});
 
         this.props.onUpdatePluginInfo(_.cloneDeep(pluginsCombined));
+        return Promise.resolve();
       });
   }
 
