@@ -46,35 +46,35 @@ class LootInterface {
   private mUserlistTime: Date;
   private mRestarts: number = MAX_RESTARTS;
 
-  constructor(context: types.IExtensionContext) {
-    const store = context.api.store;
+  constructor(api: types.IExtensionApi) {
+    const store = api.store;
 
-    this.mExtensionApi = context.api;
+    this.mExtensionApi = api;
 
     // when the game changes, we need to re-initialize loot for that game
-    context.api.events.on('gamemode-activated',
-      gameMode => this.onGameModeChanged(context, gameMode));
+    api.events.on('gamemode-activated',
+      gameMode => this.onGameModeChanged(api, gameMode));
 
     { // in case the initial gamemode-activated event was already sent,
       // initialize right away
       const gameMode = selectors.activeGameId(store.getState());
       if (gameMode) {
-        this.onGameModeChanged(context, gameMode);
+        this.onGameModeChanged(api, gameMode);
       }
     }
 
-    context.api.events.on('restart-helpers', async () => {
+    api.events.on('restart-helpers', async () => {
       const { game, loot } = await this.mInitPromise;
       const gameMode = selectors.activeGameId(store.getState());
-      this.startStopLoot(context, gameMode, loot);
+      this.startStopLoot(api, gameMode, loot);
     });
 
     // on demand, re-sort the plugin list
-    context.api.events.on('autosort-plugins', this.onSort);
+    api.events.on('autosort-plugins', this.onSort);
 
-    context.api.events.on('plugin-details',
+    api.events.on('plugin-details',
       (gameId: string, plugins: string[], callback: (result: IPluginsLoot) => void) =>
-        this.pluginDetails(context, gameId, plugins, callback));
+        this.pluginDetails(api, gameId, plugins, callback));
   }
 
   public async wait(): Promise<void> {
@@ -313,8 +313,8 @@ class LootInterface {
         && (err.message.indexOf('Access is denied') === -1);
   }
 
-  private onGameModeChanged = async (context: types.IExtensionContext, gameMode: string) => {
-    const initProm = this.mInitPromise;
+  private onGameModeChanged = async (api: types.IExtensionApi, gameMode: string) => {
+    const oldInitProm = this.mInitPromise;
 
     let onRes: (x: { game: string, loot: LootAsync }) => void;
 
@@ -322,19 +322,19 @@ class LootInterface {
       onRes = resolve;
     });
 
-    const { game, loot }: { game: string, loot: LootAsync } = await initProm;
+    const { game, loot }: { game: string, loot: LootAsync } = await oldInitProm;
     if (gameMode === game) {
-      this.mInitPromise = initProm;
+      this.mInitPromise = oldInitProm;
       onRes({ game, loot });
       // no change
       return;
     } else {
-      this.startStopLoot(context, gameMode, loot);
+      this.startStopLoot(api, gameMode, loot);
       onRes(await this.mInitPromise);
     }
   }
 
-  private startStopLoot(context: types.IExtensionContext, gameMode: string, loot: LootAsync) {
+  private startStopLoot(api: types.IExtensionApi, gameMode: string, loot: LootAsync) {
     if (loot !== undefined) {
       // close the loot instance of the old game, but give it a little time, otherwise it may try to
       // to run instructions after being closed.
@@ -348,7 +348,7 @@ class LootInterface {
       try {
         this.mInitPromise = this.init(gameMode, gamePath);
       } catch (err) {
-        context.api.showErrorNotification('Failed to initialize LOOT', {
+        api.showErrorNotification('Failed to initialize LOOT', {
           error: err,
           Game: gameMode,
           Path: gamePath,
@@ -360,19 +360,19 @@ class LootInterface {
     }
   }
 
-  private async getLoot(context: types.IExtensionContext, gameId: string):
+  private async getLoot(api: types.IExtensionApi, gameId: string):
         Promise<{ game: string, loot: typeof LootProm }> {
     let res = await this.mInitPromise;
     if (res.game !== gameId) {
-      this.onGameModeChanged(context, gameId);
+      this.onGameModeChanged(api, gameId);
       res = await this.mInitPromise;
     }
     return res;
   }
 
-  private pluginDetails = async (context: types.IExtensionContext, gameId: string,
+  private pluginDetails = async (api: types.IExtensionApi, gameId: string,
                                  plugins: string[], callback: (result: IPluginsLoot) => void) => {
-    const { game, loot } = await this.getLoot(context, gameId);
+    const { game, loot } = await this.getLoot(api, gameId);
     if ((loot === undefined) || loot.isClosed()) {
       callback({});
       return;
@@ -430,7 +430,7 @@ class LootInterface {
     });
 
     let closed = loot.isClosed();
-    Promise.all(plugins.map(async (pluginName: string) => {
+    await Promise.all(plugins.map(async (pluginName: string) => {
       if (closed) {
         result[pluginName] = createEmpty();
         return;
@@ -444,7 +444,9 @@ class LootInterface {
             info = await loot.getPluginAsync(pluginName);
           }
         } catch (err) {
-          log('error', 'failed to get plugin info', { pluginName, error: err.message });
+          const gameMode = selectors.activeGameId(this.mExtensionApi.store.getState());
+          log('error', 'failed to get plugin info',
+              { pluginName, error: err.message, gameMode, gameId });
         }
 
         result[pluginName] = {

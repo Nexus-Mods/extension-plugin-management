@@ -765,7 +765,7 @@ function init(context: IExtensionContextExt) {
       context.api.setStylesheet('plugin-management',
                                 path.join(__dirname, 'plugin_management.scss'));
 
-      loot = new LootInterface(context);
+      loot = new LootInterface(context.api);
 
       // this handles the case that the content of a profile changes
       context.api.onAsync('did-deploy', (profileId, deployment) => {
