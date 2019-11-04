@@ -1129,7 +1129,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         id: 'eslify',
         name: 'Light',
         description: 'A light plugin doesn\'t occupy a regular load order slot. '
-                    + 'Only some plugins can be made light direcly.',
+                    + 'Only some plugins can be made light directly.',
         icon: 'plugin-light',
         placement: 'detail',
         edit: {},
