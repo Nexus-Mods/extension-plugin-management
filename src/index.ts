@@ -799,7 +799,7 @@ function init(context: IExtensionContextExt) {
             const state = context.api.store.getState();
             const gameMode = selectors.activeGameId(state);
             const nextProfile = selectors.profileById(state, nextProfileId);
-            if (nextProfile.gameId !== gameMode) {
+            if ((nextProfile !== undefined) && (nextProfile.gameId !== gameMode)) {
               context.api.store.dispatch(setPluginList([]));
             }
             enqueue(() => {
