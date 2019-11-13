@@ -72,6 +72,10 @@ export function getPluginFlags(plugin: IPluginCombined,
     result.push(t('Not deployed'));
   }
 
+  if (plugin.messages.length > 0) {
+    result.push(t('LOOT Messages'));
+  }
+
   return result;
 }
 
@@ -223,6 +227,20 @@ const PluginFlags = (props: IProps): JSX.Element => {
         key={key}
         name='incompatible'
         tooltip={t('Incompatible plugin', { ns: NAMESPACE })}
+      />);
+  }
+
+  if (plugin.messages.length > 0) {
+    const hasWarnings = plugin.messages.find(msg => msg.type > 0) !== undefined;
+
+    const key = `ico-messages-${plugin.id}`;
+    flags.push(
+      <tooltip.Icon
+        id={key}
+        key={key}
+        name='feedback-warning'
+        tooltip={t('LOOT Messages', { ns: NAMESPACE })}
+        className={hasWarnings ? 'loot-messages-warnings' : undefined}
       />);
   }
 

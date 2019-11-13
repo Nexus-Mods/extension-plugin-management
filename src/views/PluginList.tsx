@@ -1213,6 +1213,16 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         calc: (plugin: IPluginCombined) => plugin.messages,
         placement: 'detail',
       },
+      {
+        id: 'loot_messages_extra',
+        name: 'LOOT Messages (inlined)',
+        edit: {},
+        customRenderer: (plugin: IPluginCombined) => this.renderLootMessages(plugin),
+        calc: (plugin: IPluginCombined) => plugin.messages,
+        placement: 'inline' as any,
+        isToggleable: true,
+        isDefaultVisible: false,
+      }
     ];
   }
 }
