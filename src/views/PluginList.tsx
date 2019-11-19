@@ -589,19 +589,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         if (pluginNames.length > 0) {
           this.context.api.events.emit('plugin-details',
             this.props.gameMode, pluginNames, (resolved: { [name: string]: IPluginLoot }) => {
-              const { onUpdateWarnings, plugins } = this.props;
               pluginsLoot = resolved;
-
-              Object.keys(pluginsLoot).forEach(name => {
-                const oldWarn = util.getSafe(plugins, [name, 'warnings', 'loot-messages'], false);
-                const newWarn = pluginsLoot[name].messages
-                  .find(message =>
-                    this.translateLootMessageType(message.type) !== 'info') !== undefined;
-                if (oldWarn !== newWarn) {
-                  onUpdateWarnings(name, 'loot-messages', newWarn);
-                }
-              });
-
               resolve();
             });
         } else {

@@ -88,11 +88,13 @@ function updatePluginList(store: types.ThunkStore<any>,
     const modName = pluginSources[fileName] !== undefined
       ? pluginSources[fileName]
       : '';
-    pluginStates[fileName.toLowerCase()] = {
+    const fileNameL = fileName.toLowerCase();
+    pluginStates[fileNameL] = {
       modName,
       filePath: path.join(basePath, fileName),
       isNative: isNativePlugin(gameId, fileName),
-      warnings: util.getSafe(state, ['session', 'plugins', 'pluginList', fileName, 'warnings'], {}),
+      warnings:
+        util.getSafe(state, ['session', 'plugins', 'pluginList', fileNameL, 'warnings'], {}),
       deployed,
     };
     return Promise.resolve();

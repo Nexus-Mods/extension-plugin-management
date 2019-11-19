@@ -170,8 +170,8 @@ const PluginFlags = (props: IProps): JSX.Element => {
     const warningKeys = Object.keys(plugin.warnings);
     const hasWarning = notification => plugin.warnings[notification] !== false;
     if ((warningKeys !== undefined)
-      && (warningKeys.length > 0)
-      && (warningKeys.find(hasWarning) !== undefined)) {
+        && (warningKeys.length > 0)
+        && (warningKeys.find(hasWarning) !== undefined)) {
 
       const tooltipText = Object.keys(plugin.warnings)
         .filter(iterKey => plugin.warnings[iterKey])
