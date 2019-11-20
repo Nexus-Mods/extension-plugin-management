@@ -721,7 +721,7 @@ function init(context: IExtensionContextExt) {
   initPersistor(context);
 
   context.onceMain(() => {
-    ipcMain.on('plugin-sync', (event: Electron.Event, enabled: boolean) => {
+    ipcMain.on('plugin-sync', (event: Electron.IpcMainEvent, enabled: boolean) => {
       const promise = enabled ? startSync(context.api) : stopSync();
       promise
         .then(() => {
