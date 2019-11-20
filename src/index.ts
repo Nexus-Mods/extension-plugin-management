@@ -30,7 +30,7 @@ import UserlistEditor from './views/UserlistEditor';
 import LootInterface from './autosort';
 import { NAMESPACE } from './statics';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { ipcMain, ipcRenderer, remote } from 'electron';
 import ESPFile from 'esptk';
 import { access, constants } from 'fs';

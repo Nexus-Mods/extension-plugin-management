@@ -6,7 +6,7 @@ import {
   pluginPath,
 } from '../util/gameSupport';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as path from 'path';
 import {fs, log, types, util} from 'vortex-api';
 

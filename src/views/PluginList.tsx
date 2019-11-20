@@ -21,7 +21,7 @@ import PluginFlags, { getPluginFlags } from './PluginFlags';
 import PluginFlagsFilter from './PluginFlagsFilter';
 import PluginStatusFilter from './PluginStatusFilter';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import ESPFile from 'esptk';
 import I18next from 'i18next';
 import update from 'immutability-helper';

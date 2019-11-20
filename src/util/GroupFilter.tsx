@@ -1,4 +1,4 @@
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as React from 'react';
 import Select from 'react-select';
