@@ -14,7 +14,7 @@ import * as path from 'path';
 import {} from 'redux-thunk';
 import {actions, fs, log, selectors, types, util} from 'vortex-api';
 
-const LOOT_LIST_REVISION = 'v0.14';
+const LOOT_LIST_REVISION = 'v0.15';
 const MAX_RESTARTS = 3;
 
 const LootProm: any = Bluebird.promisifyAll(LootAsync);
