@@ -208,7 +208,8 @@ class LootInterface {
           : Promise.reject(err));
       const sorted: string[] = await this.mSortPromise;
       this.mRestarts = MAX_RESTARTS;
-      store.dispatch(updatePluginOrder(sorted, false));
+      const state = store.getState();
+      store.dispatch(updatePluginOrder(sorted, false, state.settings.plugins.autoEnable));
     } catch (err) {
       log('info', 'loot failed', { error: err.message });
       if (err.message.startsWith('Cyclic interaction')) {

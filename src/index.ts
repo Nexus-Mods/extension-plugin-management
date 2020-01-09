@@ -25,6 +25,7 @@ import UserlistPersistor from './util/UserlistPersistor';
 import Connector from './views/Connector';
 import GroupEditor from './views/GroupEditor';
 import PluginList from './views/PluginList';
+import Settings from './views/Settings';
 import UserlistEditor from './views/UserlistEditor';
 
 import LootInterface from './autosort';
@@ -224,6 +225,8 @@ function register(context: IExtensionContextExt) {
     context.registerProfileFile(game, path.join(pluginPath(game), 'plugins.txt'));
     context.registerProfileFile(game, path.join(pluginPath(game), 'loadorder.txt'));
   }
+
+  context.registerSettings('Workarounds', Settings);
 
   context.registerReducer(['session', 'plugins'], pluginsReducer);
   context.registerReducer(['loadOrder'], loadOrderReducer);
@@ -443,7 +446,7 @@ function startSync(api: types.IExtensionApi): Promise<void> {
   const store = api.store;
 
   // start with a clean slate
-  store.dispatch(setPluginOrder([]));
+  store.dispatch(setPluginOrder([], false));
 
   const gameId = selectors.activeGameId(store.getState());
 
@@ -792,7 +795,9 @@ function init(context: IExtensionContextExt) {
           });
 
       context.api.events.on('set-plugin-list', (newPlugins: string[], setEnabled?: boolean) => {
-        store.dispatch(updatePluginOrder(newPlugins, setEnabled !== false));
+        const state = context.api.store.getState();
+        store.dispatch(updatePluginOrder(newPlugins, setEnabled !== false,
+                                         state.settings.plugins.autoEnable));
       });
 
       context.api.events.on(

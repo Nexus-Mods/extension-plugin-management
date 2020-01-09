@@ -18,18 +18,19 @@ export const loadOrderReducer: types.IReducerSpec = {
           });
         },
     [actions.setPluginOrder as any]: (state, payload) => {
+      const { plugins, defaultEnable } = payload;
       const result = {};
-      payload.forEach((pluginName: string, idx: number) => {
+      plugins.forEach((pluginName: string, idx: number) => {
         result[pluginName.toLowerCase()] = {
           name: pluginName,
-          enabled: util.getSafe(state, [pluginName, 'enabled'], true),
+          enabled: util.getSafe(state, [pluginName, 'enabled'], defaultEnable),
           loadOrder: idx,
         };
       });
       return result;
     },
     [actions.updatePluginOrder as any]: (state, payload) => {
-      const { pluginList, setEnabled } = payload;
+      const { pluginList, setEnabled, defaultEnable } = payload;
 
       const result = JSON.parse(JSON.stringify(state));
 
@@ -38,7 +39,7 @@ export const loadOrderReducer: types.IReducerSpec = {
         const id = pluginName.toLowerCase();
         result[id] = {
           name: pluginName,
-          enabled: setEnabled ? true : util.getSafe(state, [id, 'enabled'], true),
+          enabled: setEnabled ? true : util.getSafe(state, [id, 'enabled'], defaultEnable),
           loadOrder: idx,
         };
       });
