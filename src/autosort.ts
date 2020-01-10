@@ -5,7 +5,7 @@ import {gameSupported, pluginPath} from './util/gameSupport';
 
 import { NAMESPACE } from './statics';
 
-import * as Bluebird from 'bluebird';
+import Bluebird from 'bluebird';
 import { remote } from 'electron';
 import getVersion from 'exe-version';
 import i18next from 'i18next';

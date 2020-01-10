@@ -1,6 +1,6 @@
-import * as cytoscape from 'cytoscape';
-import * as coseBilkent from 'cytoscape-cose-bilkent';
-import * as edgehandles from 'cytoscape-edgehandles';
+import cytoscape from 'cytoscape';
+import coseBilkent from 'cytoscape-cose-bilkent';
+import edgehandles from 'cytoscape-edgehandles';
 import * as React from 'react';
 import { util } from 'vortex-api';
 

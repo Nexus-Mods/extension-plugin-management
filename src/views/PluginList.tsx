@@ -31,7 +31,7 @@ import * as path from 'path';
 import * as React from 'react';
 import { Alert, Button, ListGroup, ListGroupItem, Panel } from 'react-bootstrap';
 import { withTranslation } from 'react-i18next';
-import * as ReactMarkdown from 'react-markdown';
+import ReactMarkdown from 'react-markdown';
 import { connect } from 'react-redux';
 import { Creatable } from 'react-select';
 import * as Redux from 'redux';
