@@ -43,7 +43,7 @@ class Settings extends ComponentEx<IProps, {}> {
           </Toggle>
           <HelpBlock>
             {t('If checked, plugins you add to the game directory outside Vortex '
-              + '(e.g. when you create one with the creation kit) will be enabled automatically.')}
+              + '(e.g. when you create one with the Creation Kit) will be enabled automatically.')}
           </HelpBlock>
         </FormGroup>
       </form>

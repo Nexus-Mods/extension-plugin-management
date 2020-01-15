@@ -140,7 +140,7 @@ function updatePluginList(store: types.ThunkStore<any>,
       .filter(fileName => isPlugin(modInstPath, fileName, gameId))
       .each(fileName => {
         pluginSources[fileName] = mod.id;
-        setPluginState(modInstPath, fileName, false);
+        return setPluginState(modInstPath, fileName, false);
       })
       .catch((err: Error) => {
         readErrors.push(mod.id);
@@ -790,7 +790,7 @@ function init(context: IExtensionContextExt) {
             if ((previous['fallout4'] !== current['fallout4']) ||
                 (previous['skyrimse'] !== current['skyrimse'])) {
               log('debug', 'discovery for cc-supported game changed');
-              initGameSupport(store);
+              initGameSupport(store).then(() => null);
             }
           });
 
