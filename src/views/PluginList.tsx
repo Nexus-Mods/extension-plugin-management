@@ -154,10 +154,16 @@ interface IPluginCountProps {
 function PluginCount(props: IPluginCountProps) {
   const { t, gameId, plugins } = props;
 
-  const regular = Object.keys(plugins).filter(id => plugins[id].enabled && !plugins[id].isLight);
-  const light = Object.keys(plugins).filter(id => plugins[id].enabled && plugins[id].isLight);
+  if (!gameSupported(gameId)) {
+    return null;
+  }
 
-  const eslGame = gameSupported(gameId) && supportsESL(gameId);
+  const regular = Object.keys(plugins).filter(id =>
+    (plugins[id].enabled || plugins[id].isNative) && !plugins[id].isLight);
+  const light = Object.keys(plugins).filter(id =>
+    (plugins[id].enabled || plugins[id].isNative) && plugins[id].isLight);
+
+  const eslGame = supportsESL(gameId);
 
   const classes = ['gamebryo-plugin-count'];
 
