@@ -14,7 +14,7 @@ import * as path from 'path';
 import {} from 'redux-thunk';
 import {actions, fs, log, selectors, types, util} from 'vortex-api';
 
-const LOOT_LIST_REVISION = 'v0.14';
+const LOOT_LIST_REVISION = 'v0.15';
 const MAX_RESTARTS = 3;
 
 const LootProm: any = Bluebird.promisifyAll(LootAsync);
@@ -208,7 +208,8 @@ class LootInterface {
           : Promise.reject(err));
       const sorted: string[] = await this.mSortPromise;
       this.mRestarts = MAX_RESTARTS;
-      store.dispatch(updatePluginOrder(sorted, false));
+      const state = store.getState();
+      store.dispatch(updatePluginOrder(sorted, false, state.settings.plugins.autoEnable));
     } catch (err) {
       log('info', 'loot failed', { error: err.message });
       if (err.message.startsWith('Cyclic interaction')) {

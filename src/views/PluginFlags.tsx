@@ -62,6 +62,10 @@ export function getPluginFlags(plugin: IPluginCombined,
     result.push(t('Clean'));
   }
 
+  if (plugin.revision < minRevision(gameMode)) {
+    result.push(t('Incompatible'));
+  }
+
   if (plugin.enabled
       && (plugin.warnings !== undefined)
       && (Object.keys(plugin.warnings).find(key => plugin.warnings[key] !== false) !== undefined)) {
@@ -226,7 +230,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
         id={key}
         key={key}
         name='incompatible'
-        tooltip={t('Incompatible plugin', { ns: NAMESPACE })}
+        tooltip={t('Designed for a different game', { ns: NAMESPACE })}
       />);
   }
 
@@ -238,7 +242,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
       <tooltip.Icon
         id={key}
         key={key}
-        name='feedback-warning'
+        name='comments'
         tooltip={t('LOOT Messages', { ns: NAMESPACE })}
         className={hasWarnings ? 'loot-messages-warnings' : undefined}
       />);
