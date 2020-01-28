@@ -206,7 +206,7 @@ class LootInterface {
         .catch(err => (err.message === 'already closed')
           ? Promise.resolve([])
           : Promise.reject(err));
-      const sorted: string[] = await this.mSortPromise;
+      const sorted: string[] = (await this.mSortPromise).map(name => name.toLowerCase());
       this.mRestarts = MAX_RESTARTS;
       const state = store.getState();
       store.dispatch(updatePluginOrder(sorted, false, state.settings.plugins.autoEnable));
