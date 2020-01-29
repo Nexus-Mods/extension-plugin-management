@@ -795,8 +795,11 @@ function init(context: IExtensionContextExt) {
         }
         const state: types.IState = store.getState();
         const profile = state.persistent.profiles[profileId];
-        return (profile !== undefined) && gameSupported(profile.gameId)
+        return ((profile !== undefined) && gameSupported(profile.gameId))
           ? updatePluginList(store, profile.modState, profile.gameId)
+            .then(() => {
+              context.api.events.emit('autosort-plugins', false);
+            })
           : Promise.resolve();
       });
 
