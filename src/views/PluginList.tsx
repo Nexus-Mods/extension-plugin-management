@@ -713,7 +713,6 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         (userlist.plugins || []).find(entry => entry.name.toLowerCase() === pluginId);
       const res = {
         id: pluginId,
-        name: this.safeBasename(plugins[pluginId].filePath),
         modIndex: -1,
         enabled: plugins[pluginId].isNative ? undefined : false,
         cleanliness: [],
@@ -722,6 +721,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         ...loadOrder[pluginId],
         ...pluginsLoot[pluginId],
         ...pluginsParsed[pluginId],
+        name: this.safeBasename(plugins[pluginId].filePath),
       };
 
       if ((userlistEntry !== undefined)
