@@ -186,8 +186,8 @@ class PluginPersistor implements types.IPersistor {
     // enabled
     const nativePluginSet = new Set(this.mNativePlugins);
     return input.filter(name =>
-      util.getSafe(this.mPlugins, [name.toLowerCase(), 'enabled'],
-                   nativePluginSet.has(name.toLowerCase())));
+      nativePluginSet.has(name.toLowerCase())
+      || util.getSafe(this.mPlugins, [name.toLowerCase(), 'enabled'], false));
   }
 
   private toPluginListFallout4(input: string[]) {
