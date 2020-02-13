@@ -69,11 +69,6 @@ const gameSupport = {
     pluginTXTFormat: 'original',
     nativePlugins: [
       'fallout3.esm',
-      'anchorage.esm',
-      'thepitt.esm',
-      'brokensteel.esm',
-      'pointlookout.esm',
-      'zeta.esm',
     ],
   },
   fallout4: {
