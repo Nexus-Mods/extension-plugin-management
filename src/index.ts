@@ -202,6 +202,7 @@ let userlistPersistor: UserlistPersistor;
 let masterlistPersistor: UserlistPersistor;
 let loot: LootInterface;
 let refreshTimer: NodeJS.Timer;
+let deploying = false;
 
 function register(context: IExtensionContextExt) {
   const pluginActivity = new util.ReduxProp(context.api, [
@@ -397,6 +398,12 @@ function startSyncRemote(api: types.IExtensionApi): Promise<void> {
       watcher = fs.watch(modPath, {}, (evt: string, fileName: string) => {
         if (evt !== 'rename') {
           // only react to file creation or delete
+          return;
+        }
+
+        if (deploying) {
+          // during deployment we expect plugins to be added constantly so don't autosort now,
+          // it has to be triggered upon finishing deployment
           return;
         }
 
@@ -772,17 +779,36 @@ function init(context: IExtensionContextExt) {
 
       loot = new LootInterface(context.api);
 
+      let pluginsChangedQueued = false;
+
+      context.api.onAsync('will-deploy', () => {
+        deploying = true;
+        return Promise.resolve();
+      });
+
       // this handles the case that the content of a profile changes
       context.api.onAsync('did-deploy', (profileId, deployment) => {
+        deploying = false;
+        if (pluginsChangedQueued) {
+          pluginsChangedQueued = false;
+          context.api.events.emit('trigger-test-run', 'plugins-changed', 500);
+        }
         const state: types.IState = store.getState();
         const profile = state.persistent.profiles[profileId];
-        return (profile !== undefined) && gameSupported(profile.gameId)
+        return ((profile !== undefined) && gameSupported(profile.gameId))
           ? updatePluginList(store, profile.modState, profile.gameId)
+            .then(() => {
+              context.api.events.emit('autosort-plugins', false);
+            })
           : Promise.resolve();
       });
 
       context.api.onStateChange(['loadOrder'], () => {
-        context.api.events.emit('trigger-test-run', 'plugins-changed', 500);
+        if (deploying) {
+          pluginsChangedQueued = true;
+        } else {
+          context.api.events.emit('trigger-test-run', 'plugins-changed', 500);
+        }
       });
 
       context.api.onStateChange(
@@ -796,8 +822,10 @@ function init(context: IExtensionContextExt) {
 
       context.api.events.on('set-plugin-list', (newPlugins: string[], setEnabled?: boolean) => {
         const state = context.api.store.getState();
-        store.dispatch(updatePluginOrder(newPlugins, setEnabled !== false,
-                                         state.settings.plugins.autoEnable));
+        store.dispatch(updatePluginOrder(
+          newPlugins.map(name => name.toLowerCase()),
+          setEnabled !== false,
+          state.settings.plugins.autoEnable));
       });
 
       context.api.events.on(
