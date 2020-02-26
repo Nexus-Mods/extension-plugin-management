@@ -54,7 +54,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
   private mEdgeHandler: any;
   private mMousePos: { x: number, y: number } = { x: 0, y: 0 };
 
-  public componentWillReceiveProps(newProps: IGraphViewProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IGraphViewProps) {
     if (newProps.elements !== this.props.elements) {
       const changed = util.objDiff(this.props.elements, newProps.elements);
 

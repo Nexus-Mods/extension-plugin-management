@@ -406,7 +406,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     this.mMounted = false;
   }
 
-  public componentWillReceiveProps(nextProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     if (!_.isEqual(Object.keys(this.props.plugins), Object.keys(nextProps.plugins))) {
       this.updatePlugins(nextProps.plugins, nextProps.gameMode)
         .catch(util.ProcessCanceled, () => null)
@@ -1158,7 +1158,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
               } : nop}
             >
               {plugin.isLight ? 'Mark not light' : 'Mark light'}
-            </Button>);
+            </Button>
+            );
         },
       },
       {
@@ -1216,7 +1217,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         placement: 'inline' as any,
         isToggleable: true,
         isDefaultVisible: false,
-      }
+      },
     ];
   }
 }

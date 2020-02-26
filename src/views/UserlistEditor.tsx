@@ -96,7 +96,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     this.initState({ dialog: undefined, filter: undefined });
   }
 
-  public componentWillReceiveProps(nextProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     if (nextProps.dialog !== this.props.dialog) {
       this.nextState.dialog = nextProps.dialog !== undefined ? { ...nextProps.dialog } : undefined;
     }
@@ -175,7 +175,8 @@ class Editor extends ComponentEx<IProps, IComponentState> {
         <Modal.Footer>
           <Button onClick={this.close}>{t('Close')}</Button>
         </Modal.Footer>
-      </Modal>);
+      </Modal>
+      );
   }
 
   private renderRules = (userlistItem: ILOOTPlugin) => {
@@ -190,7 +191,8 @@ class Editor extends ComponentEx<IProps, IComponentState> {
           reference={ref}
           type='after'
           onDelete={this.deleteRule}
-        />)),
+        />
+      )),
       (userlistItem.req || []).map((ref: string) => (
         <RuleEntry
           t={t}
@@ -199,7 +201,8 @@ class Editor extends ComponentEx<IProps, IComponentState> {
           reference={ref}
           type='requires'
           onDelete={this.deleteRule}
-        />)),
+        />
+      )),
       (userlistItem.inc || []).map((ref: string) => (
         <RuleEntry
           t={t}
