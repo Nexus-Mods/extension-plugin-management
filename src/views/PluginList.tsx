@@ -600,6 +600,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             });
         } else {
           pluginsLoot = {};
+          resolve();
         }
       }))
       .then(() => {
