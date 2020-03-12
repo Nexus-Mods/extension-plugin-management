@@ -203,7 +203,7 @@ class LootInterface {
       store.dispatch(actions.startActivity('plugins', 'sorting'));
       this.mSortPromise = this.readLists(gameMode, loot)
         .then(() => loot.sortPluginsAsync(pluginNames))
-        .catch(err => (err.message === 'already closed')
+        .catch(err => (err.message.toLowerCase() === 'already closed')
           ? Promise.resolve([])
           : Promise.reject(err));
       const sorted: string[] = await this.mSortPromise;
@@ -292,7 +292,7 @@ class LootInterface {
             allowReport: this.allowReport(err),
           });
         }
-      } else if (err.message === 'already closed') {
+      } else if (err.message.toLowerCase() === 'already closed') {
         // loot process terminated, don't really care about the result anyway
       } else if (err.name === 'RemoteDied') {
         this.mExtensionApi.showErrorNotification('LOOT process died', err, {
@@ -408,7 +408,7 @@ class LootInterface {
         .map(name => name.toLowerCase()), false);
       pluginsLoaded = true;
     } catch (err) {
-      if (err.message === 'already closed') {
+      if (err.message.toLowerCase() === 'already closed') {
         return;
       }
 
@@ -466,7 +466,7 @@ class LootInterface {
           // invalid parameter. This simply means that loot has no meta data for this plugin
           // so that's not a problem
         } else {
-          if (err.message === 'already closed') {
+          if (err.message.toLowerCase() === 'already closed') {
             closed = true;
             return;
           }
@@ -851,7 +851,7 @@ class LootInterface {
       solutions = await this.getSolutions(t, (err as any).cycle, loot);
       renderedCycle = await this.renderCycle(t, (err as any).cycle, loot);
     } catch (err) {
-      if (err.message === 'Already closed') {
+      if (err.message.toLowerCase() === 'already closed') {
         return;
       } else {
         this.mExtensionApi.showErrorNotification('Failed to report plugin cycle', err);
