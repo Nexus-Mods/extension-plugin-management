@@ -715,8 +715,10 @@ function testMissingMasters(t: TranslationFunction,
         'Some of the enabled plugins depend on others that are not enabled:[table][tbody]' +
         Object.keys(broken).map(plugin => {
           const missing = broken[plugin].join('[br][/br]');
+          const detail = pluginList[plugin];
+          const name = detail !== undefined ? path.basename(detail.filePath) : plugin;
           return '[tr]'
-            + [plugin, t('depends on'), missing].map(iter => `[td]${iter}[/td]`).join()
+            + [name, t('depends on'), missing].map(iter => `[td]${iter}[/td]`).join()
             + '[/tr]'
             + '[tr][/tr]';
         }).join('\n') + '[/tbody][/table]',
