@@ -283,6 +283,10 @@ function register(context: IExtensionContextExt) {
     () => testMissingMasters(context.api.translate, context.api.store));
   context.registerTest('master-missing', 'plugins-changed' as any,
     () => testMissingMasters(context.api.translate, context.api.store));
+  context.registerTest('rules-unfulfilled', 'gamemode-activated' as any,
+    () => testRulesUnfulfilled(context.api.translate, context.api.store));
+  context.registerTest('rules-unfulfilled', 'plugins-changed' as any,
+    () => testRulesUnfulfilled(context.api.translate, context.api.store));
   context.registerTest('invalid-userlist', 'gamemode-activated',
     () => testUserlistInvalid(context.api.translate, context.api.store.getState()));
   context.registerTest('missing-groups', 'gamemode-activated',
@@ -726,6 +730,80 @@ function testMissingMasters(t: TranslationFunction,
       severity: 'warning' as types.ProblemSeverity,
     });
   }
+}
+
+function testRulesUnfulfilled(t: TranslationFunction,
+                              store: Redux.Store<any>)
+                              : Promise<types.ITestResult> {
+  const state = store.getState();
+  const gameMode = selectors.activeGameId(state);
+  if (!gameSupported(gameMode)) {
+    return Promise.resolve(undefined);
+  }
+
+  const natives = new Set<string>(nativePlugins(gameMode));
+  const loadOrder: { [plugin: string]: ILoadOrder } = state.loadOrder;
+  const enabledPlugins = Object.keys(loadOrder).filter(
+    (plugin: string) => loadOrder[plugin].enabled || natives.has(plugin));
+
+  const { masterlist, userlist }: { masterlist: ILOOTList, userlist: ILOOTList } = state;
+
+  interface IEntry {
+    left: string;
+    right: string;
+  }
+
+  const pluginsSet = new Set(enabledPlugins);
+
+  const required: IEntry[] = [];
+  const incompatible: IEntry[] = [];
+
+  const depName = (input: string | ILootReference): string => {
+    if (typeof(input) === 'string') {
+      return input;
+    } else {
+      return input.name;
+    }
+  };
+
+  enabledPlugins.forEach((pluginId: string) => {
+    const ml = masterlist.plugins.find(iter => iter.name.toLowerCase() === pluginId);
+    const ul = userlist.plugins.find(iter => iter.name.toLowerCase() === pluginId);
+    required.push(...[...ml?.req || [], ...ul?.req || []]
+      .filter(iter => !pluginsSet.has(depName(iter)))
+      .map((right: string) => ({
+        left: pluginId, right: right.toLowerCase(),
+      })));
+    incompatible.push(...[...ml?.inc || [], ...ul?.inc || []]
+      .filter(iter => pluginsSet.has(depName(iter)))
+      .map((right: string) => ({
+        left: pluginId, right: right.toLowerCase(),
+      })));
+  });
+
+  if ((required.length === 0) && (incompatible.length === 0)) {
+    return Promise.resolve(undefined);
+  } else {
+    const reqLine = (left: string, right: string) =>
+      `[tr][td]${left}[/td][td]requires[/td][td]${right}[/td][/tr]`;
+    const incLine = (left: string, right: string) =>
+      `[tr][td]${left}[/td][td]is incompatible with[/td][td]${right}[/td][/tr]`;
+
+    return Promise.resolve({
+      description: {
+        short: 'Plugin dependencies unfulfilled',
+        long:
+          'Some of the enabled plugins have dependencies or incompatibles '
+          + 'that are not obeyed in your current setup:[table][tbody]'
+          + required.map(iter => reqLine(iter.left, iter.right))
+          + '[tr][/tr]'
+          + incompatible.map(iter => incLine(iter.left, iter.right))
+          + '[/tbody][/table]',
+      },
+      severity: 'warning' as types.ProblemSeverity,
+    });
+  }
+
 }
 
 function init(context: IExtensionContextExt) {
