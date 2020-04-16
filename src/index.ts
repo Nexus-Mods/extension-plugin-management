@@ -770,14 +770,18 @@ function testRulesUnfulfilled(t: TranslationFunction,
     const ml = masterlist.plugins.find(iter => iter.name.toLowerCase() === pluginId);
     const ul = userlist.plugins.find(iter => iter.name.toLowerCase() === pluginId);
     required.push(...[...ml?.req || [], ...ul?.req || []]
-      .filter(iter => !pluginsSet.has(depName(iter)))
+      .map(iter => depName(iter).toLowerCase())
+      .filter(iter => !pluginsSet.has(iter))
+      .filter(iter => iter !== undefined)
       .map((right: string) => ({
-        left: pluginId, right: right.toLowerCase(),
+        left: pluginId, right,
       })));
     incompatible.push(...[...ml?.inc || [], ...ul?.inc || []]
-      .filter(iter => pluginsSet.has(depName(iter)))
+      .map(iter => depName(iter).toLowerCase())
+      .filter(iter => pluginsSet.has(iter))
+      .filter(iter => iter !== undefined)
       .map((right: string) => ({
-        left: pluginId, right: right.toLowerCase(),
+        left: pluginId, right,
       })));
   });
 

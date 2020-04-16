@@ -76,7 +76,7 @@ export function getPluginFlags(plugin: IPluginCombined,
     result.push(t('Not deployed'));
   }
 
-  if (plugin.messages.length > 0) {
+  if ((plugin.messages || []).length > 0) {
     result.push(t('LOOT Messages'));
   }
 
@@ -234,7 +234,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
       />);
   }
 
-  if (plugin.messages.length > 0) {
+  if ((plugin.messages || []).length > 0) {
     const hasWarnings = plugin.messages.find(msg => msg.type > 0) !== undefined;
 
     const key = `ico-messages-${plugin.id}`;
