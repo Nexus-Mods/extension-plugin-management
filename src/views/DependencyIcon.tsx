@@ -132,6 +132,15 @@ const dependencySource: DragSourceSpec<IProps, any> = {
 
     if (source !== dest) {
       if ((component !== null) && (component.context as any).getModifiers().ctrl) {
+
+        const plugin = props.userlist.find(iter => iter.name === sourcePlugin.id);
+        if (plugin !== undefined) {
+          if ((plugin.after || []).indexOf(destPlugin.id) !== -1) {
+            // don't add a duplicate rule
+            return;
+          }
+        }
+
         props.onAddRule(sourcePlugin.id, destPlugin.id, 'after');
       } else {
         props.onEditDialog(sourcePlugin.id, destPlugin.id, 'after');
