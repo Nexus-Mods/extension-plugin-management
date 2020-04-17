@@ -33,6 +33,7 @@ export interface IDirtyInfo {
 export interface ILootReference {
   name: string;
   display: string;
+  condition?: string;
 }
 
 export interface ILOOTPlugin {

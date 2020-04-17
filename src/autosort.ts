@@ -9,7 +9,7 @@ import Bluebird from 'bluebird';
 import { remote } from 'electron';
 import getVersion from 'exe-version';
 import i18next from 'i18next';
-import { LootAsync } from 'loot';
+import { LootAsync, PluginMetadata } from 'loot';
 import * as path from 'path';
 import {} from 'redux-thunk';
 import {actions, fs, log, selectors, types, util} from 'vortex-api';
@@ -372,7 +372,12 @@ class LootInterface {
   }
 
   private pluginDetails = async (api: types.IExtensionApi, gameId: string,
-                                 plugins: string[], callback: (result: IPluginsLoot) => void) => {
+                                 plugins: string[], cb: (result: IPluginsLoot) => void) => {
+    const callback = (res: IPluginsLoot)  => {
+      api.events.emit('trigger-test-run', 'loot-info-updated');
+      cb(res);
+    };
+
     const { game, loot } = await this.getLoot(api, gameId);
     if ((loot === undefined) || loot.isClosed()) {
       callback({});
@@ -427,6 +432,8 @@ class LootInterface {
       group: undefined,
       isValidAsLightMaster: false,
       loadsArchive: false,
+      incompatibilities: [],
+      requirements: [],
       version: '',
     });
 
@@ -437,7 +444,7 @@ class LootInterface {
         return;
       }
       try {
-        const meta = await loot.getPluginMetadataAsync(pluginName);
+        const meta: PluginMetadata = await loot.getPluginMetadataAsync(pluginName);
         let info;
         try {
           const id = pluginName.toLowerCase();
@@ -450,12 +457,16 @@ class LootInterface {
               { pluginName, error: err.message, gameMode, gameId });
         }
 
+        const toRef = iter => ({ name: iter.name, display: iter.displayName });
+
         result[pluginName] = {
           messages: meta.messages,
           tags: meta.tags,
           cleanliness: meta.cleanInfo || [],
           dirtyness: meta.dirtyInfo || [],
-          group: meta.group,
+          group: meta['group'],
+          requirements: meta.requirements.map(toRef),
+          incompatibilities: meta.incompatibilities.map(toRef),
           isValidAsLightMaster: pluginsLoaded && (info !== undefined) && info.isValidAsLightMaster,
           loadsArchive: pluginsLoaded && (info !== undefined) && info.loadsArchive,
           version: (pluginsLoaded && (info !== undefined)) ? info.version : '',

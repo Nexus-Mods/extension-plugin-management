@@ -1,6 +1,7 @@
 import {ILoadOrder} from './ILoadOrder';
 
 import {Message, PluginCleaningData, Tag} from 'loot';
+import { ILootReference } from './ILOOTList';
 
 /**
  * generic information about a plugin
@@ -67,6 +68,11 @@ export interface IPluginParsed {
   revision: number;
 }
 
+export interface IFile {
+  name: string;
+  displayName: string;
+}
+
 export interface IPluginLoot {
   messages: Message[];
   cleanliness: PluginCleaningData[];
@@ -74,6 +80,8 @@ export interface IPluginLoot {
   tags: Tag[];
   group: string;
   isValidAsLightMaster: boolean;
+  requirements: ILootReference[];
+  incompatibilities: ILootReference[];
   loadsArchive: boolean;
   version: string;
 }

@@ -9,7 +9,7 @@ import userlistReducer from './reducers/userlist';
 import userlistEditReducer from './reducers/userlistEdit';
 import { ILoadOrder } from './types/ILoadOrder';
 import { ILOOTList, ILootReference } from './types/ILOOTList';
-import { IPlugins } from './types/IPlugins';
+import { IPluginCombined, IPlugins } from './types/IPlugins';
 import { IStateEx } from './types/IStateEx';
 import {
   gameSupported,
@@ -20,6 +20,7 @@ import {
   pluginPath,
   supportedGames,
 } from './util/gameSupport';
+import { markdownToBBCode } from './util/mdtobb';
 import PluginPersistor from './util/PluginPersistor';
 import UserlistPersistor from './util/UserlistPersistor';
 import Connector from './views/Connector';
@@ -170,7 +171,7 @@ function updatePluginList(store: types.ThunkStore<any>,
     .then((fileNames: string[]) => {
       return Promise
         .filter(fileNames, val => isPlugin(modPath, val, gameId))
-        .each(fileName => setPluginState(modPath, fileName, true))
+        .each((fileName: string) => setPluginState(modPath, fileName, true))
         .then(() => {
           if (Object.keys(pluginStates).length > 0) {
             store.dispatch(setPluginList(pluginStates));
@@ -283,10 +284,8 @@ function register(context: IExtensionContextExt) {
     () => testMissingMasters(context.api.translate, context.api.store));
   context.registerTest('master-missing', 'plugins-changed' as any,
     () => testMissingMasters(context.api.translate, context.api.store));
-  context.registerTest('rules-unfulfilled', 'gamemode-activated' as any,
-    () => testRulesUnfulfilled(context.api.translate, context.api.store));
-  context.registerTest('rules-unfulfilled', 'plugins-changed' as any,
-    () => testRulesUnfulfilled(context.api.translate, context.api.store));
+  (context.registerTest)('rules-unfulfilled', 'loot-info-updated' as any,
+    () => testRulesUnfulfilled(context.api));
   context.registerTest('invalid-userlist', 'gamemode-activated',
     () => testUserlistInvalid(context.api.translate, context.api.store.getState()));
   context.registerTest('missing-groups', 'gamemode-activated',
@@ -732,31 +731,29 @@ function testMissingMasters(t: TranslationFunction,
   }
 }
 
-function testRulesUnfulfilled(t: TranslationFunction,
-                              store: Redux.Store<any>)
+function testRulesUnfulfilled(api: types.IExtensionApi)
                               : Promise<types.ITestResult> {
+  const { translate: t, store } = api;
+
   const state = store.getState();
   const gameMode = selectors.activeGameId(state);
   if (!gameSupported(gameMode)) {
     return Promise.resolve(undefined);
   }
 
+  const pluginInfo: { [id: string]: IPluginCombined } = state.session.plugins?.pluginInfo || {};
+
+  const discovery = selectors.discoveryByGame(state, gameMode);
+
   const natives = new Set<string>(nativePlugins(gameMode));
   const loadOrder: { [plugin: string]: ILoadOrder } = state.loadOrder;
   const enabledPlugins = Object.keys(loadOrder).filter(
     (plugin: string) => loadOrder[plugin].enabled || natives.has(plugin));
 
-  const { masterlist, userlist }: { masterlist: ILOOTList, userlist: ILOOTList } = state;
-
   interface IEntry {
     left: string;
     right: string;
   }
-
-  const pluginsSet = new Set(enabledPlugins);
-
-  const required: IEntry[] = [];
-  const incompatible: IEntry[] = [];
 
   const depName = (input: string | ILootReference): string => {
     if (typeof(input) === 'string') {
@@ -766,48 +763,94 @@ function testRulesUnfulfilled(t: TranslationFunction,
     }
   };
 
+  interface ICheckEntry { display: string; refs: string[]; }
+  interface ICheckMap { [key: string]: ICheckEntry; };
+  const reqCheck: ICheckMap = {};
+  const incCheck: ICheckMap = {};
+
+  const addCheck = (target: ICheckMap, source: string, entry: ILootReference) => {
+    if ((typeof(entry) !== 'string') && (entry.condition !== undefined)) {
+      // evaluation of condition not supported atm
+      // return;
+    }
+    const name = depName(entry);
+    const id = name.toLowerCase();
+    util.setdefault(target, id, { display: name, refs: [] }).refs.push(source);
+    if (entry['display'] !== undefined) {
+      target[id].display = entry['display'];
+    }
+  };
+
+  // for each enabled plugin, go through their list of required and incompatble files.
   enabledPlugins.forEach((pluginId: string) => {
-    const ml = masterlist.plugins.find(iter => iter.name.toLowerCase() === pluginId);
-    const ul = userlist.plugins.find(iter => iter.name.toLowerCase() === pluginId);
-    required.push(...[...ml?.req || [], ...ul?.req || []]
-      .map(iter => depName(iter).toLowerCase())
-      .filter(iter => !pluginsSet.has(iter))
-      .filter(iter => iter !== undefined)
-      .map((right: string) => ({
-        left: pluginId, right,
-      })));
-    incompatible.push(...[...ml?.inc || [], ...ul?.inc || []]
-      .map(iter => depName(iter).toLowerCase())
-      .filter(iter => pluginsSet.has(iter))
-      .filter(iter => iter !== undefined)
-      .map((right: string) => ({
-        left: pluginId, right,
-      })));
+    pluginInfo[pluginId]?.requirements.forEach(req => addCheck(reqCheck, pluginId, req))
+    pluginInfo[pluginId]?.incompatibilities.forEach(inc => addCheck(incCheck, pluginId, inc));
   });
 
-  if ((required.length === 0) && (incompatible.length === 0)) {
-    return Promise.resolve(undefined);
-  } else {
-    const reqLine = (left: string, right: string) =>
-      `[tr][td]${left}[/td][td]requires[/td][td]${right}[/td][/tr]`;
-    const incLine = (left: string, right: string) =>
-      `[tr][td]${left}[/td][td]is incompatible with[/td][td]${right}[/td][/tr]`;
+  const pluginsSet = new Set(enabledPlugins);
 
-    return Promise.resolve({
-      description: {
-        short: 'Plugin dependencies unfulfilled',
-        long:
-          'Some of the enabled plugins have dependencies or incompatibles '
-          + 'that are not obeyed in your current setup:[table][tbody]'
-          + required.map(iter => reqLine(iter.left, iter.right))
-          + '[tr][/tr]'
-          + incompatible.map(iter => incLine(iter.left, iter.right))
-          + '[/tbody][/table]',
-      },
-      severity: 'warning' as types.ProblemSeverity,
+  const required: IEntry[] = [];
+  const incompatible: IEntry[] = [];
+
+  // it's not quite clear to me how the requirements/incompatibilities from LOOT are
+  // evaluated. It definitively checks for the existence of required files, so fulfilled
+  // requirements aren't listed in reqCheck at this points.
+  // Otoh I do get "incompatibilities" entries for plugins that aren't installed.
+  // This meaning we still have to check again to ensure we're not producing false positives but
+  // since I don't know where the inconsistency in LOOT comes from this may be doing redundant
+  // checks.
+
+  const exists = (id: string): Promise<boolean> =>
+    ['.esp', '.esl', '.esm'].includes(path.extname(id))
+    ? Promise.resolve(pluginsSet.has(id))
+    : fs.statAsync(path.resolve(discovery.path, 'Data', id)).then(() => true).catch((err) => false);
+
+  return Promise.map(Object.keys(reqCheck), reqId =>
+    exists(reqId).then(existsRes => {
+        if (!existsRes) {
+          required.push(...reqCheck[reqId].refs.map(ref =>
+            ({ left: ref, right: reqCheck[reqId].display })));
+        }
+      }))
+    .then(() => Promise.map(Object.keys(incCheck), incId =>
+      exists(incId).then(existsRes => {
+        if (existsRes) {
+          incompatible.push(...incCheck[incId].refs.map(ref =>
+            ({ left: ref, right: incCheck[incId].display })));
+        }
+      })))
+    .then(() => {
+      if ((required.length === 0) && (incompatible.length === 0)) {
+        return Promise.resolve(undefined);
+      } else {
+        const reqLine = (left: string, right: string) =>
+          `[tr][td]${left}[/td][td]${t('requires')}[/td][td]${markdownToBBCode(right)}[/td][/tr]`;
+        const incLine = (left: string, right: string) =>
+          `[tr][td]${left}[/td][td]${t('is incompatible with')}[/td][td]${markdownToBBCode(right)}[/td][/tr]`;
+
+        return Promise.resolve<types.ITestResult>({
+          description: {
+            short: t('Plugin dependencies unfulfilled'),
+            long:
+              t('Some of the enabled plugins have dependencies or incompatibles '
+                + 'that are not obeyed in your current setup')
+              + ':[table][tbody]'
+              + required.map(iter => reqLine(iter.left, iter.right))
+              + '[tr][/tr]'
+              + incompatible.map(iter => incLine(iter.left, iter.right))
+              + '[/tbody][/table]',
+            localize: false,
+          },
+          severity: 'warning' as types.ProblemSeverity,
+          onRecheck: () => {
+            return new Promise((resolve, reject) => {
+              api.events.emit('plugin-details', gameMode,
+                              Object.keys(state.session.plugins.pluginList), resolve);
+            });
+          },
+        } as any);
+      }
     });
-  }
-
 }
 
 function init(context: IExtensionContextExt) {
