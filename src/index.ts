@@ -138,8 +138,8 @@ function updatePluginList(store: types.ThunkStore<any>,
       .map(fileName => (activator !== undefined)
          ? (activator as any).getDeployedPath(fileName)
          : fileName)
-      .filter(fileName => isPlugin(modInstPath, fileName, gameId))
-      .each(fileName => {
+      .filter((fileName: string) => isPlugin(modInstPath, fileName, gameId))
+      .each((fileName: string) => {
         pluginSources[fileName] = mod.id;
         return setPluginState(modInstPath, fileName, false);
       })
@@ -764,7 +764,7 @@ function testRulesUnfulfilled(api: types.IExtensionApi)
   };
 
   interface ICheckEntry { display: string; refs: string[]; }
-  interface ICheckMap { [key: string]: ICheckEntry; };
+  interface ICheckMap { [key: string]: ICheckEntry; }
   const reqCheck: ICheckMap = {};
   const incCheck: ICheckMap = {};
 
@@ -783,7 +783,7 @@ function testRulesUnfulfilled(api: types.IExtensionApi)
 
   // for each enabled plugin, go through their list of required and incompatble files.
   enabledPlugins.forEach((pluginId: string) => {
-    pluginInfo[pluginId]?.requirements.forEach(req => addCheck(reqCheck, pluginId, req))
+    pluginInfo[pluginId]?.requirements.forEach(req => addCheck(reqCheck, pluginId, req));
     pluginInfo[pluginId]?.incompatibilities.forEach(inc => addCheck(incCheck, pluginId, inc));
   });
 

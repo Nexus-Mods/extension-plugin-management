@@ -50,8 +50,8 @@
     "react-select": "^1.2.1",
     "redux": "^4.0.0",
     "redux-thunk": "^2.3.0",
-    "ts-loader": "4.4.2",
+    "ts-loader": "7.0.1",
     "vortex-api": "Nexus-Mods/Vortex-api#electron7",
-    "webpack": "^4.16.5"
+    "webpack": "^4.42.1"
   }
 }
