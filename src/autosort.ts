@@ -1,6 +1,6 @@
 import {updatePluginOrder} from './actions/loadOrder';
 import { removeGroupRule, removeRule, setGroup } from './actions/userlist';
-import {IPlugins, IPluginsLoot} from './types/IPlugins';
+import {IPluginLoot, IPlugins, IPluginsLoot} from './types/IPlugins';
 import {gameSupported, pluginPath} from './util/gameSupport';
 
 import { NAMESPACE } from './statics';
@@ -424,7 +424,7 @@ class LootInterface {
                                                });
     }
 
-    const createEmpty = () => ({
+    const createEmpty = (): IPluginLoot => ({
       messages: [],
       tags: [],
       cleanliness: [],

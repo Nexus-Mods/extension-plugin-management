@@ -783,8 +783,10 @@ function testRulesUnfulfilled(api: types.IExtensionApi)
 
   // for each enabled plugin, go through their list of required and incompatble files.
   enabledPlugins.forEach((pluginId: string) => {
-    pluginInfo[pluginId]?.requirements.forEach(req => addCheck(reqCheck, pluginId, req));
-    pluginInfo[pluginId]?.incompatibilities.forEach(inc => addCheck(incCheck, pluginId, inc));
+    (pluginInfo[pluginId]?.requirements || [])
+      .forEach(req => addCheck(reqCheck, pluginId, req));
+    (pluginInfo[pluginId]?.incompatibilities || [])
+      .forEach(inc => addCheck(incCheck, pluginId, inc));
   });
 
   const pluginsSet = new Set(enabledPlugins);

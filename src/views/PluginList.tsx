@@ -367,13 +367,19 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
   public emptyPluginLOOT(): { [plugin: string]: IPluginLoot } {
     return Object.keys(this.props.plugins).reduce((prev, key) => {
-      prev[key] = {
+      const empty: IPluginLoot = {
         messages: [],
         cleanliness: [],
         dirtyness: [],
         group: '',
         tags: [],
+        isValidAsLightMaster: false,
+        incompatibilities: [],
+        requirements: [],
+        loadsArchive: false,
+        version: '',
       };
+      prev[key] = empty;
       return prev;
     }, {});
   }
