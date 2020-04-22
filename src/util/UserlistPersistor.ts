@@ -2,7 +2,7 @@ import { ILOOTList, ILOOTPlugin } from '../types/ILOOTList';
 
 import {gameSupported} from './gameSupport';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, dialog as dialogIn, remote } from 'electron';
 import { safeDump, safeLoad } from 'js-yaml';
 import * as _ from 'lodash';

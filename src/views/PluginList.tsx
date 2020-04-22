@@ -21,7 +21,7 @@ import PluginFlags, { getPluginFlags } from './PluginFlags';
 import PluginFlagsFilter from './PluginFlagsFilter';
 import PluginStatusFilter from './PluginStatusFilter';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import ESPFile from 'esptk';
 import I18next from 'i18next';
 import update from 'immutability-helper';
@@ -31,7 +31,7 @@ import * as path from 'path';
 import * as React from 'react';
 import { Alert, Button, ListGroup, ListGroupItem, Panel } from 'react-bootstrap';
 import { withTranslation } from 'react-i18next';
-import * as ReactMarkdown from 'react-markdown';
+import ReactMarkdown from 'react-markdown';
 import { connect } from 'react-redux';
 import { Creatable } from 'react-select';
 import * as Redux from 'redux';
@@ -367,13 +367,19 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
   public emptyPluginLOOT(): { [plugin: string]: IPluginLoot } {
     return Object.keys(this.props.plugins).reduce((prev, key) => {
-      prev[key] = {
+      const empty: IPluginLoot = {
         messages: [],
         cleanliness: [],
         dirtyness: [],
         group: '',
         tags: [],
+        isValidAsLightMaster: false,
+        incompatibilities: [],
+        requirements: [],
+        loadsArchive: false,
+        version: '',
       };
+      prev[key] = empty;
       return prev;
     }, {});
   }
@@ -406,7 +412,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     this.mMounted = false;
   }
 
-  public componentWillReceiveProps(nextProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     if (!_.isEqual(Object.keys(this.props.plugins), Object.keys(nextProps.plugins))) {
       this.updatePlugins(nextProps.plugins, nextProps.gameMode)
         .catch(util.ProcessCanceled, () => null)
@@ -1159,7 +1165,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
               } : nop}
             >
               {plugin.isLight ? 'Mark not light' : 'Mark light'}
-            </Button>);
+            </Button>
+            );
         },
       },
       {
@@ -1217,7 +1224,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         placement: 'inline' as any,
         isToggleable: true,
         isDefaultVisible: false,
-      }
+      },
     ];
   }
 }

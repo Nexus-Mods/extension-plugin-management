@@ -83,7 +83,7 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
     });
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if ((this.props.userlist !== newProps.userlist)
         || (this.props.masterlist !== newProps.masterlist)) {
      this.nextState.elements = this.genElements(newProps);

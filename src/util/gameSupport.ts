@@ -1,6 +1,6 @@
 import {PluginFormat} from '../util/PluginPersistor';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';

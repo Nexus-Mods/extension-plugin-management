@@ -132,6 +132,15 @@ const dependencySource: DragSourceSpec<IProps, any> = {
 
     if (source !== dest) {
       if ((component !== null) && (component.context as any).getModifiers().ctrl) {
+
+        const plugin = props.userlist.find(iter => iter.name === sourcePlugin.id);
+        if (plugin !== undefined) {
+          if ((plugin.after || []).indexOf(destPlugin.id) !== -1) {
+            // don't add a duplicate rule
+            return;
+          }
+        }
+
         props.onAddRule(sourcePlugin.id, destPlugin.id, 'after');
       } else {
         props.onEditDialog(sourcePlugin.id, destPlugin.id, 'after');
@@ -187,7 +196,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     this.props.connectDragPreview(getEmptyImage() as any);
   }
 
-  public componentWillReceiveProps(nextProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     if (this.props.isDragging !== nextProps.isDragging) {
       let pos;
       if (nextProps.isDragging) {
@@ -356,7 +365,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       </Popover>
     );
 
-    const connectorIcon = connectDragSource(
+    const connectorIcon = connectDragSource((
         <div style={{ display: 'inline' }}>
           <tooltip.IconButton
             id={`btn-meta-data-${plugin.id}`}
@@ -376,12 +385,14 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
           >
             {popover}
           </Overlay>
-        </div>);
+        </div>
+        ));
 
-    return connectDropTarget(
+    return connectDropTarget((
       <div style={{ textAlign: 'center', width: '100%' }}>
         {connectorIcon}
-      </div>);
+      </div>
+    ));
   }
 
   private renderRule = (ref: string | ILootReference, ruleType: string, readOnly: boolean) => {
