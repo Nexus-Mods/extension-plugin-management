@@ -673,8 +673,8 @@ function testMissingMasters(t: TranslationFunction,
   const pluginList = state.session.plugins.pluginList;
   const natives = new Set<string>(nativePlugins(gameMode));
   const loadOrder: { [plugin: string]: ILoadOrder } = state.loadOrder;
-  const enabledPlugins = Object.keys(loadOrder).filter(
-    (plugin: string) => loadOrder[plugin].enabled || natives.has(plugin));
+  const enabledPlugins = Object.keys(loadOrder)
+    .filter((plugin: string) => loadOrder[plugin].enabled || natives.has(plugin));
   const pluginDetails =
     enabledPlugins.filter((name: string) => pluginList[name] !== undefined)
       .map((plugin) => {
@@ -748,7 +748,8 @@ function testRulesUnfulfilled(api: types.IExtensionApi)
   const natives = new Set<string>(nativePlugins(gameMode));
   const loadOrder: { [plugin: string]: ILoadOrder } = state.loadOrder;
   const enabledPlugins = Object.keys(loadOrder).filter(
-    (plugin: string) => loadOrder[plugin].enabled || natives.has(plugin));
+    (plugin: string) => (pluginInfo[plugin] !== undefined)
+                     && (loadOrder[plugin].enabled || natives.has(plugin)));
 
   interface IEntry {
     left: string;
