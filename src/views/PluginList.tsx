@@ -39,7 +39,7 @@ import { ThunkDispatch } from 'redux-thunk';
 import { generate as shortid } from 'shortid';
 import {ComponentEx, FlexLayout, Icon, IconBar, ITableRowAction,
   log, MainPage, selectors, Spinner,
-  Table, TableTextFilter, ToolbarIcon, types, Usage, util,
+  Table, TableTextFilter, ToolbarIcon, tooltip, types, Usage, util,
 } from 'vortex-api';
 
 type TranslationFunction = typeof I18next.t;
@@ -49,6 +49,7 @@ const CLEANING_GUIDE_LINK =
 
 interface IBaseProps {
   nativePlugins: string[];
+  onRefreshPlugins: () => void;
 }
 
 interface IConnectedProps {
@@ -172,8 +173,8 @@ function PluginCount(props: IPluginCountProps) {
     classes.push('gamebryo-plugin-limit');
   }
 
-  let tooltip = t('Plugins shouldn\'t exceed mod index {{maxIndex}} for a total of {{count}} '
-                + 'plugins (including base game and DLCs).', {
+  let tooltipText = t('Plugins shouldn\'t exceed mod index {{maxIndex}} for a total of {{count}} '
+                  + 'plugins (including base game and DLCs).', {
       replace: {
         maxIndex: eslGame ? '0xFD' : '0xFE',
         count: eslGame ? 254 : 255,
@@ -181,12 +182,12 @@ function PluginCount(props: IPluginCountProps) {
     });
 
   if (eslGame) {
-    tooltip += '\n' + t('In addition you can have up to 4096 light plugins.');
+    tooltipText += '\n' + t('In addition you can have up to 4096 light plugins.');
   }
 
   return (
     <div className={classes.join(' ')}>
-      <a onClick={nop} className='fake-link' title={tooltip}>
+      <a onClick={nop} className='fake-link' title={tooltipText}>
       {t('Active: {{ count }}', { count: regular.length })}
       {eslGame ? ' ' + t('Light: {{ count }}', { count: light.length }) : null}
       </a>
@@ -431,12 +432,42 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, deployProgress, gameMode, needToDeploy } = this.props;
+    const { t, deployProgress, gameMode, needToDeploy, onRefreshPlugins } = this.props;
     const { pluginsCombined } = this.state;
 
     if (!gameSupported(gameMode)) {
       return null;
     }
+
+    const data = () => {
+      if ((this.mCachedGameMode !== gameMode) || (deployProgress !== undefined)) {
+        return (
+          <div className='plugin-list-loading'>
+            <Spinner />
+          </div>
+        );
+      } else if (Object.keys(pluginsCombined).length === 0) {
+        return (
+          <div className='plugin-list-loading'>
+            <p>{t('No plugins, something seems to have gone wrong')}</p>
+            <tooltip.IconButton
+              icon='refresh'
+              onClick={onRefreshPlugins}
+              tooltip={t('Refresh plugin list')}
+            />
+          </div>
+        );
+      } else {
+        return (
+          <Table
+            tableId='gamebryo-plugins'
+            actions={this.actions}
+            staticElements={[this.pluginEnabledAttribute, ...this.pluginAttributes]}
+            data={pluginsCombined}
+          />
+        );
+      }
+    };
 
     return (
       <MainPage>
@@ -456,18 +487,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             <FlexLayout.Flex>
               <Panel>
                 <Panel.Body>
-                  {(this.mCachedGameMode === gameMode) && (deployProgress === undefined) ? (
-                    <Table
-                      tableId='gamebryo-plugins'
-                      actions={this.actions}
-                      staticElements={[this.pluginEnabledAttribute, ...this.pluginAttributes]}
-                      data={pluginsCombined}
-                    />
-                  ) : (
-                    <div className='plugin-list-loading'>
-                      <Spinner />
-                    </div>
-                  )}
+                  {Object.keys(pluginsCombined).length === 0}
+                  {data()}
                 </Panel.Body>
               </Panel>
             </FlexLayout.Flex>
@@ -554,6 +575,17 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   private updatePlugins(pluginsIn: IPlugins, gameMode: string) {
     const updateId = this.mUpdateId = shortid();
     const pluginNames: string[] = Object.keys(pluginsIn);
+
+    if ((pluginNames.length === 0) && (gameMode !== this.mCachedGameMode)) {
+      // plugin list is empty after switching game, this just means we're still
+      // in the process of loading the plugin list
+      this.setState(update(this.state, {
+        pluginsParsed: { $set: {} },
+        pluginsLoot: { $set: {} },
+        pluginsCombined: { $set: {} },
+      }));
+      return Promise.resolve();
+    }
 
     const pluginsParsed: { [pluginName: string]: IPluginParsed } = {};
     let pluginsLoot;

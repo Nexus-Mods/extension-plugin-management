@@ -118,16 +118,9 @@ class LootInterface {
       : 'Masterlist unmodified';
   }
 
-  public sort(): Promise<void> {
-    let error: Error = null;
-    return this.onSort(true, err => error = err)
-      .then(() => (error !== null)
-        ? Promise.reject(error)
-        : Promise.resolve());
-  }
-
   private onSort = async (manual: boolean, callback?: (err: Error) => void) => {
     const { store } = this.mExtensionApi;
+    const started = Date.now();
     try {
       if (manual || store.getState().settings.plugins.autoSort) {
         // ensure initialisation is done
@@ -183,6 +176,8 @@ class LootInterface {
       if (callback !== undefined) {
         callback(err);
       }
+    } finally {
+      log('debug', 'plugins sorted', { duration: `${Math.floor((Date.now() - started) / 1000)}s` });
     }
   }
 

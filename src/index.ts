@@ -219,6 +219,7 @@ function register(context: IExtensionContextExt) {
       nativePlugins: gameSupported(selectors.activeGameId(context.api.store.getState()))
         ? nativePlugins(selectors.activeGameId(context.api.store.getState()))
         : [],
+      onRefreshPlugins: () => updateCurrentProfile(context.api.store),
     }),
     activity: pluginActivity,
   });
