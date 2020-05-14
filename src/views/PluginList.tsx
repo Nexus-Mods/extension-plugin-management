@@ -902,7 +902,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     setTimeout(() => {
       this.context.api.events.emit('mods-scroll-to', modId);
       this.context.api.highlightControl(
-        `#${(util as any).sanitizeCSSId(modId)} > .cell-name`, 4000);
+        `.${(util as any).sanitizeCSSId(modId)} > .cell-name`, 4000);
     }, 200);
   }
 
