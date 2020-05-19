@@ -282,9 +282,9 @@ function register(context: IExtensionContextExt) {
   context.registerTest('plugins-locked', 'gamemode-activated',
     () => testPluginsLocked(selectors.activeGameId(context.api.store.getState())));
   context.registerTest('master-missing', 'gamemode-activated',
-    () => testMissingMasters(context.api.translate, context.api.store));
+    () => testMissingMasters(context.api));
   context.registerTest('master-missing', 'plugins-changed' as any,
-    () => testMissingMasters(context.api.translate, context.api.store));
+    () => testMissingMasters(context.api));
   (context.registerTest)('rules-unfulfilled', 'loot-info-updated' as any,
     () => testRulesUnfulfilled(context.api));
   context.registerTest('invalid-userlist', 'gamemode-activated',
@@ -663,8 +663,8 @@ function testUserlistInvalid(t: TranslationFunction,
   return Promise.resolve(undefined);
 }
 
-function testMissingMasters(t: TranslationFunction,
-                            store: Redux.Store<any>): Promise<types.ITestResult> {
+function testMissingMasters(api: types.IExtensionApi): Promise<types.ITestResult> {
+  const { translate, store } = api;
   const state = store.getState();
   const gameMode = selectors.activeGameId(state);
   if (!gameSupported(gameMode)) {
@@ -712,6 +712,9 @@ function testMissingMasters(t: TranslationFunction,
   if (Object.keys(broken).length === 0) {
     return Promise.resolve(undefined);
   } else {
+    const link = (pluginName: string) => {
+      return `[link="cb://showplugin/${pluginName}"]${pluginName}[/link]`;
+    };
     return Promise.resolve({
       description: {
         short: 'Missing Masters',
@@ -722,10 +725,26 @@ function testMissingMasters(t: TranslationFunction,
           const detail = pluginList[plugin];
           const name = detail !== undefined ? path.basename(detail.filePath) : plugin;
           return '[tr]'
-            + [name, t('depends on'), missing].map(iter => `[td]${iter}[/td]`).join()
+            + [link(name), translate('depends on'), link(missing)]
+                .map(iter => `[td]${iter}[/td]`).join()
             + '[/tr]'
             + '[tr][/tr]';
         }).join('\n') + '[/tbody][/table]',
+        context: {
+          callbacks: {
+            showplugin: (pluginName: string) => {
+              // have to update state and gameMode as they may have changed since the
+              // message was generated
+              const stateNow: types.IState = store.getState();
+              const gameModeNow = selectors.activeGameId(stateNow);
+              if (gameSupported(gameModeNow)) {
+                api.events.emit('show-main-page', 'gamebryo-plugins');
+                store.dispatch(
+                  actions.setAttributeFilter('gamebryo-plugins', 'name', pluginName));
+              }
+            },
+          },
+        },
       },
       severity: 'warning' as types.ProblemSeverity,
     });
