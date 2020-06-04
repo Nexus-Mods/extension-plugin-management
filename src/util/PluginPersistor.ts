@@ -460,7 +460,8 @@ class PluginPersistor implements types.IPersistor {
           .catch(util.UserCanceled, () => Promise.resolve())
           .catch(err => (err.code === 'ENOENT')
             ? Promise.resolve()
-            : this.mOnError(`failed to read "${fileName}"`, err, { allowReport: err.code !== 'EPERM' }));
+            : this.mOnError(`failed to read "${fileName}"`,
+                            err, { allowReport: err.code !== 'EPERM' }));
         }
       });
       this.mWatch.on('error', error => {

@@ -3261,9 +3261,9 @@ void-elements@^2.0.1:
   resolved "https://registry.yarnpkg.com/void-elements/-/void-elements-2.0.1.tgz#c066afb582bb1cb4128d60ea92392e94d5e9dbec"
   integrity sha1-wGavtYK7HLQSjWDqkjkulNXp2+w=
 
-vortex-api@Nexus-Mods/Vortex-api#electron7:
-  version "1.2.7-r1"
-  resolved "https://codeload.github.com/Nexus-Mods/Vortex-api/tar.gz/b733e7c2cd1d904f4117acb4238d1baba52094a4"
+vortex-api@Nexus-Mods/vortex-api:
+  version "1.2.11-r8"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/01b7f099ed478a769ce511a6e57b50ba0a67492d"
 
 watchpack@^1.6.0:
   version "1.6.1"
