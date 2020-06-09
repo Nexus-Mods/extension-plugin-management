@@ -833,7 +833,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       , plugin => this.eslify(plugin, true))
     .then(() => null)
     .catch(err => {
-      this.context.api.showErrorNotification('Failed to mark plugins as light', err);
+      this.context.api.showErrorNotification('Failed to mark plugins as light', err,
+        { allowReport: ['EPERM', 'EACCESS'].indexOf(err.code) === -1 });
     });
   }
 
