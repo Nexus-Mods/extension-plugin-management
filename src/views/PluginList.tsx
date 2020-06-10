@@ -827,14 +827,17 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       .map(pluginId => this.state.pluginsCombined[pluginId])
       .filter(plugin =>
         (plugin !== undefined)
+        && plugin.deployed
         && plugin.isValidAsLightMaster
         && !plugin.isLight
         && path.extname(plugin.id) === '.esp')
       , plugin => this.eslify(plugin, true))
     .then(() => null)
     .catch(err => {
+      const isUserError = ['EPERM', 'EACCESS'].includes(err.code)
+                       || err.message.includes('file not found');
       this.context.api.showErrorNotification('Failed to mark plugins as light', err,
-        { allowReport: ['EPERM', 'EACCESS'].indexOf(err.code) === -1 });
+        { allowReport: !isUserError });
     });
   }
 
@@ -843,12 +846,16 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       .map(pluginId => this.state.pluginsCombined[pluginId])
       .filter(plugin =>
         (plugin !== undefined)
+        && plugin.deployed
         && plugin.isLight
         && path.extname(plugin.id) === '.esp')
       , plugin => this.eslify(plugin, false))
     .then(() => null)
     .catch(err => {
-      this.context.api.showErrorNotification('Failed to mark plugins as regular', err);
+      const isUserError = ['EPERM', 'EACCESS'].includes(err.code)
+                       || err.message.includes('file not found');
+      this.context.api.showErrorNotification('Failed to mark plugins as regular', err,
+        { allowReport: !isUserError });
     });
   }
 
