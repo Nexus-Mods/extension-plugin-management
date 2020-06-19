@@ -1199,8 +1199,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
                   .then(() =>
                     this.context.api.events.emit('autosort-plugins', true))
                   .catch(err => {
+                    // still haven't figured out why these error messages are localized
+                    // but what we actually want to "suppress" reporting on is "Access denied"
                     this.context.api.showErrorNotification('Failed to convert plugin', err,
-                    { allowReport: err.message.indexOf('Access is denied.') === -1 });
+                    { allowReport: err.message.indexOf('rename:') === -1 });
                   });
               } : nop}
             >
