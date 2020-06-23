@@ -45,7 +45,7 @@ import {ComponentEx, FlexLayout, Icon, IconBar, ITableRowAction,
 type TranslationFunction = typeof I18next.t;
 
 const CLEANING_GUIDE_LINK =
-  'https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html';
+  'https://tes5edit.github.io/docs/7-mod-cleaning-and-error-checking.html';
 
 interface IBaseProps {
   nativePlugins: string[];
