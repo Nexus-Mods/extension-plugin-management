@@ -229,7 +229,11 @@ function register(context: IExtensionContextExt) {
     context.registerProfileFile(game, path.join(pluginPath(game), 'loadorder.txt'));
   }
 
-  context.registerSettings('Workarounds', Settings);
+  context.registerSettings('Workarounds', Settings, undefined, () => {
+    const state = context.api.store.getState();
+    const gameMode = selectors.activeGameId(state);
+    return supportedGames().indexOf(gameMode) !== -1;
+  });
 
   context.registerReducer(['session', 'plugins'], pluginsReducer);
   context.registerReducer(['loadOrder'], loadOrderReducer);
