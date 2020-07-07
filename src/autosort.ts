@@ -712,12 +712,12 @@ class LootInterface {
   }
 
   private getGroup(state: any, pluginName: string): { group: string, custom: boolean } {
-    const ulEdge = state.userlist.plugins.find(
+    const ulEdge = (state.userlist.plugins ?? []).find(
       iter => iter.name.toLowerCase() === pluginName.toLowerCase());
     if ((ulEdge !== undefined) && (ulEdge.group !== undefined)) {
       return { group: ulEdge.group, custom: true };
     }
-    const mlEdge = state.masterlist.plugins.find(
+    const mlEdge = (state.masterlist.plugins ?? []).find(
       iter => iter.name.toLowerCase() === pluginName.toLowerCase());
     if ((mlEdge !== undefined) && (mlEdge.group !== undefined)) {
       return { group: mlEdge.group, custom: false };

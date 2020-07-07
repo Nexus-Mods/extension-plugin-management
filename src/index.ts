@@ -273,7 +273,7 @@ function register(context: IExtensionContextExt) {
   context.registerActionCheck('ADD_USERLIST_RULE', (state: any, action: any) => {
     const {pluginId, reference, type} = action.payload;
 
-    const plugin = state.userlist.plugins.find(iter => iter.name === pluginId);
+    const plugin = (state.userlist.plugins ?? []).find(iter => iter.name === pluginId);
     if (plugin !== undefined) {
       if ((plugin[type] || []).indexOf(reference) !== -1) {
         return `Duplicate rule "${pluginId} ${type} ${reference}"`;
