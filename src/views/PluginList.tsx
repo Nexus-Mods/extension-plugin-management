@@ -835,7 +835,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     .then(() => null)
     .catch(err => {
       const isUserError = ['EPERM', 'EACCESS'].includes(err.code)
-                       || err.message.includes('file not found');
+                       || err.message.includes('file not found')
+                       || err.message.includes('Access is denied');
       this.context.api.showErrorNotification('Failed to mark plugins as light', err,
         { allowReport: !isUserError });
     });
