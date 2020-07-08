@@ -1061,28 +1061,33 @@ function init(context: IExtensionContextExt) {
                 if (plugins.length === 1) {
                   context.api.store.dispatch(setPluginEnabled(plugins[0], true));
                 } else if (plugins.length > 1) {
-                  const t = context.api.translate;
-                  context.api.sendNotification({
-                    id: `multiple-plugins-${mod.id}`,
-                    type: 'info',
-                    message: t('The mod "{{ modName }}" contains multiple plugins',
-                              {
-                                replace: {
-                                  modName: util.renderModName(mod, { version: false }),
-                                },
-                                ns: NAMESPACE,
-                              }),
-                    actions: [
-                      {
-                        title: 'Enable all',
-                        action: dismiss => {
-                          plugins.forEach(plugin => context.api.store.dispatch(
-                                              setPluginEnabled(plugin, true)));
-                          dismiss();
+                  if (mod.attributes?.enableallplugins === true) {
+                    plugins.forEach(plugin => context.api.store.dispatch(
+                      setPluginEnabled(plugin, true)));
+                  } else {
+                    const t = context.api.translate;
+                    context.api.sendNotification({
+                      id: `multiple-plugins-${mod.id}`,
+                      type: 'info',
+                      message: t('The mod "{{ modName }}" contains multiple plugins',
+                                {
+                                  replace: {
+                                    modName: util.renderModName(mod, { version: false }),
+                                  },
+                                  ns: NAMESPACE,
+                                }),
+                      actions: [
+                        {
+                          title: 'Enable all',
+                          action: dismiss => {
+                            plugins.forEach(plugin => context.api.store.dispatch(
+                                                setPluginEnabled(plugin, true)));
+                            dismiss();
+                          },
                         },
-                      },
-                    ],
-                  });
+                      ],
+                    });
+                  }
                 }
               })
               .catch(util.ProcessCanceled, () => undefined)
