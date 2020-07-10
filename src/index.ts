@@ -725,11 +725,11 @@ function testMissingMasters(api: types.IExtensionApi): Promise<types.ITestResult
         long:
         'Some of the enabled plugins depend on others that are not enabled:[table][tbody]' +
         Object.keys(broken).map(plugin => {
-          const missing = broken[plugin].join('[br][/br]');
+          const missing = broken[plugin].map(link).join('[br][/br]');
           const detail = pluginList[plugin];
           const name = detail !== undefined ? path.basename(detail.filePath) : plugin;
           return '[tr]'
-            + [link(name), translate('depends on'), link(missing)]
+            + [link(name), translate('depends on'), missing]
                 .map(iter => `[td]${iter}[/td]`).join()
             + '[/tr]'
             + '[tr][/tr]';
