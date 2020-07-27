@@ -801,8 +801,10 @@ function testRulesUnfulfilled(api: types.IExtensionApi)
     const name = depName(entry);
     const id = name.toLowerCase();
     util.setdefault(target, id, { display: name, refs: [] }).refs.push(source);
-    if (entry['display'] !== undefined) {
-      target[id].display = entry['display'];
+    // the loot api returns the regular file name as a fallback if no display name is specified
+    // in the user-/masterlist - without escaping characters that may be special in markdown.
+    if ((entry['display'] !== undefined) && (entry['display'] !== name)) {
+      target[id].display = markdownToBBCode(entry['display']);
     }
   };
 
@@ -851,9 +853,9 @@ function testRulesUnfulfilled(api: types.IExtensionApi)
         return Promise.resolve(undefined);
       } else {
         const reqLine = (left: string, right: string) =>
-          `[tr][td]${left}[/td][td]${t('requires')}[/td][td]${markdownToBBCode(right)}[/td][/tr]`;
+          `[tr][td]${left}[/td][td]${t('requires')}[/td][td]${right}[/td][/tr]`;
         const incLine = (left: string, right: string) =>
-          `[tr][td]${left}[/td][td]${t('is incompatible with')}[/td][td]${markdownToBBCode(right)}[/td][/tr]`;
+          `[tr][td]${left}[/td][td]${t('is incompatible with')}[/td][td]${right}[/td][/tr]`;
 
         return Promise.resolve<types.ITestResult>({
           description: {
