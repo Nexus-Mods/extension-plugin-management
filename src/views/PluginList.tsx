@@ -112,8 +112,10 @@ class GroupSelect extends React.PureComponent<IGroupSelectProps, {}> {
       group = '';
     }
 
-    const options = Array.from(new Set(
-          [].concat(masterlist.groups, userlist.groups).map(iter => iter.name)))
+    const options = Array.from(new Set([]
+        .concat(masterlist.groups, userlist.groups)
+        .filter(iter => iter !== undefined)
+        .map(iter => iter.name)))
       .map(iter => ({ label: iter, value: iter }));
 
     const isCustom: boolean = (userlist.plugins || []).find(plugin => {
