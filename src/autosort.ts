@@ -697,16 +697,21 @@ class LootInterface {
       case EdgeType.tieBreak:
         return t('tie breaker');
       case EdgeType.group: {
-        const groupPath: ICycleEdge[] =
-          await loot.getGroupsPathAsync(edgeGroup || 'default', nextGroup || 'default');
-        return t('groups are connected like this: {{path}}', { replace: {
-          path: groupPath.map(grp => {
-            const connection = grp.typeOfEdgeToNextVertex === 'hardcoded'
-              ? ''
-              : ` --(${this.renderEdge(t, grp)})->`;
-            return `${grp.name}${connection}`;
-          }).join(' '),
-        } });
+        try {
+          const groupPath: ICycleEdge[] =
+            await loot.getGroupsPathAsync(edgeGroup || 'default', nextGroup || 'default');
+          return t('groups are connected like this: {{path}}', { replace: {
+            path: groupPath.map(grp => {
+              const connection = grp.typeOfEdgeToNextVertex === 'hardcoded'
+                ? ''
+                : ` --(${this.renderEdge(t, grp)})->`;
+              return `${grp.name}${connection}`;
+            }).join(' '),
+          } });
+        } catch (err) {
+          log('warn', 'failed to determine path between groups', err.message);
+          return t('groups are connected');
+        }
       }
     }
   }
@@ -791,23 +796,29 @@ class LootInterface {
             value: false,
           });
         }
-        const groupPath: ICycleEdge[] =
-          await loot.getGroupsPathAsync(edgeGroup.group || 'default', nextGroup.group || 'default');
-        if (groupPath.find(iter => user.indexOf(iter.typeOfEdgeToNextVertex) !== -1)) {
-          result.push({
-            // Storing the plugin names here instead of the group directly because the plugin names
-            //   are file names on disk and thus won't contain colons, meaning we can cleanly
-            //   parse this id later, the same would be more complicated with group names
-            id: `resetgroups:${edge.name}:${next.name}`,
-            text: t('Reset customized groups between "{{first}}@{{firstGroup}}" '
-                    + 'and "{{second}}@{{secondGroup}}"', { replace: {
-                      first: edge.name,
-                      firstGroup: edgeGroup.group || 'default',
-                      second: next.name,
-                      secondGroup: nextGroup.group || 'default',
-                    }}),
-            value: false,
-          });
+        try {
+          const groupPath: ICycleEdge[] = await
+            loot.getGroupsPathAsync(edgeGroup.group || 'default', nextGroup.group || 'default');
+          if (groupPath.find(iter => user.indexOf(iter.typeOfEdgeToNextVertex) !== -1)) {
+            result.push({
+              // Storing the plugin names here instead of the group directly because the plugin
+              //   names are file names on disk and thus won't contain colons, meaning we can
+              //   cleanly parse this id later, the same would be more complicated with group names
+              id: `resetgroups:${edge.name}:${next.name}`,
+              text: t('Reset customized groups between "{{first}}@{{firstGroup}}" '
+                + 'and "{{second}}@{{secondGroup}}"', {
+                  replace: {
+                    first: edge.name,
+                    firstGroup: edgeGroup.group || 'default',
+                    second: next.name,
+                    secondGroup: nextGroup.group || 'default',
+                  },
+              }),
+              value: false,
+            });
+          }
+        } catch (err) {
+          log('warn', 'failed to determine path between groups', err.message);
         }
       }
     }));
