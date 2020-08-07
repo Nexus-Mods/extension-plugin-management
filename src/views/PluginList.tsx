@@ -1202,10 +1202,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
                   .then(() =>
                     this.context.api.events.emit('autosort-plugins', true))
                   .catch(err => {
+                    const hasSubstring = (subString) => err.message.indexOf(subString) !== -1;
                     // still haven't figured out why these error messages are localized
                     // but what we actually want to "suppress" reporting on is "Access denied"
+                    // and "file not found" given that we can't stop the user or 3rd party
+                    // applications from removing the file for whatever reason.
                     this.context.api.showErrorNotification('Failed to convert plugin', err,
-                    { allowReport: err.message.indexOf('rename:') === -1 });
+                    { allowReport: !hasSubstring('rename:')
+                                && !hasSubstring('file not found') });
                   });
               } : nop}
             >
