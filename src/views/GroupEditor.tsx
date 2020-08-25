@@ -187,7 +187,7 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
         }
         return res;
       },
-    }, [{ label: 'Cancel' }, { label: 'Add' }])
+    }, [{ label: 'Cancel' }, { label: 'Add', default: true }])
     .then((result: types.IDialogResult) => {
         if (result.action === 'Add') {
           onAddGroup(result.input.newGroup);

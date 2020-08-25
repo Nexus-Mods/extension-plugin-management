@@ -106,7 +106,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
                 const from = san(id);
                 const to = san(conn);
                 const connId = `${from}-to-${to}`;
-                if (refId[0] === '-') {
+                if ((connGroupIdx[0] === '-') || (refId[0] === '-')) {
                   this.mGraph.remove('#' + connId);
                 } else {
                   this.mGraph.add({
@@ -117,7 +117,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
                       target: from,
                       targetOrig: id,
                     } as any,
-                    classes: newProps.elements[id].connections[parseInt(connGroupIdx, 10)].class,
+                    classes: newProps.elements[id].connections[parseInt(connGroupIdx, 10)]?.class,
                   });
                 }
               });
