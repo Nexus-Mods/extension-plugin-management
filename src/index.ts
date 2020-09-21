@@ -723,7 +723,8 @@ function testMissingMasters(api: types.IExtensionApi): Promise<types.ITestResult
       description: {
         short: 'Missing Masters',
         long:
-        'Some of the enabled plugins depend on others that are not enabled:[table][tbody]' +
+        translate('Some of the enabled plugins depend on others that are not enabled:')
+        + '[table][tbody]' +
         Object.keys(broken).map(plugin => {
           const missing = broken[plugin].map(link).join('[br][/br]');
           const detail = pluginList[plugin];
