@@ -58,6 +58,7 @@ interface IConnectedProps {
   loadOrder: { [name: string]: ILoadOrder };
   autoSort: boolean;
   activity: string[];
+  modActivity: string[];
   needToDeploy: boolean;
   userlist: ILOOTList;
   masterlist: ILOOTList;
@@ -210,6 +211,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   private mMounted: boolean = false;
   private mCachedGameMode: string;
   private mUpdateId: string;
+  private mUpdateDetailsDebounder: util.Debouncer;
 
   private installedNative: { [name: string]: number } = {};
 
@@ -351,6 +353,19 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         }),
       },
     ];
+
+    this.mUpdateDetailsDebounder = new util.Debouncer((pluginList: IPlugins, gameId: string) => {
+      if (this.props.modActivity.length > 0) {
+        log('debug', 'deferring update plugin details because mod activity');
+        this.mUpdateDetailsDebounder.schedule(undefined, pluginList, gameId);
+        return Promise.resolve();
+      }
+      return this.updatePlugins(pluginList, gameId)
+        .catch(util.ProcessCanceled, () => null)
+        .catch(err => {
+          log('warn', 'failed to update plugins', { error: err.message });
+        });
+    }, 2000);
   }
 
   public emptyPluginParsed(): { [plugin: string]: IPluginParsed } {
@@ -417,11 +432,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
   public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     if (!_.isEqual(Object.keys(this.props.plugins), Object.keys(nextProps.plugins))) {
-      this.updatePlugins(nextProps.plugins, nextProps.gameMode)
-        .catch(util.ProcessCanceled, () => null)
-        .catch(err => {
-          log('warn', 'failed to update plugins', { error: err.message });
-        });
+      this.mUpdateDetailsDebounder.schedule(undefined, nextProps.plugins, nextProps.gameMode);
+
     }
 
     if (this.props.loadOrder !== nextProps.loadOrder) {
@@ -1296,6 +1308,7 @@ function mapStateToProps(state: any): IConnectedProps {
     masterlist: state.masterlist || emptyList,
     autoSort: state.settings.plugins.autoSort,
     activity: state.session.base.activity['plugins'],
+    modActivity: state.session.base.activity['mods'],
     deployProgress: util.getSafe(state.session.base,
                                  ['progress', 'profile', 'deploying', 'text'],
                                  undefined),

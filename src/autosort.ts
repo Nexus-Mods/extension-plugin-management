@@ -368,6 +368,7 @@ class LootInterface {
 
   private pluginDetails = async (api: types.IExtensionApi, gameId: string,
                                  plugins: string[], cb: (result: IPluginsLoot) => void) => {
+    log('debug', 'requesting plugin info', plugins);
     const callback = (res: IPluginsLoot)  => {
       api.events.emit('trigger-test-run', 'loot-info-updated');
       cb(res);
