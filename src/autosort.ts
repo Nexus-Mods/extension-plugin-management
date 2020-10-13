@@ -456,13 +456,13 @@ class LootInterface {
         const toRef = iter => ({ name: iter.name, display: iter.displayName });
 
         result[pluginName] = {
-          messages: meta.messages,
-          tags: meta.tags,
-          cleanliness: meta.cleanInfo || [],
-          dirtyness: meta.dirtyInfo || [],
-          group: meta['group'],
-          requirements: meta.requirements.map(toRef),
-          incompatibilities: meta.incompatibilities.map(toRef),
+          messages: meta?.messages,
+          tags: meta?.tags,
+          cleanliness: meta?.cleanInfo || [],
+          dirtyness: meta?.dirtyInfo || [],
+          group: meta?.['group'],
+          requirements: meta?.requirements.map(toRef),
+          incompatibilities: meta?.incompatibilities.map(toRef),
           isValidAsLightMaster: pluginsLoaded && (info !== undefined) && info.isValidAsLightMaster,
           loadsArchive: pluginsLoaded && (info !== undefined) && info.loadsArchive,
           version: (pluginsLoaded && (info !== undefined)) ? info.version : '',
