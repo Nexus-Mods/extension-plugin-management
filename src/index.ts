@@ -79,9 +79,9 @@ function isPlugin(filePath: string, fileName: string, gameMode: string): Promise
 /**
  * updates the list of known plugins for the managed game
  */
-function updatePluginList(store: types.ThunkStore<any>,
-                          newModList: IModStates,
-                          gameId: string): Promise<void> {
+function updatePluginListImpl(store: types.ThunkStore<any>,
+                              newModList: IModStates,
+                              gameId: string): Promise<void> {
   const state: types.IState = store.getState();
 
   const pluginSources: { [pluginName: string]: string } = {};
@@ -174,8 +174,8 @@ function updatePluginList(store: types.ThunkStore<any>,
         .filter(fileNames, val => isPlugin(modPath, val, gameId))
         .each((fileName: string) => setPluginState(modPath, fileName, true))
         .then(() => {
+          store.dispatch(setPluginList(pluginStates));
           if (Object.keys(pluginStates).length > 0) {
-            store.dispatch(setPluginList(pluginStates));
             const notDeployed = Object.keys(pluginStates).find(key =>
               !pluginStates[key].deployed);
             if (notDeployed !== undefined) {
@@ -193,6 +193,23 @@ function updatePluginList(store: types.ThunkStore<any>,
     .catch((err: Error) => {
       util.showError(store.dispatch, 'Failed to update plugin list', err);
     });
+}
+
+function withActivity<T>(store: Redux.Store<any>,
+                         groupId: string, activity: string,
+                         cb: () => Promise<T>): Promise<T> {
+  store.dispatch(actions.startActivity(groupId, activity));
+  return cb()
+    .finally(() => {
+      store.dispatch(actions.stopActivity(groupId, activity));
+    });
+}
+
+function updatePluginList(store: Redux.Store<any>,
+                          newModList: IModStates,
+                          gameId: string) {
+  return withActivity(store, 'plugins', 'update-plugin-list', () =>
+    updatePluginListImpl(store, newModList, gameId));
 }
 
 interface IExtensionContextExt extends types.IExtensionContext {
@@ -1035,14 +1052,14 @@ function init(context: IExtensionContextExt) {
           'profile-will-change',
           (nextProfileId: string, enqueue: (cb: () => Promise<void>) => void) => {
             if (nextProfileId === undefined) {
-              context.api.store.dispatch(setPluginList([]));
+              context.api.store.dispatch(setPluginList(undefined));
               return;
             }
             const state = context.api.store.getState();
             const gameMode = selectors.activeGameId(state);
             const nextProfile = selectors.profileById(state, nextProfileId);
             if ((nextProfile !== undefined) && (nextProfile.gameId !== gameMode)) {
-              context.api.store.dispatch(setPluginList([]));
+              context.api.store.dispatch(setPluginList(undefined));
             }
             enqueue(() => {
               return stopSync()

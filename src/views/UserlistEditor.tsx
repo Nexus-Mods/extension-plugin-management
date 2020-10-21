@@ -285,7 +285,7 @@ function mapStateToProps(state: any): IConnectedProps {
   const dialog: IDialog = state.session.pluginDependencies.dialog;
   return {
     dialog,
-    plugins: state.session.plugins.pluginList,
+    plugins: state.session.plugins.pluginList ?? emptyList,
     userlist: state.userlist.plugins || emptyList,
   };
 }

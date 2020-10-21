@@ -369,7 +369,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public emptyPluginParsed(): { [plugin: string]: IPluginParsed } {
-    return Object.keys(this.props.plugins).reduce((prev, key) => {
+    return Object.keys(this.props.plugins ?? {}).reduce((prev, key) => {
       prev[key] = {
         isMaster: false,
         isLight: false,
@@ -384,7 +384,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public emptyPluginLOOT(): { [plugin: string]: IPluginLoot } {
-    return Object.keys(this.props.plugins).reduce((prev, key) => {
+    return Object.keys(this.props.plugins ?? {}).reduce((prev, key) => {
       const empty: IPluginLoot = {
         messages: [],
         cleanliness: [],
@@ -431,9 +431,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
-    if (!_.isEqual(Object.keys(this.props.plugins), Object.keys(nextProps.plugins))) {
+    if ((this.props.plugins === undefined)
+        || !_.isEqual(Object.keys(this.props.plugins), Object.keys(nextProps.plugins))) {
       this.mUpdateDetailsDebounder.schedule(undefined, nextProps.plugins, nextProps.gameMode);
-
     }
 
     if (this.props.loadOrder !== nextProps.loadOrder) {
@@ -446,7 +446,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, deployProgress, gameMode, needToDeploy, onRefreshPlugins } = this.props;
+    const { t, activity, deployProgress, gameMode, needToDeploy, onRefreshPlugins } = this.props;
     const { pluginsCombined } = this.state;
 
     if (!gameSupported(gameMode)) {
@@ -454,7 +454,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     }
 
     const data = () => {
-      if ((this.mCachedGameMode !== gameMode) || (deployProgress !== undefined)) {
+      if ((activity.length > 0)
+          || (this.mCachedGameMode !== gameMode)
+          || (deployProgress !== undefined)) {
         return (
           <div className='plugin-list-loading'>
             <Spinner />
@@ -588,9 +590,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
   private updatePlugins(pluginsIn: IPlugins, gameMode: string) {
     const updateId = this.mUpdateId = shortid();
-    const pluginNames: string[] = Object.keys(pluginsIn);
 
-    if ((pluginNames.length === 0) && (gameMode !== this.mCachedGameMode)) {
+    if ((pluginsIn === undefined) && (gameMode !== this.mCachedGameMode)) {
       // plugin list is empty after switching game, this just means we're still
       // in the process of loading the plugin list
       this.setState(update(this.state, {
@@ -601,6 +602,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       return Promise.resolve();
     }
 
+    const pluginNames: string[] = Object.keys(pluginsIn);
     const pluginsParsed: { [pluginName: string]: IPluginParsed } = {};
     let pluginsLoot;
 
@@ -759,7 +761,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   ): { [id: string]: IPluginCombined } {
     const { loadOrder, userlist } = this.props;
 
-    const pluginIds = Object.keys(plugins);
+    const pluginIds = Object.keys(plugins ?? {});
 
     const pluginObjects: IPluginCombined[] = pluginIds.map((pluginId: string) => {
       const userlistEntry =
