@@ -19,6 +19,7 @@ import {
   pluginExtensions,
   pluginPath,
   supportedGames,
+  supportsESL,
 } from './util/gameSupport';
 import { markdownToBBCode } from './util/mdtobb';
 import PluginPersistor from './util/PluginPersistor';
@@ -295,6 +296,8 @@ function register(context: IExtensionContextExt) {
     () => testUserlistInvalid(context.api.translate, context.api.store.getState()));
   context.registerTest('missing-groups', 'gamemode-activated',
     () => testMissingGroups(context.api.translate, context.api.store));
+  context.registerTest('exceeded-plugin-limit', 'plugins-changed',
+    () => testExceededPluginLimit(context.api));
   context.registerDialog('plugin-dependencies-connector', Connector);
   context.registerDialog('userlist-editor', UserlistEditor);
   context.registerDialog('group-editor', GroupEditor);
@@ -665,6 +668,49 @@ function testUserlistInvalid(t: TranslationFunction,
     });
   }
   return Promise.resolve(undefined);
+}
+
+function testExceededPluginLimit(api: types.IExtensionApi): Promise<types.ITestResult> {
+  const { translate, store } = api;
+  const state = store.getState();
+  const gameMode = selectors.activeGameId(state);
+  if (!gameSupported(gameMode)) {
+    return Promise.resolve(undefined);
+  }
+  const loadOrder = util.getSafe(state, ['loadOrder'], {});
+  const pluginList = state.session.plugins.pluginList;
+  const plugins = Object.keys(pluginList).reduce((accum, key) => {
+    if (util.getSafe(loadOrder, [key, 'enabled'], false)) {
+      accum[key] = pluginList[key];
+    }
+    return accum;
+  }, {});
+
+  const regular = Object.keys(plugins).filter(id =>
+    (plugins[id].deployed || plugins[id].isNative) && !plugins[id].isLight);
+  const light = Object.keys(plugins).filter(id =>
+    (plugins[id].deployed || plugins[id].isNative) && plugins[id].isLight);
+
+  const eslGame = supportsESL(gameMode);
+  const regLimit = eslGame ? 254 : 255;
+  return ((regular.length > regLimit) || (light.length > 4096))
+    ? Promise.resolve({
+      description: {
+        short: 'You\'ve exceeded the plugin limit for your game',
+        long:
+          translate('Plugins shouldn\'t exceed mod index {{maxIndex}} for a total of {{count}} '
+                  + 'plugins (including base game and DLCs) as the game will behave oddly otherwise. '
+                  + 'Please disable or attempt to mark plugins as light (if applicable) '
+                  + 'in the Plugins page', {
+          replace: {
+            maxIndex: eslGame ? '0xFD' : '0xFE',
+            count: eslGame ? 254 : 255,
+          },
+        }),
+      },
+      severity: 'warning' as types.ProblemSeverity,
+    })
+    : Promise.resolve(undefined);
 }
 
 function testMissingMasters(api: types.IExtensionApi): Promise<types.ITestResult> {
