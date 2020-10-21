@@ -228,6 +228,18 @@
   width: 100%;
 }
 
+@keyframes pulseWarningText {
+  0% {
+    color: $text-color;
+  }
+  50% {
+    color: $brand-warning;
+  }
+  100% {
+    color: $text-color;
+  }
+}
+
 .gamebryo-plugin-count {
   flex: 1 1 0;
   display: flex;
@@ -235,7 +247,7 @@
   justify-content: flex-end;
 
   &.gamebryo-plugin-limit {
-    color: $brand-warning;
+    animation: pulseWarningText 4s infinite linear;
   }
 }
 
