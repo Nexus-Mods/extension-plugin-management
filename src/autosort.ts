@@ -683,7 +683,7 @@ class LootInterface {
       case EdgeType.master:
       case EdgeType.masterFlag:
         return t('{{master}} is a master and {{regular}} isn\'t', { replace: {
-          master: next.name, regular: edge.name,
+          master: edge.name, regular: next.name,
         }});
       case EdgeType.masterlistLoadAfter:
       case EdgeType.masterlistRequirement:
