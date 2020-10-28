@@ -698,7 +698,15 @@ function testExceededPluginLimit(api: types.IExtensionApi): Promise<types.ITestR
   const pluginList = state.session.plugins.pluginList;
   const plugins = Object.keys(pluginList).reduce((accum, key) => {
     if (util.getSafe(loadOrder, [key, 'enabled'], false)) {
-      accum[key] = pluginList[key];
+      let isLight;
+      try {
+        isLight = new ESPFile(pluginList[key].filePath).isLight;
+      } catch (err) {
+        // We won't log this as the error will most definitely
+        //  be raised somewhere else -> nop
+        isLight = false;
+      }
+      accum[key] = { ...pluginList[key], isLight };
     }
     return accum;
   }, {});
