@@ -301,12 +301,14 @@ function register(context: IExtensionContextExt) {
     return undefined;
   });
 
+  const pluginInfoCache = new PluginInfoCache();
+
   context.registerTest('plugins-locked', 'gamemode-activated',
     () => testPluginsLocked(selectors.activeGameId(context.api.store.getState())));
   context.registerTest('master-missing', 'gamemode-activated',
-    () => testMissingMasters(context.api));
+    () => testMissingMasters(context.api, pluginInfoCache));
   context.registerTest('master-missing', 'plugins-changed' as any,
-    () => testMissingMasters(context.api));
+    () => testMissingMasters(context.api, pluginInfoCache));
   (context.registerTest)('rules-unfulfilled', 'loot-info-updated' as any,
     () => testRulesUnfulfilled(context.api));
   context.registerTest('invalid-userlist', 'gamemode-activated',
@@ -314,7 +316,7 @@ function register(context: IExtensionContextExt) {
   context.registerTest('missing-groups', 'gamemode-activated',
     () => testMissingGroups(context.api.translate, context.api.store));
   context.registerTest('exceeded-plugin-limit', 'plugins-changed',
-    () => testExceededPluginLimit(context.api));
+    () => testExceededPluginLimit(context.api, pluginInfoCache));
   context.registerDialog('plugin-dependencies-connector', Connector);
   context.registerDialog('userlist-editor', UserlistEditor);
   context.registerDialog('group-editor', GroupEditor);
@@ -687,7 +689,8 @@ function testUserlistInvalid(t: TranslationFunction,
   return Promise.resolve(undefined);
 }
 
-function testExceededPluginLimit(api: types.IExtensionApi): Promise<types.ITestResult> {
+function testExceededPluginLimit(api: types.IExtensionApi, infoCache: PluginInfoCache)
+    : Promise<types.ITestResult> {
   const { translate, store } = api;
   const state = store.getState();
   const gameMode = selectors.activeGameId(state);
@@ -700,7 +703,7 @@ function testExceededPluginLimit(api: types.IExtensionApi): Promise<types.ITestR
     if (util.getSafe(loadOrder, [key, 'enabled'], false)) {
       let isLight;
       try {
-        isLight = new ESPFile(pluginList[key].filePath).isLight;
+        isLight = infoCache.getInfo(pluginList[key].filePath).isLight;
       } catch (err) {
         // We won't log this as the error will most definitely
         //  be raised somewhere else -> nop
@@ -738,7 +741,50 @@ function testExceededPluginLimit(api: types.IExtensionApi): Promise<types.ITestR
     : Promise.resolve(undefined);
 }
 
-function testMissingMasters(api: types.IExtensionApi): Promise<types.ITestResult> {
+interface IESPInfo {
+  isLight: boolean;
+  masterList: string[];
+}
+
+// TODO: This should be asynchronous but that would make the calling code more complex
+//   and I was worried about breaking something in a patch release.
+//   Also: In an ideal world this information would be shared with the ui components
+//   instead of duplicating the work
+class PluginInfoCache {
+  private mCache: { [id: string]: { lastModified: number, info: IESPInfo } } = {};
+
+  public getInfo(filePath: string): IESPInfo {
+    const id = this.fileId(filePath);
+    let mtime: number;
+    try {
+      const stat = fs.statSync(filePath);
+      mtime = stat.mtimeMs;
+    } catch (err) {
+      mtime = Date.now();
+    }
+
+    if ((this.mCache[id] === undefined)
+        || (mtime > this.mCache[id].lastModified)) {
+      const info = new ESPFile(filePath);
+      this.mCache[id] = {
+        lastModified: mtime,
+        info: {
+          isLight: info.isLight,
+          masterList: info.masterList,
+        },
+      };
+    }
+
+    return this.mCache[id].info;
+  }
+
+  private fileId(filePath: string): string {
+    return path.basename(filePath).toUpperCase();
+  }
+}
+
+function testMissingMasters(api: types.IExtensionApi,
+                            infoCache: PluginInfoCache): Promise<types.ITestResult> {
   const { translate, store } = api;
   const state = store.getState();
   const gameMode = selectors.activeGameId(state);
@@ -757,7 +803,7 @@ function testMissingMasters(api: types.IExtensionApi): Promise<types.ITestResult
         try {
           return {
             name: plugin,
-            masterList: new ESPFile(pluginList[plugin].filePath).masterList,
+            masterList: infoCache.getInfo(pluginList[plugin].filePath).masterList,
           };
         } catch (err) {
           log('warn', 'failed to parse esp file',
