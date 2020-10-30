@@ -979,7 +979,7 @@ function testRulesUnfulfilled(api: types.IExtensionApi)
           description: {
             short: t('Plugin dependencies unfulfilled'),
             long:
-              t('Some of the enabled plugins have dependencies or incompatibles '
+              t('Some of the enabled plugins have dependencies or incompatibilities '
                 + 'that are not obeyed in your current setup')
               + ':[table][tbody]'
               + required.map(iter => reqLine(iter.left, iter.right))
