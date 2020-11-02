@@ -1294,7 +1294,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 }
 
 const emptyObj = {};
-const emptyList: ILOOTList = {
+const emptyList = [];
+const emptyLOOTList: ILOOTList = {
   globals: [],
   groups: [],
   plugins: [],
@@ -1307,10 +1308,10 @@ function mapStateToProps(state: any): IConnectedProps {
     gameMode,
     plugins: state.session.plugins.pluginList,
     loadOrder: state.loadOrder,
-    userlist: state.userlist || emptyList,
-    masterlist: state.masterlist || emptyList,
+    userlist: state.userlist || emptyLOOTList,
+    masterlist: state.masterlist || emptyLOOTList,
     autoSort: state.settings.plugins.autoSort,
-    activity: state.session.base.activity['plugins'],
+    activity: state.session.base.activity['plugins'] ?? emptyList,
     modActivity: state.session.base.activity['mods'],
     deployProgress: util.getSafe(state.session.base,
                                  ['progress', 'profile', 'deploying', 'text'],
