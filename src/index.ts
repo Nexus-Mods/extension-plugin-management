@@ -452,7 +452,7 @@ function startSyncRemote(api: types.IExtensionApi): Promise<void> {
             const pluginId = fileName.toLowerCase();
             const state = store.getState();
             const known = (state.loadOrder[pluginId] !== undefined)
-                       && (state.session.plugins.pluginList[pluginId] !== undefined);
+                       && (state.session.plugins.pluginList?.[pluginId] !== undefined);
             if (exists !== known) {
               if (refreshTimer !== undefined) {
                 clearTimeout(refreshTimer);
@@ -698,7 +698,7 @@ function testExceededPluginLimit(api: types.IExtensionApi, infoCache: PluginInfo
     return Promise.resolve(undefined);
   }
   const loadOrder = util.getSafe(state, ['loadOrder'], {});
-  const pluginList = state.session.plugins.pluginList;
+  const pluginList = state.session.plugins.pluginList ?? {};
   const plugins = Object.keys(pluginList).reduce((accum, key) => {
     if (util.getSafe(loadOrder, [key, 'enabled'], false)) {
       let isLight;
@@ -792,7 +792,7 @@ function testMissingMasters(api: types.IExtensionApi,
     return Promise.resolve(undefined);
   }
 
-  const pluginList = state.session.plugins.pluginList;
+  const pluginList = state.session.plugins.pluginList ?? {};
   const natives = new Set<string>(nativePlugins(gameMode));
   const loadOrder: { [plugin: string]: ILoadOrder } = state.loadOrder;
   const enabledPlugins = Object.keys(loadOrder)
@@ -992,7 +992,7 @@ function testRulesUnfulfilled(api: types.IExtensionApi)
           onRecheck: () => {
             return new Promise((resolve, reject) => {
               api.events.emit('plugin-details', gameMode,
-                              Object.keys(state.session.plugins.pluginList), resolve);
+                              Object.keys(state.session.plugins.pluginList ?? {}), resolve);
             });
           },
         } as any);
