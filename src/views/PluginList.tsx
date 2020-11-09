@@ -454,8 +454,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     }
 
     const data = () => {
-      if ((activity.length > 0)
-          || (this.mCachedGameMode !== gameMode)
+      if ((this.mCachedGameMode !== gameMode)
           || (deployProgress !== undefined)) {
         return (
           <div className='plugin-list-loading'>

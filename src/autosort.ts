@@ -120,7 +120,6 @@ class LootInterface {
 
   private onSort = async (manual: boolean, callback?: (err: Error) => void) => {
     const { store } = this.mExtensionApi;
-    const started = Date.now();
     try {
       if (manual || store.getState().settings.plugins.autoSort) {
         // ensure initialisation is done
@@ -176,8 +175,6 @@ class LootInterface {
       if (callback !== undefined) {
         callback(err);
       }
-    } finally {
-      log('debug', 'plugins sorted', { duration: `${Math.floor((Date.now() - started) / 1000)}s` });
     }
   }
 
@@ -195,6 +192,7 @@ class LootInterface {
     const { store } = this.mExtensionApi;
     try {
       this.mExtensionApi.dismissNotification('loot-cycle-warning');
+      const timeBefore = Date.now();
       store.dispatch(actions.startActivity('plugins', 'sorting'));
       this.mSortPromise = this.readLists(gameMode, loot)
         .then(() => loot.sortPluginsAsync(pluginNames))
@@ -205,6 +203,7 @@ class LootInterface {
       this.mRestarts = MAX_RESTARTS;
       const state = store.getState();
       store.dispatch(updatePluginOrder(sorted, false, state.settings.plugins.autoEnable));
+      log('debug', 'sorting plugins finished', { elapsedMS: Date.now() - timeBefore });
     } catch (err) {
       log('info', 'loot failed', { error: err.message });
       if (err.message.startsWith('Cyclic interaction')) {
