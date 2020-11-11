@@ -751,23 +751,27 @@ interface IESPInfo {
 //   Also: In an ideal world this information would be shared with the ui components
 //   instead of duplicating the work
 class PluginInfoCache {
-  private mCache: { [id: string]: { lastModified: number, info: IESPInfo } } = {};
+  private mCache: { [id: string]: { lastModified: number, lastINO: bigint, info: IESPInfo } } = {};
 
   public getInfo(filePath: string): IESPInfo {
     const id = this.fileId(filePath);
     let mtime: number;
+    let ino: bigint;
     try {
-      const stat = fs.statSync(filePath);
-      mtime = stat.mtimeMs;
+      const stat = fs.statSync(filePath, { bigint: true });
+      mtime = Number(stat.mtimeMs);
+      ino = stat.ino;
     } catch (err) {
       mtime = Date.now();
     }
 
     if ((this.mCache[id] === undefined)
-        || (mtime > this.mCache[id].lastModified)) {
+        || (mtime !== this.mCache[id].lastModified)
+        || (ino !== this.mCache[id].lastINO)) {
       const info = new ESPFile(filePath);
       this.mCache[id] = {
         lastModified: mtime,
+        lastINO: ino,
         info: {
           isLight: info.isLight,
           masterList: info.masterList,
