@@ -54,6 +54,7 @@ interface IBaseProps {
 
 interface IConnectedProps {
   gameMode: string;
+  language: string;
   plugins: IPlugins;
   loadOrder: { [name: string]: ILoadOrder };
   autoSort: boolean;
@@ -939,8 +940,25 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     }[input];
   }
 
-  private prepareMessage(input: any, plugin: IPluginCombined) {
-    return input.replace(/%1%/g, `"${plugin.name}"`);
+  private prepareMessage(input: string | Array<{ text: string, language: string }>,
+                         plugin: IPluginCombined) {
+    const { language } = this.props;
+
+    let text: string;
+
+    if (Array.isArray(input)) {
+      let entry = input.find(iter => iter.language === language);
+      if (entry === undefined) {
+        entry = input.find(iter => iter.language === 'en');
+        if (entry === undefined) {
+          entry = input[0];
+        }
+      }
+    } else {
+      text = input;
+    }
+
+    return text.replace(/%1%/g, `"${plugin.name}"`);
   }
 
   private renderLootMessages(plugin: IPluginCombined) {
@@ -954,7 +972,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           plugin.messages.map((msg: Message, idx: number) => (
             <ListGroupItem key={idx}>
               <Alert bsStyle={this.translateLootMessageType(msg.type)}>
-              <ReactMarkdown source={this.prepareMessage(msg.value, plugin)} />
+              <ReactMarkdown source={this.prepareMessage(msg.content, plugin)} />
               </Alert>
             </ListGroupItem>
           ))
@@ -1305,6 +1323,7 @@ function mapStateToProps(state: any): IConnectedProps {
   const gameMode = profile !== undefined ? profile.gameId : undefined;
   return {
     gameMode,
+    language: state.settings.interface.language,
     plugins: state.session.plugins.pluginList,
     loadOrder: state.loadOrder,
     userlist: state.userlist || emptyLOOTList,
