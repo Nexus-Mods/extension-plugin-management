@@ -954,6 +954,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           entry = input[0];
         }
       }
+      text = entry.text;
     } else {
       text = input;
     }
@@ -962,7 +963,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderLootMessages(plugin: IPluginCombined) {
-    if (plugin.messages === undefined) {
+    if (plugin?.messages === undefined) {
       return null;
     }
 
