@@ -1190,17 +1190,41 @@ function init(context: IExtensionContextExt) {
                       setPluginEnabled(plugin, true)));
                   } else {
                     const t = context.api.translate;
+                    const modName = util.renderModName(mod, { version: false })
                     context.api.sendNotification({
                       id: `multiple-plugins-${mod.id}`,
                       type: 'info',
                       message: t('The mod "{{ modName }}" contains multiple plugins',
                                 {
-                                  replace: {
-                                    modName: util.renderModName(mod, { version: false }),
-                                  },
+                                  replace: { modName },
                                   ns: NAMESPACE,
                                 }),
                       actions: [
+                        {
+                          title: 'Show',
+                          action: dismiss => {
+                            const stateNow: types.IState = store.getState();
+                            const gameModeNow = selectors.activeGameId(stateNow);
+                            if (gameModeNow === currentProfile.gameId) {
+                              context.api.events.emit('show-main-page', 'gamebryo-plugins');
+                              store.dispatch(
+                                actions.setAttributeVisible('gamebryo-plugins', 'modName', true));
+                              store.dispatch(
+                                actions.setAttributeFilter('gamebryo-plugins', 'modName', modName));
+                            } else {
+                              context.api.sendNotification({
+                                type: 'info',
+                                message: t('Please activate "{{ gameId }}" to enable plugins manually',
+                                {
+                                  replace: { gameId: currentProfile.gameId },
+                                  ns: NAMESPACE,
+                                }),
+                              });
+                            }
+
+                            dismiss();
+                          },
+                        },
                         {
                           title: 'Enable all',
                           action: dismiss => {
