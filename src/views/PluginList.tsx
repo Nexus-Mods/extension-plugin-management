@@ -1022,6 +1022,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         name: 'Name',
         isToggleable: false,
         edit: {},
+        isDefaultFilter: true,
         isSortable: true,
         calc: (plugin: IPluginCombined) => plugin.name,
         placement: 'both',
