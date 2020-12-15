@@ -74,6 +74,14 @@
       }
     }
   }
+
+  .plugin-tags {
+    max-width: 20vw;
+    white-space: normal;
+    > div {
+      margin-left: 1em;
+    }
+  }
 }
 
 #dropdown-gamebryo-plugins-enabled {

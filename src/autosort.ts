@@ -421,7 +421,8 @@ class LootInterface {
 
     const createEmpty = (): IPluginLoot => ({
       messages: [],
-      tags: [],
+      currentTags: [],
+      suggestedTags: [],
       cleanliness: [],
       dirtyness: [],
       group: undefined,
@@ -456,7 +457,8 @@ class LootInterface {
 
         result[pluginName] = {
           messages: meta?.messages || [],
-          tags: meta?.tags || [],
+          currentTags: info?.bashTags || [],
+          suggestedTags: meta?.tags || [],
           cleanliness: meta?.cleanInfo || [],
           dirtyness: meta?.dirtyInfo || [],
           group: meta?.group || '',

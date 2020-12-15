@@ -77,7 +77,8 @@ export interface IPluginLoot {
   messages: Message[];
   cleanliness: PluginCleaningData[];
   dirtyness: PluginCleaningData[];
-  tags: Tag[];
+  currentTags: Tag[];
+  suggestedTags: Tag[];
   group: string;
   isValidAsLightMaster: boolean;
   requirements: ILootReference[];

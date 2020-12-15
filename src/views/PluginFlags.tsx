@@ -170,6 +170,21 @@ const PluginFlags = (props: IProps): JSX.Element => {
       />);
   }
 
+  if ((plugin.currentTags.length > 0) || (plugin.suggestedTags.length > 0)) {
+    const key = `ico-tags-${plugin.id}`;
+    const tags = [].concat(
+      plugin.currentTags.map(tag => tag.name),
+      plugin.suggestedTags.map(tag => (tag.isAddition ? '+' : '-') + tag.name),
+    );
+    flags.push(
+      <tooltip.Icon
+        id={key}
+        key={key}
+        name='tags'
+        tooltip={tags.join('\n')}
+      />);
+  }
+
   if (plugin.enabled) {
     const warningKeys = Object.keys(plugin.warnings);
     const hasWarning = notification => plugin.warnings[notification] !== false;

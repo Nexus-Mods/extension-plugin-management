@@ -391,7 +391,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         cleanliness: [],
         dirtyness: [],
         group: '',
-        tags: [],
+        currentTags: [],
+        suggestedTags: [],
         isValidAsLightMaster: false,
         incompatibilities: [],
         requirements: [],
@@ -1107,6 +1108,24 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         sortFunc: (lhs: string[], rhs: string[]) => lhs.length - rhs.length,
         filter: new PluginFlagsFilter(),
         placement: 'table',
+      },
+      {
+        id: 'tags',
+        name: 'Tags',
+        icon: 'flag',
+        customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => (
+          <div className='plugin-tags'>
+          {t('Current')}
+          <div>{plugin.currentTags.map(tag => tag.name).join(', ')}</div>
+          {t('Suggested (by LOOT)')}
+          <div>{plugin.suggestedTags.map(tag => tag.name).join(', ')}</div>
+          </div>
+        ),
+        calc: (plugin: IPluginCombined) =>
+          [].concat(plugin.currentTags, plugin.suggestedTags)
+            .map(tag => tag.name).join(', '),
+        placement: 'detail',
+        edit: {},
       },
       {
         id: 'flagsDetail',
