@@ -13,7 +13,7 @@ import {
 import { gameSupported, minRevision, revisionText, supportsESL } from '../util/gameSupport';
 import GroupFilter from '../util/GroupFilter';
 
-import { NAMESPACE } from '../statics';
+import { GHOST_EXT, NAMESPACE } from '../statics';
 
 import DependencyIcon from './DependencyIcon';
 import MasterList from './MasterList';
@@ -50,6 +50,7 @@ const CLEANING_GUIDE_LINK =
 interface IBaseProps {
   nativePlugins: string[];
   onRefreshPlugins: () => void;
+  onSetPluginGhost: (pluginId: string, ghosted: boolean) => void;
 }
 
 interface IConnectedProps {
@@ -280,7 +281,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       icon: 'check-o',
       calc: (plugin: IPluginCombined) => plugin.isNative
         ? undefined
-        : plugin.enabled === true ? 'Enabled' : 'Disabled',
+        : plugin.enabled === true
+          ? 'Enabled'
+          : path.extname(plugin.filePath) === GHOST_EXT
+            ? 'Ghost'
+            : 'Disabled',
       placement: 'table',
       isToggleable: false,
       edit: {
@@ -288,6 +293,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         choices: () => [
           { key: 'enabled', text: 'Enabled', icon: 'toggle-enabled' },
           { key: 'disabled', text: 'Disabled', icon: 'toggle-disabled' },
+          { key: 'ghost', text: 'Ghost', icon: 'ghost' },
         ],
         onChangeValue: (plugin: IPluginCombined, value: any) => {
           if (plugin.isNative) {
@@ -297,9 +303,20 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
           if (value === undefined) {
             // toggle
-            this.props.onSetPluginEnabled(plugin.id, !plugin.enabled);
+            if (path.extname(plugin.filePath) === GHOST_EXT) {
+              this.props.onSetPluginGhost(plugin.id, false);
+            } else {
+              this.props.onSetPluginEnabled(plugin.id, !plugin.enabled);
+            }
           } else {
-            this.props.onSetPluginEnabled(plugin.id, value === 'enabled');
+            if (value === 'ghost') {
+              this.props.onSetPluginGhost(plugin.id, true);
+            } else {
+              if (path.extname(plugin.filePath) === GHOST_EXT) {
+                this.props.onSetPluginGhost(plugin.id, false);
+              }
+              this.props.onSetPluginEnabled(plugin.id, value === 'enabled');
+            }
           }
         },
       },
@@ -433,8 +450,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
+    const pluginPaths = (input: IPlugins) =>
+      Object.values(input).map(plug => plug.filePath).sort();
     if ((this.props.plugins === undefined)
-        || !_.isEqual(Object.keys(this.props.plugins), Object.keys(nextProps.plugins))) {
+        || !_.isEqual(Object.keys(this.props.plugins), Object.keys(nextProps.plugins))
+        || !_.isEqual(pluginPaths(this.props.plugins), pluginPaths(nextProps.plugins))) {
       this.mUpdateDetailsDebounder.schedule(undefined, nextProps.plugins, nextProps.gameMode);
     }
 
@@ -576,6 +596,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private isMaster(filePath: string, flag: boolean): boolean {
+    if (path.extname(filePath) === GHOST_EXT) {
+      filePath = path.basename(filePath, GHOST_EXT);
+    }
     const masterExts = supportsESL(this.props.gameMode)
       ? ['.esm', '.esl']
       : ['.esm'];
@@ -583,6 +606,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private isLight(filePath: string, flag: boolean) {
+    if (path.extname(filePath) === GHOST_EXT) {
+      filePath = path.basename(filePath, GHOST_EXT);
+    }
     if (!supportsESL(this.props.gameMode)) {
       return false;
     }
@@ -752,7 +778,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
   private safeBasename(filePath: string) {
     return filePath !== undefined
-      ? path.basename(filePath)
+      ? path.basename(filePath, GHOST_EXT)
       : '';
   }
 
@@ -910,11 +936,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private pluginModName = (plugin: IPluginCombined) => {
-    if (plugin.modName === undefined) {
+    if (plugin.modId === undefined) {
       return '';
     }
 
-    const mod = util.getSafe(this.props.mods, [plugin.modName], undefined);
+    const mod = util.getSafe(this.props.mods, [plugin.modId], undefined);
     if (mod === undefined) {
       return '';
     }
@@ -1037,7 +1063,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         edit: {},
         calc: plugin => this.pluginModName(plugin),
         customRenderer: (plugin: IPluginCombined) => (
-          <a data-modid={plugin.modName} onClick={this.highlightMod} >
+          <a data-modid={plugin.modId} onClick={this.highlightMod} >
             {this.pluginModName(plugin)}
           </a>
         ),

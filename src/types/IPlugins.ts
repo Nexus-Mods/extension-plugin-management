@@ -17,7 +17,7 @@ export interface IPlugin {
    * @type {string}
    * @memberOf IPlugin
    */
-  modName?: string;
+  modId?: string;
   /**
    * path to the plugin on disk
    */

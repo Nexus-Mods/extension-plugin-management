@@ -11,6 +11,12 @@ export const pluginsReducer: types.IReducerSpec = {
       util.setSafe(state, ['pluginList'], payload.plugins),
     [actions.setPluginInfo as any]: (state, payload) =>
       util.setSafe(state, ['pluginInfo'], payload.plugins),
+    [actions.setPluginFilePath as any]: (state, payload) => {
+      const { pluginId, filePath } = payload;
+      return util.setSafe(
+        util.setSafe(state, ['pluginList', pluginId, 'filePath'], filePath),
+        ['pluginInfo', pluginId, 'filePath'], filePath);
+    },
     [actions.updatePluginWarnings as any]: (state, payload) =>
       (state.pluginList[payload.id] !== undefined)
       ? util.setSafe(state, ['pluginList', payload.id, 'warnings', payload.warning], payload.value)

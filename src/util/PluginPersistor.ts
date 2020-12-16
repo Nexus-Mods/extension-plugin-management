@@ -196,7 +196,9 @@ class PluginPersistor implements types.IPersistor {
     const nativePluginSet = new Set(this.mNativePlugins);
     return input
       .filter(name => !nativePluginSet.has(name.toLowerCase()))
-      .map(name => util.getSafe(this.mPlugins, [name.toLowerCase(), 'enabled'], false)
+      .map(name => (util.getSafe<boolean | 'ghost'>(this.mPlugins,
+                                                    [name.toLowerCase(), 'enabled'],
+                                                    false) === true)
           ? '*' + name
           : name);
   }

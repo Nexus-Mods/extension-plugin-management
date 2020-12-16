@@ -14,6 +14,7 @@ export class PluginStatusFilterComponent extends React.Component<types.IFilterPr
     const currentFilters = [
       { label: 'Enabled', value: 'Enabled' },
       { label: 'Disabled', value: 'Disabled' },
+      { label: 'Ghost', value: 'Ghost' },
       { label: 'Loaded by engine', value: 'undefined' },
     ];
 

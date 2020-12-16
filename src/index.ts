@@ -1,5 +1,5 @@
 import { setPluginEnabled, setPluginOrder, updatePluginOrder } from './actions/loadOrder';
-import { setPluginList, updatePluginWarnings } from './actions/plugins';
+import { setPluginFilePath, setPluginList, updatePluginWarnings } from './actions/plugins';
 import { removeGroupRule, setGroup } from './actions/userlist';
 import { openGroupEditor, setCreateRule } from './actions/userlistEdit';
 import { loadOrderReducer } from './reducers/loadOrder';
@@ -31,7 +31,7 @@ import Settings from './views/Settings';
 import UserlistEditor from './views/UserlistEditor';
 
 import LootInterface from './autosort';
-import { NAMESPACE } from './statics';
+import { GHOST_EXT, NAMESPACE } from './statics';
 
 import Promise from 'bluebird';
 import { ipcMain, ipcRenderer, remote } from 'electron';
@@ -68,12 +68,20 @@ function isFile(fileName: string): Promise<boolean> {
 }
 
 function isPlugin(filePath: string, fileName: string, gameMode: string): Promise<boolean> {
+  if (path.extname(fileName) === GHOST_EXT) {
+    fileName = path.basename(fileName, GHOST_EXT);
+  }
+
   if (!fileName
     || (pluginExtensions(gameMode).indexOf(path.extname(fileName).toLowerCase()) === -1)) {
     return Promise.resolve(false);
   }
   return isFile(path.join(filePath, fileName))
     .catch(util.UserCanceled, () => false);
+}
+
+function toPluginId(fileName: string) {
+  return path.basename(fileName.toLowerCase(), GHOST_EXT);
 }
 
 /**
@@ -88,12 +96,12 @@ function updatePluginListImpl(store: types.ThunkStore<any>,
   const pluginStates: IPlugins = {};
 
   const setPluginState = (basePath: string, fileName: string, deployed: boolean) => {
-    const modName = pluginSources[fileName] !== undefined
+    const modId = pluginSources[fileName] !== undefined
       ? pluginSources[fileName]
       : '';
-    const fileNameL = fileName.toLowerCase();
+    const fileNameL = toPluginId(fileName);
     pluginStates[fileNameL] = {
-      modName,
+      modId,
       filePath: path.join(basePath, fileName),
       isNative: isNativePlugin(gameId, fileName),
       warnings:
@@ -212,6 +220,29 @@ function updatePluginList(store: Redux.Store<any>,
     updatePluginListImpl(store, newModList, gameId));
 }
 
+function renamePlugin(api: types.IExtensionApi,
+                      plugin: IPluginCombined,
+                      targetPath: string): Promise<void> {
+  const renameProm = fs.renameAsync(plugin.filePath, targetPath);
+  if (!plugin.modId) {
+    return renameProm;
+  } else {
+    // if we have a corresponding mod we need to rename the file in the staging directory instead,
+    // deployment will later figure out the file in the game directory
+    const state = api.getState();
+    const gameMode = selectors.activeGameId(state);
+    const stagingPath = selectors.installPathForGame(state, gameMode);
+    const mod = state.persistent.mods[gameMode][plugin.modId];
+    const srcName = path.basename(plugin.filePath);
+    const dstName = path.basename(targetPath);
+    return renameProm
+      .then(() => fs.renameAsync(path.join(stagingPath, mod.installationPath, srcName),
+                                 path.join(stagingPath, mod.installationPath, dstName)))
+      .then(() => fs.removeAsync(plugin.filePath));
+  }
+
+}
+
 interface IExtensionContextExt extends types.IExtensionContext {
   registerProfileFile: (gameId: string, filePath: string) => void;
 }
@@ -238,6 +269,28 @@ function register(context: IExtensionContextExt) {
         ? nativePlugins(selectors.activeGameId(context.api.store.getState()))
         : [],
       onRefreshPlugins: () => updateCurrentProfile(context.api.store),
+      onSetPluginGhost: (pluginId: string, ghosted: boolean) => {
+        const state = context.api.store.getState();
+        const { pluginList } = state.session.plugins;
+        const plugin: IPluginCombined = pluginList[pluginId];
+        if (plugin === undefined) {
+          log('warn', 'invalid plugin id', pluginId);
+          return;
+        }
+        const targetPath = ghosted
+          ? plugin.filePath + GHOST_EXT
+          : path.join(path.dirname(plugin.filePath), path.basename(plugin.filePath, GHOST_EXT));
+
+        return renamePlugin(context.api, plugin, targetPath)
+          .then(() => {
+            context.api.store.dispatch(setPluginFilePath(pluginId, targetPath));
+            context.api.store.dispatch(setPluginEnabled(pluginId, !ghosted));
+          })
+          .catch(err => {
+            context.api.showErrorNotification('Failed to rename plugin',
+                                              err, { allowReport: false });
+          });
+      },
     }),
     activity: pluginActivity,
   });
@@ -1181,7 +1234,8 @@ function init(context: IExtensionContextExt) {
               .then(files => {
                 const plugins = files.filter(
                     fileName => pluginExtensions(currentProfile.gameId).indexOf(
-                                    path.extname(fileName).toLowerCase()) !== -1);
+                                    path.extname(fileName).toLowerCase()) !== -1)
+                    .map(fileName => path.basename(fileName, GHOST_EXT));
                 if (plugins.length === 1) {
                   context.api.store.dispatch(setPluginEnabled(plugins[0], true));
                 } else if (plugins.length > 1) {
@@ -1190,7 +1244,7 @@ function init(context: IExtensionContextExt) {
                       setPluginEnabled(plugin, true)));
                   } else {
                     const t = context.api.translate;
-                    const modName = util.renderModName(mod, { version: false })
+                    const modName = util.renderModName(mod, { version: false });
                     context.api.sendNotification({
                       id: `multiple-plugins-${mod.id}`,
                       type: 'info',

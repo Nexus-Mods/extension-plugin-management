@@ -14,5 +14,9 @@ TODO: Do we actually need multiple fields for this? IPluginCombined is a superse
 export const setPluginInfo =
     createAction('SET_PLUGIN_INFO', (plugins: { [id: string]: IPluginCombined }) => ({ plugins }));
 
+export const setPluginFilePath =
+    createAction('SET_PLUGIN_FILE_PATH', (pluginId: string, filePath: string) =>
+      ({ pluginId, filePath }));
+
 export const updatePluginWarnings = createAction('UPDATE_PLUGIN_WARNING',
   (id: string, warning: string, value: boolean) => ({ id, warning, value }));
