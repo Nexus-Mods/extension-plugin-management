@@ -150,7 +150,7 @@ class UserlistPersistor implements types.IPersistor {
 
   private handleInvalidList() {
     if (this.mMode === 'masterlist') {
-      dialog.showMessageBox(null, {
+      dialog.showMessageBoxSync(null, {
         title: 'Masterlist invalid',
         message: 'The masterlist couldn\'t be read. This might have been '
                + 'caused by network problems. You should go to the plugins '
@@ -161,7 +161,7 @@ class UserlistPersistor implements types.IPersistor {
         ],
       });
     } else {
-      if (dialog.showMessageBox(null, {
+      if (dialog.showMessageBoxSync(null, {
         title: 'Userlist invalid',
         message: `The LOOT userlist "${this.mUserlistPath}" can\'t be read. `
                + '\n\n'
