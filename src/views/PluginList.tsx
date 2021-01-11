@@ -23,7 +23,7 @@ import PluginStatusFilter from './PluginStatusFilter';
 
 import Promise from 'bluebird';
 import ESPFile from 'esptk';
-import I18next from 'i18next';
+import I18next, { TFunction } from 'i18next';
 import update from 'immutability-helper';
 import * as _ from 'lodash';
 import { Message, PluginCleaningData } from 'loot';
@@ -1304,7 +1304,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         icon: 'plug',
         placement: 'table',
         customRenderer: (plugin: IPluginCombined, detail: boolean,
-                         t: I18next.TFunction, props: types.ICustomProps) =>
+                         t: TFunction, props: types.ICustomProps) =>
           <DependencyIcon plugin={plugin} t={t} onHighlight={props.onHighlight} />,
         calc: () => null,
         isToggleable: true,

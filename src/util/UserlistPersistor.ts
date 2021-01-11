@@ -227,7 +227,7 @@ class UserlistPersistor implements types.IPersistor {
 
       let newList: Partial<ILOOTList> = {};
       try {
-        newList = safeLoad(data.toString(), { json: true } as any);
+        newList = safeLoad(data.toString(), { json: true }) as any;
       } catch (err) {
         this.handleInvalidList();
       }
