@@ -1,7 +1,8 @@
 import {ILoadOrder} from './ILoadOrder';
+import { ILootReference } from './ILOOTList';
 
 import {Message, PluginCleaningData, Tag} from 'loot';
-import { ILootReference } from './ILOOTList';
+import { IDialog } from '../views/UserlistEditor';
 
 /**
  * generic information about a plugin
@@ -115,3 +116,17 @@ export type IPluginCombined = IPlugin & ILoadOrder & IPluginParsed
   modIndex: number,
   eslIndex?: number,
 };
+
+export interface IPluginDependencies {
+  connection: {
+    target: {
+      id: string,
+    },
+  };
+  dialog: IDialog;
+  quickEdit: {
+    plugin: string,
+    mode: string,
+  };
+  groupEditorOpen: boolean;
+}

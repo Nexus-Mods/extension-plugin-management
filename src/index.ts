@@ -22,6 +22,7 @@ import {
   supportsESL,
 } from './util/gameSupport';
 import { markdownToBBCode } from './util/mdtobb';
+import PluginHistory from './util/PluginHistory';
 import PluginPersistor from './util/PluginPersistor';
 import UserlistPersistor from './util/UserlistPersistor';
 import Connector from './views/Connector';
@@ -99,13 +100,13 @@ function updatePluginListImpl(store: types.ThunkStore<any>,
     const modId = pluginSources[fileName] !== undefined
       ? pluginSources[fileName]
       : '';
-    const fileNameL = toPluginId(fileName);
-    pluginStates[fileNameL] = {
+    const pluginId = toPluginId(fileName);
+    pluginStates[pluginId] = {
       modId,
       filePath: path.join(basePath, fileName),
       isNative: isNativePlugin(gameId, fileName),
       warnings:
-        util.getSafe(state, ['session', 'plugins', 'pluginList', fileNameL, 'warnings'], {}),
+        util.getSafe(state, ['session', 'plugins', 'pluginList', pluginId, 'warnings'], {}),
       deployed,
     };
     return Promise.resolve();
@@ -254,6 +255,31 @@ let loot: LootInterface;
 let refreshTimer: NodeJS.Timer;
 let deploying = false;
 
+function makeSetPluginGhost(api: types.IExtensionApi) {
+  return (pluginId: string, ghosted: boolean) => {
+    const state = api.store.getState();
+    const { pluginList } = state.session.plugins;
+    const plugin: IPluginCombined = pluginList[pluginId];
+    if (plugin === undefined) {
+      log('warn', 'invalid plugin id', pluginId);
+      return;
+    }
+    const targetPath = ghosted
+      ? plugin.filePath + GHOST_EXT
+      : path.join(path.dirname(plugin.filePath), path.basename(plugin.filePath, GHOST_EXT));
+
+    return renamePlugin(api, plugin, targetPath)
+      .then(() => {
+        api.store.dispatch(setPluginFilePath(pluginId, targetPath));
+        api.store.dispatch(setPluginEnabled(pluginId, !ghosted));
+      })
+      .catch(err => {
+        api.showErrorNotification('Failed to rename plugin',
+          err, { allowReport: false });
+      });
+  };
+}
+
 function register(context: IExtensionContextExt) {
   const pluginActivity = new util.ReduxProp(context.api, [
     ['session', 'base', 'activity', 'plugins'],
@@ -269,28 +295,7 @@ function register(context: IExtensionContextExt) {
         ? nativePlugins(selectors.activeGameId(context.api.store.getState()))
         : [],
       onRefreshPlugins: () => updateCurrentProfile(context.api.store),
-      onSetPluginGhost: (pluginId: string, ghosted: boolean) => {
-        const state = context.api.store.getState();
-        const { pluginList } = state.session.plugins;
-        const plugin: IPluginCombined = pluginList[pluginId];
-        if (plugin === undefined) {
-          log('warn', 'invalid plugin id', pluginId);
-          return;
-        }
-        const targetPath = ghosted
-          ? plugin.filePath + GHOST_EXT
-          : path.join(path.dirname(plugin.filePath), path.basename(plugin.filePath, GHOST_EXT));
-
-        return renamePlugin(context.api, plugin, targetPath)
-          .then(() => {
-            context.api.store.dispatch(setPluginFilePath(pluginId, targetPath));
-            context.api.store.dispatch(setPluginEnabled(pluginId, !ghosted));
-          })
-          .catch(err => {
-            context.api.showErrorNotification('Failed to rename plugin',
-                                              err, { allowReport: false });
-          });
-      },
+      onSetPluginGhost: makeSetPluginGhost(context.api),
     }),
     activity: pluginActivity,
   });
@@ -340,6 +345,10 @@ function register(context: IExtensionContextExt) {
           });
         });
     });
+
+  context.registerAction('gamebryo-plugin-icons', 200, 'history', {}, 'History', () => {
+    context.api.ext.showHistory?.('plugins');
+  });
 
   context.registerActionCheck('ADD_USERLIST_RULE', (state: any, action: any) => {
     const {pluginId, reference, type} = action.payload;
@@ -1058,8 +1067,12 @@ function testRulesUnfulfilled(api: types.IExtensionApi)
 }
 
 function init(context: IExtensionContextExt) {
+  const history = new PluginHistory(context.api, makeSetPluginGhost(context.api));
+
   register(context);
   initPersistor(context);
+
+  context.registerHistoryStack('plugins', history);
 
   context.onceMain(() => {
     ipcMain.on('plugin-sync', (event: Electron.IpcMainEvent, enabled: boolean) => {
@@ -1299,6 +1312,8 @@ function init(context: IExtensionContextExt) {
               });
         }
       });
+
+      history.init();
     }));
 
   return true;

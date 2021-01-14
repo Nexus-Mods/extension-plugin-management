@@ -1,8 +1,9 @@
 import { types, util } from 'vortex-api';
 
 import * as actions from '../actions/userlistEdit';
+import { IPluginDependencies } from '../types/IPlugins';
 
-const userlistReducer: types.IReducerSpec = {
+const userlistReducer: types.IReducerSpec<IPluginDependencies> = {
   reducers: {
     [actions.setSource as any]: (state, payload) => {
       if (payload.pos !== undefined) {

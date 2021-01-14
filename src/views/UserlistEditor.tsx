@@ -12,6 +12,7 @@ import Select from 'react-select';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { ComponentEx, Icon, tooltip, types } from 'vortex-api';
+import { IStateEx } from '../types/IStateEx';
 
 type RuleType = 'after' | 'requires' | 'incompatible';
 
@@ -58,7 +59,7 @@ class RuleEntry extends React.Component<IRuleEntryProps, {}> {
   }
 }
 
-interface IDialog {
+export interface IDialog {
   gameId: string;
   pluginId: string;
   reference: string;
@@ -279,14 +280,15 @@ class Editor extends ComponentEx<IProps, IComponentState> {
   }
 }
 
+const emptyObject = {};
 const emptyList = [];
 
-function mapStateToProps(state: any): IConnectedProps {
+function mapStateToProps(state: IStateEx): IConnectedProps {
   const dialog: IDialog = state.session.pluginDependencies.dialog;
   return {
     dialog,
-    plugins: state.session.plugins.pluginList ?? emptyList,
-    userlist: state.userlist.plugins || emptyList,
+    plugins: state.session.plugins.pluginList ?? emptyObject,
+    userlist: state.userlist.plugins ?? emptyList,
   };
 }
 
