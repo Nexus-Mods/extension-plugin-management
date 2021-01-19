@@ -3460,8 +3460,8 @@ void-elements@^2.0.1:
   integrity sha1-wGavtYK7HLQSjWDqkjkulNXp2+w=
 
 vortex-api@Nexus-Mods/vortex-api:
-  version "1.4.0-rc1"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/109efbb7851a0c673dc23eeca3a05f87184c50d0"
+  version "1.4.0-rc2"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/0a2b5dc935ef5713bbaf2e54551d3f514c681147"
   dependencies:
     fs-extra "^9.0.1"
     gray-matter "^4.0.2"
