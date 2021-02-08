@@ -2,17 +2,18 @@ import { types } from 'vortex-api';
 
 import * as React from 'react';
 import Select from 'react-select';
+import { NAMESPACE } from '../statics';
 
 export class PluginFlagFilterComponent extends React.Component<types.IFilterProps, {}> {
   public render(): JSX.Element {
-    const { filter } = this.props;
+    const { t, filter } = this.props;
 
     const selectionFilters = [
       'Master', 'Light', 'Loads Archive', 'Could be light', 'Native', 'Dirty',
       'Don\'t clean', 'Warnings', 'Incompatible', 'LOOT Messages', 'Tags'];
 
     const currentFilters = selectionFilters.map(current => ({
-      label: current,
+      label: t(current, { ns: NAMESPACE }),
       value: current,
     }));
 

@@ -2,6 +2,7 @@ import { types } from 'vortex-api';
 
 import * as React from 'react';
 import Select from 'react-select';
+import { NAMESPACE } from '../statics';
 
 function nop() {
   return '';
@@ -9,13 +10,13 @@ function nop() {
 
 export class PluginStatusFilterComponent extends React.Component<types.IFilterProps, {}> {
   public render(): JSX.Element {
-    const { filter } = this.props;
+    const { t, filter } = this.props;
 
     const currentFilters = [
-      { label: 'Enabled', value: 'Enabled' },
-      { label: 'Disabled', value: 'Disabled' },
-      { label: 'Ghost', value: 'Ghost' },
-      { label: 'Loaded by engine', value: 'undefined' },
+      { label: t('Enabled'), value: 'Enabled' },
+      { label: t('Disabled'), value: 'Disabled' },
+      { label: t('Ghost', { ns: NAMESPACE}), value: 'Ghost' },
+      { label: t('Loaded by engine', { ns: NAMESPACE }), value: 'undefined' },
     ];
 
     return (
