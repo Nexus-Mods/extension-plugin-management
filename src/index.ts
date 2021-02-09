@@ -24,6 +24,7 @@ import {
 import { markdownToBBCode } from './util/mdtobb';
 import PluginHistory from './util/PluginHistory';
 import PluginPersistor from './util/PluginPersistor';
+import toPluginId from './util/toPluginId';
 import UserlistPersistor from './util/UserlistPersistor';
 import Connector from './views/Connector';
 import GroupEditor from './views/GroupEditor';
@@ -79,10 +80,6 @@ function isPlugin(filePath: string, fileName: string, gameMode: string): Promise
   }
   return isFile(path.join(filePath, fileName))
     .catch(util.UserCanceled, () => false);
-}
-
-function toPluginId(fileName: string) {
-  return path.basename(fileName.toLowerCase(), GHOST_EXT);
 }
 
 /**
@@ -396,7 +393,8 @@ function initPersistor(context: IExtensionContextExt) {
   //   This is mega-ugly and needs to go
   if (remote === undefined) {
     if (pluginPersistor === undefined) {
-      pluginPersistor = new PluginPersistor(onError);
+      pluginPersistor = new PluginPersistor(onError, () =>
+        context.api.store.getState().settings.plugins.autoSort);
     }
     if (userlistPersistor === undefined) {
       userlistPersistor = new UserlistPersistor('userlist', onError);

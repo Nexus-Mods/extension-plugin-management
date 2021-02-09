@@ -5,6 +5,7 @@ import {
   pluginFormat,
   pluginPath,
 } from '../util/gameSupport';
+import toPluginId from '../util/toPluginId';
 
 import Promise from 'bluebird';
 import * as path from 'path';
@@ -29,6 +30,7 @@ class PluginPersistor implements types.IPersistor {
   private mPluginPath: string;
   private mPluginFormat: PluginFormat;
   private mNativePlugins: string[];
+  private mGameId: string;
   private mResetCallback: () => Promise<void>;
 
   private mWatch: fs.FSWatcher;
@@ -47,10 +49,13 @@ class PluginPersistor implements types.IPersistor {
   private mLoaded: boolean = false;
   private mFailed: boolean = false;
   private mOnError: (message: string, details: Error, options?: types.IErrorOptions) => void;
+  private mControlOrder: () => boolean;
 
-  constructor(onError: (message: string, details: Error, options?: types.IErrorOptions) => void) {
+  constructor(onError: (message: string, details: Error, options?: types.IErrorOptions) => void,
+              controlLoadOrder: () => boolean) {
     this.mPlugins = {};
     this.mOnError = onError;
+    this.mControlOrder = controlLoadOrder;
   }
 
   public disable(): Promise<void> {
@@ -80,6 +85,7 @@ class PluginPersistor implements types.IPersistor {
       this.mPluginPath = pluginPath(gameMode);
       this.mPluginFormat = pluginFormat(gameMode);
       this.mNativePlugins = nativePlugins(gameMode);
+      this.mGameId = gameMode;
       this.updateNative();
       // ensure that the native plugins are always included
       log('debug', 'synching plugins', {pluginsPath: this.mPluginPath});
@@ -265,7 +271,7 @@ class PluginPersistor implements types.IPersistor {
           { encoding: 'latin1' });
       })
       .then(() => {
-        if (this.mPluginFormat === 'original') {
+        if ((this.mPluginFormat === 'original') && this.mControlOrder()) {
           const offset = 946684800;
           const oneDay = 24 * 60 * 60;
           return Promise.mapSeries(sorted, (fileName, idx) => {
@@ -326,7 +332,7 @@ class PluginPersistor implements types.IPersistor {
 
   private initFromKeyList(plugins: IPluginMap, keys: string[], enable: boolean, offset: number) {
     // plugins identifies files actually on disk, keys is from loadorder.txt or plugins.txt, can't
-    // be sure if those files actually exist on disk
+    // be sure if those files actually exist on disk, could be outdated
 
     let loadOrderPos = offset;
     const nativePluginSet = new Set<string>(this.mNativePlugins);
@@ -396,6 +402,32 @@ class PluginPersistor implements types.IPersistor {
         }
         const keys: string[] = this.filterFileData(data.toString('latin1'), true);
         this.initFromKeyList(newPlugins, keys, true, offset);
+      })
+      .then(() => {
+        // if we control the load order or in the case of skyrim (all reasonably current versions)
+        // the load order is stored in loadorder.txt with plugins.txt overriding for
+        // enabled plugins. In that case we have the correct load order at this point.
+        // If we aren't controlling the load order for Oblivion, Fallout 3 and Fallout NV
+        // these files are likely outdated and we have to use the file time instead.
+        if ((this.mPluginFormat !== 'original')
+            || this.mControlOrder()
+            || (this.mGameId === 'skyrim')) {
+          return Promise.resolve();
+        }
+
+        return fs.readdirAsync(this.mDataPath)
+          .filter((fileName: string) => newPlugins[toPluginId(fileName)] !== undefined)
+          .then((fileNames: string[]) => Promise.map(fileNames, fileName =>
+            fs.statAsync(path.join(this.mDataPath, fileName))
+              .then(stat => ({ fileName, fileTime: stat.mtimeMs }))))
+          .then(fileEntries => fileEntries.sort((lhs, rhs) => lhs.fileTime - rhs.fileTime))
+          .then(sortedEntries => {
+            sortedEntries.forEach((entry, idx) => {
+              newPlugins[toPluginId(entry.fileName)].loadOrder = idx;
+            });
+          });
+      })
+      .then(() => {
         this.mPlugins = newPlugins;
         this.mLoaded = true;
         if (this.mResetCallback) {
