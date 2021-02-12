@@ -21,7 +21,7 @@ class PluginHistory implements types.IHistoryStack {
   private mEventTypes: { [key: string]: IEventType };
 
   constructor(api: types.IExtensionApi,
-              setPluginGhost: (pluginId: string, ghosted: boolean) => void) {
+              setPluginGhost: (pluginId: string, ghosted: boolean, enabled: boolean) => void) {
     this.mApi = api;
 
     const renderAct = (data) => {
@@ -50,7 +50,7 @@ class PluginHistory implements types.IHistoryStack {
           },
           do: evt => {
             if (evt.data.wasGhost) {
-              setPluginGhost(evt.data.id, true);
+              setPluginGhost(evt.data.id, true, false);
             } else {
               api.store.dispatch(setPluginEnabled(evt.data.id, evt.data.oldState));
             }
@@ -75,7 +75,7 @@ class PluginHistory implements types.IHistoryStack {
           },
           do: evt => {
             if (evt.data.wasGhost) {
-              setPluginGhost(evt.data.id, true);
+              setPluginGhost(evt.data.id, true, false);
             } else {
               api.store.dispatch(setPluginEnabled(evt.data.id, evt.data.oldState));
             }
@@ -100,7 +100,7 @@ class PluginHistory implements types.IHistoryStack {
             return path.extname(plugin.filePath).toLowerCase() === GHOST_EXT;
           },
           do: evt => {
-            setPluginGhost(evt.data.id, false);
+            setPluginGhost(evt.data.id, false, true);
             return Promise.resolve();
           },
         },

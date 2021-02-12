@@ -233,6 +233,7 @@ function renamePlugin(api: types.IExtensionApi,
     const mod = state.persistent.mods[gameMode][plugin.modId];
     const srcName = path.basename(plugin.filePath);
     const dstName = path.basename(targetPath);
+
     return renameProm
       .then(() => fs.renameAsync(path.join(stagingPath, mod.installationPath, srcName),
                                  path.join(stagingPath, mod.installationPath, dstName)))
@@ -253,7 +254,7 @@ let refreshTimer: NodeJS.Timer;
 let deploying = false;
 
 function makeSetPluginGhost(api: types.IExtensionApi) {
-  return (pluginId: string, ghosted: boolean) => {
+  return (pluginId: string, ghosted: boolean, enabled: boolean) => {
     const state = api.store.getState();
     const { pluginList } = state.session.plugins;
     const plugin: IPluginCombined = pluginList[pluginId];
@@ -268,7 +269,7 @@ function makeSetPluginGhost(api: types.IExtensionApi) {
     return renamePlugin(api, plugin, targetPath)
       .then(() => {
         api.store.dispatch(setPluginFilePath(pluginId, targetPath));
-        api.store.dispatch(setPluginEnabled(pluginId, !ghosted));
+        api.store.dispatch(setPluginEnabled(pluginId, enabled));
       })
       .catch(err => {
         api.showErrorNotification('Failed to rename plugin',

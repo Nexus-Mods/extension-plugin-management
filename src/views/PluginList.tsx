@@ -50,7 +50,7 @@ const CLEANING_GUIDE_LINK =
 interface IBaseProps {
   nativePlugins: string[];
   onRefreshPlugins: () => void;
-  onSetPluginGhost: (pluginId: string, ghosted: boolean) => void;
+  onSetPluginGhost: (pluginId: string, ghosted: boolean, enabled: boolean) => void;
 }
 
 interface IConnectedProps {
@@ -279,13 +279,15 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       name: 'Status',
       description: 'Is plugin enabled in current profile',
       icon: 'check-o',
-      calc: (plugin: IPluginCombined) => plugin.isNative
-        ? undefined
-        : plugin.enabled === true
+      calc: (plugin: IPluginCombined) => {
+        return plugin.isNative
+          ? undefined
+          : (path.extname(plugin.filePath) === GHOST_EXT)
+          ? 'Ghost'
+          : (plugin.enabled === true)
           ? 'Enabled'
-          : path.extname(plugin.filePath) === GHOST_EXT
-            ? 'Ghost'
-            : 'Disabled',
+          : 'Disabled';
+      },
       placement: 'table',
       isToggleable: false,
       edit: {
@@ -304,18 +306,19 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           if (value === undefined) {
             // toggle
             if (path.extname(plugin.filePath) === GHOST_EXT) {
-              this.props.onSetPluginGhost(plugin.id, false);
+              this.props.onSetPluginGhost(plugin.id, false, true);
             } else {
               this.props.onSetPluginEnabled(plugin.id, !plugin.enabled);
             }
           } else {
             if (value === 'ghost') {
-              this.props.onSetPluginGhost(plugin.id, true);
+              this.props.onSetPluginGhost(plugin.id, true, false);
             } else {
               if (path.extname(plugin.filePath) === GHOST_EXT) {
-                this.props.onSetPluginGhost(plugin.id, false);
+                this.props.onSetPluginGhost(plugin.id, false, value === 'enabled');
+              } else {
+                this.props.onSetPluginEnabled(plugin.id, value === 'enabled');
               }
-              this.props.onSetPluginEnabled(plugin.id, value === 'enabled');
             }
           }
         },
