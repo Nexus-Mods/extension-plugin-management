@@ -457,8 +457,8 @@ class LootInterface {
 
         result[pluginName] = {
           messages: meta?.messages || [],
-          currentTags: info?.bashTags || [],
-          suggestedTags: meta?.tags || [],
+          currentTags: info?.bashTags?.filter?.(tag => !!tag) || [],
+          suggestedTags: meta?.tags?.filter?.(tag => !!tag) || [],
           cleanliness: meta?.cleanInfo || [],
           dirtyness: meta?.dirtyInfo || [],
           group: meta?.group || '',
