@@ -246,6 +246,12 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         singleRowAction: false,
       },
       {
+        icon: 'ghost',
+        title: 'Ghost',
+        action: this.ghostSelected,
+        singleRowAction: false,
+      },
+      {
         icon: 'plugin-light',
         title: 'Mark as Light',
         action: this.eslifySelected,
@@ -723,10 +729,13 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const { loadOrder, onSetPluginEnabled, plugins } = this.props;
 
     pluginIds.forEach((key: string) => {
-      if ((plugins[key] === undefined) || plugins[key].isNative) {
+      const plugin = plugins[key];
+      if ((plugin === undefined) || plugin.isNative) {
         return;
       }
-      if (!util.getSafe(loadOrder, [key, 'enabled'], false)) {
+      if (path.extname(plugin.filePath) === GHOST_EXT) {
+        this.props.onSetPluginGhost(key, false, true);
+      } else if (!util.getSafe(loadOrder, [key, 'enabled'], false)) {
         onSetPluginEnabled(key, true);
       }
     });
@@ -736,11 +745,25 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const { loadOrder, onSetPluginEnabled, plugins } = this.props;
 
     pluginIds.forEach((key: string) => {
-      if ((plugins[key] === undefined) || plugins[key].isNative) {
+      const plugin = plugins[key];
+      if ((plugin === undefined) || plugin.isNative) {
         return;
       }
-      if (util.getSafe<boolean>(loadOrder, [key, 'enabled'], false)) {
+
+      if (path.extname(plugin.filePath) === GHOST_EXT) {
+        this.props.onSetPluginGhost(key, false, false);
+      } else if (util.getSafe<boolean>(loadOrder, [key, 'enabled'], false)) {
         onSetPluginEnabled(key, false);
+      }
+    });
+  }
+
+  private ghostSelected = (pluginIds: string[]) => {
+    const { onSetPluginGhost, plugins } = this.props;
+
+    pluginIds.forEach((key: string) => {
+      if (path.extname(plugins[key]?.filePath) !== GHOST_EXT) {
+        onSetPluginGhost(key, true, false);
       }
     });
   }
