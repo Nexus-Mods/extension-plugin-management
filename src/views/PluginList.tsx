@@ -1168,13 +1168,17 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => (
           <div className='plugin-tags'>
           {t('Current')}
-          <div>{plugin.currentTags.map(tag => tag.name).join(', ')}</div>
+          <div>{plugin.currentTags
+            .filter(tag => tag !== undefined).map(tag => tag.name).join(', ')}</div>
           {t('Suggested (by LOOT)')}
-          <div>{plugin.suggestedTags.map(tag => tag.name).join(', ')}</div>
+          <div>{plugin.suggestedTags
+            .filter(tag => tag !== undefined).map(tag => tag.name).join(', ')}</div>
           </div>
         ),
         calc: (plugin: IPluginCombined) =>
           [].concat(plugin.currentTags, plugin.suggestedTags)
+            // TODO: it is unclear to me how there could be an undefined value in this list
+            .filter(tag => tag !== undefined)
             .map(tag => tag.name).join(', '),
         placement: 'detail',
         edit: {},
