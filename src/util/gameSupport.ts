@@ -133,6 +133,17 @@ const gameSupport = {
       'oblivion.esm',
     ],
   },
+  enderalspecialedition: {
+    appDataPath: 'Enderal Special Edition',
+    pluginTXTFormat: 'fallout4',
+    nativePlugins: [
+      'skyrim.esm',
+      'update.esm',
+      'dawnguard.esm',
+      'hearthfires.esm',
+      'dragonborn.esm',
+    ],
+  },
 };
 
 export function initGameSupport(store: Redux.Store<any>): Promise<void> {
@@ -141,7 +152,7 @@ export function initGameSupport(store: Redux.Store<any>): Promise<void> {
   const state: types.IState = store.getState();
 
   const {discovered} = state.settings.gameMode;
-  if (util.getSafe(discovered, ['skyrimse', 'path'], undefined) !== undefined) {
+  if (discovered['skyrimse']?.path !== undefined) {
     const skyrimsecc = new Set(gameSupport['skyrimse'].nativePlugins);
     res = res
       .then(() => fs.readFileAsync(path.join(discovered['skyrimse'].path, 'Skyrim.ccc'))
@@ -154,7 +165,7 @@ export function initGameSupport(store: Redux.Store<any>): Promise<void> {
           gameSupport['skyrimse'].nativePlugins = Array.from(skyrimsecc);
         }));
   }
-  if (util.getSafe(discovered, ['fallout4', 'path'], undefined) !== undefined) {
+  if (discovered['fallout4']?.path !== undefined) {
     const fallout4cc = new Set(gameSupport['fallout4'].nativePlugins);
     res = res
       .then(() => fs.readFileAsync(path.join(discovered['fallout4'].path, 'Fallout4.ccc'))
@@ -166,6 +177,14 @@ export function initGameSupport(store: Redux.Store<any>): Promise<void> {
         .then(() => {
           gameSupport['fallout4'].nativePlugins = Array.from(fallout4cc);
         }));
+  }
+
+  if (discovered['enderalspecialedition']?.path !== undefined) {
+    // enderal discovered, may have to update appDataPath
+    if (discovered['enderalspecialedition']?.path.toLowerCase().includes('skyrim')) {
+      log('info', 'Enderal seems to be installed into the skyrim directory');
+      gameSupport['enderalspecialedition'].appDataPath = 'Skyrim Special Edition';
+    }
   }
 
   return res;

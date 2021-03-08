@@ -1154,14 +1154,9 @@ function init(context: IExtensionContextExt) {
         }
       });
 
-      context.api.onStateChange(
-          ['settings', 'gameMode', 'discovered'], (previous, current) => {
-            if ((previous['fallout4'] !== current['fallout4']) ||
-                (previous['skyrimse'] !== current['skyrimse'])) {
-              log('debug', 'discovery for cc-supported game changed');
-              initGameSupport(store).then(() => null);
-            }
-          });
+      context.api.onStateChange(['settings', 'gameMode', 'discovered'], (previous, current) => {
+          initGameSupport(store).then(() => null);
+        });
 
       context.api.events.on('set-plugin-list', (newPlugins: string[], setEnabled?: boolean) => {
         const state = context.api.store.getState();
