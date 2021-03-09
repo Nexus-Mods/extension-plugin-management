@@ -534,14 +534,17 @@ class LootInterface {
   });
 
   private convertGameId(gameMode: string, masterlist: boolean) {
+    // the vr games use the same masterlist as the base game but have their own game id within loot.
+    // with enderal it's the other way around, they use the game id of the base game but there is
+    // a separate masterlist (one for both variants)
     if (masterlist && (gameMode === 'fallout4vr')) {
-      // use the masterlist from fallout 4
       return 'fallout4';
-    } else if (gameMode === 'skyrimvr') {
-      // no specific support from skyrim vr yet
+    } else if (masterlist && (gameMode === 'skyrimvr')) {
       return 'skyrimse';
     } else if (gameMode === 'enderal') {
-      return 'skyrim';
+      return masterlist ? 'enderal' : 'skyrim';
+    } else if (gameMode === 'enderalspecialedition') {
+      return masterlist ? 'enderal' : 'skyrimse';
     }
     return gameMode;
   }
