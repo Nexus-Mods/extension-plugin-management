@@ -1073,7 +1073,11 @@ function init(context: IExtensionContextExt) {
 
   context.registerHistoryStack('plugins', history);
 
-  context.onceMain(() => {
+  context
+  // Similar to once, we need to initGameSupport from the get-go or the pluginPersistor
+  //  will not use the updated appDataPath values (given that the gameSupport object
+  //  wasn't previously initialized for the main application thread)
+  .onceMain(() => initGameSupport(context.api.store).then(() => {
     ipcMain.on('plugin-sync', (event: Electron.IpcMainEvent, enabled: boolean) => {
       const promise = enabled ? startSync(context.api) : stopSync();
       promise
@@ -1098,7 +1102,7 @@ function init(context: IExtensionContextExt) {
                (event: Electron.Event, knownPlugins: { [pluginId: string]: string }) => {
       pluginPersistor.setKnownPlugins(knownPlugins);
     });
-  });
+  }));
 
   context
   // first thing on once, init game support for the previously discovered games

@@ -8,6 +8,21 @@ import { fs, log, types, util } from 'vortex-api';
 
 const app = appIn || remote.app;
 
+const gameSupportXbox = {
+  skyrimse: {
+    appDataPath: path.join('Packages', 'BethesdaSoftworks.SkyrimSE-PC_3275kfvn8vcwc',
+      'LocalCache', 'Local', 'Skyrim Special Edition MS'),
+  },
+  fallout4: {
+    appDataPath: path.join('Packages', 'BethesdaSoftworks.Fallout4-PC_3275kfvn8vcwc',
+      'LocalCache', 'Local', 'Fallout4 MS'),
+  },
+  oblivion: {
+    appDataPath: path.join('Packages', 'BethesdaSoftworks.TESOblivion-PC_3275kfvn8vcwc',
+      'LocalCache', 'Local', 'Oblivion'),
+  }
+}
+
 const gameSupport = {
   skyrim: {
     appDataPath: 'Skyrim',
@@ -151,7 +166,18 @@ export function initGameSupport(store: Redux.Store<any>): Promise<void> {
 
   const state: types.IState = store.getState();
 
-  const {discovered} = state.settings.gameMode;
+  const { discovered } = state.settings.gameMode;
+  Object.keys(gameSupportXbox).forEach(gameMode => {
+    if (discovered[gameMode]?.path !== undefined) {
+      // 3275kfvn8vcwc is Bethesda's publisher Id on Xbox game pass; if the path contains
+      //  the publisher Id, that's a clear sign that the game has been installed through
+      //  the xbox store.
+      if (discovered[gameMode].path.toLowerCase().includes('3275kfvn8vcwc')) {
+        gameSupport[gameMode].appDataPath = gameSupportXbox[gameMode].appDataPath;
+      }
+    }
+  });
+
   if (discovered['skyrimse']?.path !== undefined) {
     const skyrimsecc = new Set(gameSupport['skyrimse'].nativePlugins);
     res = res
