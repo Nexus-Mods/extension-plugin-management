@@ -130,8 +130,9 @@ class PluginHistory implements types.IHistoryStack {
         allIds.forEach(id => {
           if ((prev[id]?.enabled !== undefined)
               && (prev[id]?.enabled !== current[id]?.enabled)) {
-            const plugin = state.session.plugins.pluginList[id];
-            const ghost = path.extname(plugin.filePath).toLowerCase() === GHOST_EXT;
+            const plugin = state.session.plugins.pluginList?.[id];
+            const ghost = (plugin !== undefined)
+                       && (path.extname(plugin.filePath).toLowerCase() === GHOST_EXT);
             addToHistory('plugins', {
                   type: current[id]?.enabled === true
                     ? 'plugin-enabled'
@@ -142,7 +143,7 @@ class PluginHistory implements types.IHistoryStack {
                   data: {
                     id,
                     oldState: prev[id]?.enabled ?? false,
-                    name: path.basename(state.session.plugins.pluginList[id].filePath, GHOST_EXT),
+                    name: path.basename(plugin?.filePath ?? id, GHOST_EXT),
                     wasGhost: ghost,
                     profileId: profile.id,
                     profileName: profile.name,
