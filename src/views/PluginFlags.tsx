@@ -170,11 +170,12 @@ const PluginFlags = (props: IProps): JSX.Element => {
       />);
   }
 
-  if ((plugin.currentTags.length > 0) || (plugin.suggestedTags.length > 0)) {
+  if (((plugin.currentTags ?? []).length > 0)
+      || ((plugin.suggestedTags ?? []).length > 0)) {
     const key = `ico-tags-${plugin.id}`;
     const tags = [].concat(
-      plugin.currentTags.map(tag => tag.name),
-      plugin.suggestedTags.map(tag => (tag.isAddition ? '+' : '-') + tag.name),
+      (plugin.currentTags ?? []).map(tag => tag.name),
+      (plugin.suggestedTags ?? []).map(tag => (tag.isAddition ? '+' : '-') + tag.name),
     );
     flags.push(
       <tooltip.Icon
