@@ -161,6 +161,12 @@ const gameSupport = {
   },
 };
 
+function isXboxPath(discoveryPath: string) {
+  const hasPathElement = (element) =>
+    discoveryPath.toLowerCase().includes(element);
+  return ['modifiablewindowsapps', '3275kfvn8vcwc'].find(hasPathElement) !== undefined;
+}
+
 export function initGameSupport(store: Redux.Store<any>): Promise<void> {
   let res = Promise.resolve();
 
@@ -169,10 +175,9 @@ export function initGameSupport(store: Redux.Store<any>): Promise<void> {
   const { discovered } = state.settings.gameMode;
   Object.keys(gameSupportXbox).forEach(gameMode => {
     if (discovered[gameMode]?.path !== undefined) {
-      // 3275kfvn8vcwc is Bethesda's publisher Id on Xbox game pass; if the path contains
-      //  the publisher Id, that's a clear sign that the game has been installed through
-      //  the xbox store.
-      if (discovered[gameMode].path.toLowerCase().includes('3275kfvn8vcwc')) {
+      // If the path contains 'modifiablewindowsapps' or '3275kfvn8vcwc', that's a clear
+      //  sign that the game has been installed through the xbox store.
+      if (isXboxPath(discovered[gameMode].path)) {
         gameSupport[gameMode].appDataPath = gameSupportXbox[gameMode].appDataPath;
       }
     }
