@@ -1101,20 +1101,20 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         filter: new TableTextFilter(true),
         sortFunc: (lhs: string, rhs: string, locale: string) =>
           this.getCollator(locale).compare(lhs, rhs),
-      } as any,
+      },
       {
         id: 'category',
         name: 'Mod Category',
         edit: {},
         calc: plugin => util.resolveCategoryName(
-          util.getSafe(this.props.mods, [plugin.modName, 'attributes', 'category'], undefined),
+          util.getSafe(this.props.mods, [plugin.modId, 'attributes', 'category'], undefined),
           this.context.api.store.getState()),
         placement: 'both',
         isDefaultVisible: false,
         isSortable: true,
         isToggleable: true,
         isGroupable: true,
-      } as any,
+      },
       {
         id: 'author',
         name: 'Author',
