@@ -279,6 +279,13 @@ function makeSetPluginGhost(api: types.IExtensionApi) {
 }
 
 function register(context: IExtensionContextExt) {
+  context.registerReducer(['session', 'plugins'], pluginsReducer);
+  context.registerReducer(['loadOrder'], loadOrderReducer);
+  context.registerReducer(['userlist'], userlistReducer);
+  context.registerReducer(['masterlist'], { defaults: {}, reducers: {} });
+  context.registerReducer(['settings', 'plugins'], settingsReducer);
+  context.registerReducer(['session', 'pluginDependencies'], userlistEditReducer);
+
   const pluginActivity = new util.ReduxProp(context.api, [
     ['session', 'base', 'activity', 'plugins'],
   ], (activity: string[]) => (activity !== undefined) && (activity.length > 0));
@@ -308,13 +315,6 @@ function register(context: IExtensionContextExt) {
     const gameMode = selectors.activeGameId(state);
     return supportedGames().indexOf(gameMode) !== -1;
   });
-
-  context.registerReducer(['session', 'plugins'], pluginsReducer);
-  context.registerReducer(['loadOrder'], loadOrderReducer);
-  context.registerReducer(['userlist'], userlistReducer);
-  context.registerReducer(['masterlist'], { defaults: {}, reducers: {} });
-  context.registerReducer(['settings', 'plugins'], settingsReducer);
-  context.registerReducer(['session', 'pluginDependencies'], userlistEditReducer);
 
   context.registerAction('gamebryo-plugin-icons', 100, 'connection', {}, 'Manage Rules',
     () => {
