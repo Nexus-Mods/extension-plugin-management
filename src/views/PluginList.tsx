@@ -762,7 +762,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const { onSetPluginGhost, plugins } = this.props;
 
     pluginIds.forEach((key: string) => {
-      if (path.extname(plugins[key]?.filePath) !== GHOST_EXT) {
+      if ((plugins[key]?.filePath !== undefined)
+          && (path.extname(plugins[key]?.filePath) !== GHOST_EXT)) {
         onSetPluginGhost(key, true, false);
       }
     });
