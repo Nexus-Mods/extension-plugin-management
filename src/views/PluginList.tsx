@@ -473,6 +473,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     if (this.props.userlist !== nextProps.userlist) {
       this.applyUserlist(nextProps.userlist.plugins || [], nextProps.masterlist.plugins || []);
+      // We have applied a userlist change to the component state - the details update debouncer
+      //  will not kick off unless the plugins are re-sorted; unfortunately this means that the
+      //  data displayed to the user in the plugins table can be outdated. Which is why we need
+      //  to kick off the update details debouncer at this stage.
+      //
+      // Please note: Doing this on group change inside a componentDidUpdate lifecycle method
+      //  will be EXTREMELY expensive - don't do it!
+      this.mUpdateDetailsDebounder.schedule(undefined, this.props.plugins, this.props.gameMode);
     }
   }
 
