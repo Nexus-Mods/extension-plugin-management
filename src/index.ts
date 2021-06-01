@@ -1,7 +1,7 @@
 import { setPluginEnabled, setPluginOrder, updatePluginOrder } from './actions/loadOrder';
 import { setPluginFilePath, setPluginList, updatePluginWarnings } from './actions/plugins';
 import { removeGroupRule, setGroup } from './actions/userlist';
-import { openGroupEditor, setCreateRule } from './actions/userlistEdit';
+import { closeDialog, openGroupEditor, setCreateRule } from './actions/userlistEdit';
 import { loadOrderReducer } from './reducers/loadOrder';
 import { pluginsReducer } from './reducers/plugins';
 import { settingsReducer } from './reducers/settings';
@@ -318,7 +318,7 @@ function register(context: IExtensionContextExt) {
 
   context.registerAction('gamebryo-plugin-icons', 100, 'connection', {}, 'Manage Rules',
     () => {
-      context.api.store.dispatch(setCreateRule());
+      context.api.store.dispatch(closeDialog());
     });
 
   context.registerAction('gamebryo-plugin-icons', 105, 'groups', {}, 'Manage Groups',

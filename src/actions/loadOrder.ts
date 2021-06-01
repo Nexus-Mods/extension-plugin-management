@@ -7,7 +7,7 @@ export const setPluginEnabled = createAction('SET_PLUGIN_ENABLED',
  * completely replace the load order (not changing the enabled state of plugins)
  */
 export const setPluginOrder = createAction('SET_PLUGIN_ORDER',
-    (plugins: string, defaultEnable: boolean) => ({ plugins, defaultEnable }));
+    (plugins: string[], defaultEnable: boolean) => ({ plugins, defaultEnable }));
 
 /**
  * update the plugin order, not removing entries

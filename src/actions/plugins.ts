@@ -2,6 +2,10 @@ import {IPluginCombined, IPlugins} from '../types/IPlugins';
 
 import { createAction } from 'redux-act';
 
+const uiOnlyMeta = (process.type === 'renderer')
+  ? () => ({ forward: false, scope: 'local' })
+  : undefined;
+
 export const setPluginList =
     createAction('SET_PLUGIN_LIST', (plugins: IPlugins) => ({plugins}));
 
@@ -19,4 +23,5 @@ export const setPluginFilePath =
       ({ pluginId, filePath }));
 
 export const updatePluginWarnings = createAction('UPDATE_PLUGIN_WARNING',
-  (id: string, warning: string, value: boolean) => ({ id, warning, value }));
+  (id: string, warning: string, value: boolean) => ({ id, warning, value }),
+  uiOnlyMeta);
