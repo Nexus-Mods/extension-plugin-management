@@ -39,6 +39,8 @@ export function getPluginFlags(plugin: IPluginCombined,
     } else if (plugin.isValidAsLightMaster
                && (path.extname(plugin.filePath).toLowerCase() === '.esp')) {
       result.push(t('Could be light'));
+    } else {
+      result.push(t('Not light'));
     }
   }
 
