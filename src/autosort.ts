@@ -305,7 +305,8 @@ class LootInterface {
 
   private allowReport(err: Error) {
     return (err.message.indexOf('boost::filesystem') === -1)
-        && (err.message.indexOf('Access is denied') === -1);
+        && (err.message.indexOf('Access is denied') === -1)
+        && (err.message.indexOf('cannot find the path specified') === -1);
   }
 
   private onGameModeChanged = async (api: types.IExtensionApi, gameMode: string) => {
