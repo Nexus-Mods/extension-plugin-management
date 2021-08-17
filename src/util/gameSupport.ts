@@ -158,6 +158,7 @@ const gameSupport = {
       'hearthfires.esm',
       'dragonborn.esm',
     ],
+    supportsESL: true,
   },
 };
 
