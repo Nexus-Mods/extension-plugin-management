@@ -1264,6 +1264,10 @@ function init(context: IExtensionContextExt) {
                                   replace: { modName },
                                   ns: NAMESPACE,
                                 }),
+                      replace: {
+                        modName,
+                        modId: mod.id,
+                      },
                       actions: [
                         {
                           title: 'Show',
