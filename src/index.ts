@@ -262,9 +262,15 @@ function makeSetPluginGhost(api: types.IExtensionApi) {
       log('warn', 'invalid plugin id', pluginId);
       return;
     }
-    const targetPath = ghosted
-      ? plugin.filePath + GHOST_EXT
-      : path.join(path.dirname(plugin.filePath), path.basename(plugin.filePath, GHOST_EXT));
+    let targetPath = path.join(path.dirname(plugin.filePath), path.basename(plugin.filePath, GHOST_EXT));
+    if (ghosted) {
+      targetPath += GHOST_EXT;
+    }
+
+    if (path.basename(targetPath) === path.basename(plugin.filePath)) {
+      // The targetPath matches the current filePath - do nothing
+      return;
+    }
 
     return renamePlugin(api, plugin, targetPath)
       .then(() => {
