@@ -1,12 +1,9 @@
 import {PluginFormat} from '../util/PluginPersistor';
 
 import Promise from 'bluebird';
-import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { fs, log, types, util } from 'vortex-api';
-
-const app = appIn || remote.app;
 
 const gameSupportXbox = {
   skyrimse: {
@@ -226,7 +223,7 @@ export function pluginPath(gameMode: string): string {
   const gamePath = gameSupport[gameMode].appDataPath;
   return (process.env.LOCALAPPDATA !== undefined)
     ? path.join(process.env.LOCALAPPDATA, gamePath)
-    : path.resolve(app.getPath('appData'), '..', 'Local', gamePath);
+    : path.resolve(util.getVortexPath('appData'), '..', 'Local', gamePath);
 }
 
 export function pluginFormat(gameMode: string): PluginFormat {

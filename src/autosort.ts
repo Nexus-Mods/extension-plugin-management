@@ -6,7 +6,6 @@ import {gameSupported, pluginPath} from './util/gameSupport';
 import { NAMESPACE } from './statics';
 
 import Bluebird from 'bluebird';
-import { remote } from 'electron';
 import getVersion from 'exe-version';
 import i18next from 'i18next';
 import { LootAsync, PluginMetadata } from 'loot';
@@ -101,7 +100,7 @@ class LootInterface {
       return 'LOOT not initialised';
     }
 
-    const masterlistPath = path.join(remote.app.getPath('userData'), gameMode,
+    const masterlistPath = path.join(util.getVortexPath('userData'), gameMode,
       'masterlist');
 
     await fs.removeAsync(masterlistPath);
@@ -498,9 +497,9 @@ class LootInterface {
   // tslint:disable-next-line:member-ordering
   private readLists = Bluebird.method(async (gameMode: string, loot: typeof LootProm) => {
     const t = this.mExtensionApi.translate;
-    const masterlistPath = path.join(remote.app.getPath('userData'), gameMode,
+    const masterlistPath = path.join(util.getVortexPath('userData'), gameMode,
                                      'masterlist', 'masterlist.yaml');
-    const userlistPath = path.join(remote.app.getPath('userData'), gameMode, 'userlist.yaml');
+    const userlistPath = path.join(util.getVortexPath('userData'), gameMode, 'userlist.yaml');
 
     let mtime: Date;
     try {
@@ -573,7 +572,7 @@ class LootInterface {
       } as any);
       return { game: gameMode, loot: undefined };
     }
-    const masterlistRepoPath = path.join(remote.app.getPath('userData'), gameMode,
+    const masterlistRepoPath = path.join(util.getVortexPath('userData'), gameMode,
                                          'masterlist');
     const masterlistPath = path.join(masterlistRepoPath, 'masterlist.yaml');
     try {
@@ -599,7 +598,7 @@ class LootInterface {
     try {
       // we need to ensure lists get loaded at least once. before sorting there
       // will always be a check if the userlist was changed
-      const userlistPath = path.join(remote.app.getPath('userData'), gameMode, 'userlist.yaml');
+      const userlistPath = path.join(util.getVortexPath('userData'), gameMode, 'userlist.yaml');
 
       let mtime: Date;
       try {

@@ -36,7 +36,7 @@ import LootInterface from './autosort';
 import { GHOST_EXT, NAMESPACE } from './statics';
 
 import Promise from 'bluebird';
-import { ipcMain, ipcRenderer, remote } from 'electron';
+import { ipcMain, ipcRenderer } from 'electron';
 import ESPFile from 'esptk';
 import { access, constants } from 'fs';
 import I18next from 'i18next';
@@ -398,7 +398,7 @@ function initPersistor(context: IExtensionContextExt) {
   };
   // TODO: Currently need to stop this from being called in the render process.
   //   This is mega-ugly and needs to go
-  if (remote === undefined) {
+  if (process.type === 'browser') {
     if (pluginPersistor === undefined) {
       pluginPersistor = new PluginPersistor(onError, () =>
         context.api.store.getState().settings.plugins.autoSort);
@@ -455,7 +455,7 @@ function sendStartStopSync(enable: boolean): Promise<void> {
 }
 
 function stopSync(): Promise<void> {
-  if (remote !== undefined) {
+  if (process.type === 'renderer') {
     return sendStartStopSync(false);
   }
   if (watcher !== undefined) {
@@ -544,7 +544,7 @@ function startSyncRemote(api: types.IExtensionApi): Promise<void> {
 }
 
 function startSync(api: types.IExtensionApi): Promise<void> {
-  if (remote !== undefined) {
+  if (process.type === 'renderer') {
     return startSyncRemote(api);
   }
   const store = api.store;
@@ -708,7 +708,7 @@ function testUserlistInvalid(t: TranslationFunction,
     return false;
   });
   if (duplicate !== undefined) {
-    const userlistPath = path.join(remote.app.getPath('userData'), gameMode, 'userlist.yaml');
+    const userlistPath = path.join(util.getVortexPath('userData'), gameMode, 'userlist.yaml');
     return Promise.resolve({
       description: {
         short: 'Duplicate entries',
@@ -734,7 +734,7 @@ function testUserlistInvalid(t: TranslationFunction,
     return duplicateAfter !== undefined;
   });
   if (plugin !== undefined) {
-    const userlistPath = path.join(remote.app.getPath('userData'), gameMode, 'userlist.yaml');
+    const userlistPath = path.join(util.getVortexPath('userData'), gameMode, 'userlist.yaml');
     return Promise.resolve({
       description: {
         short: 'Duplicate dependencies',

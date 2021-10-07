@@ -2,15 +2,15 @@ import { ILOOTList, ILOOTPlugin } from '../types/ILOOTList';
 
 import {gameSupported} from './gameSupport';
 
+import * as RemoteT from '@electron/remote';
 import Promise from 'bluebird';
-import { app as appIn, dialog as dialogIn, remote } from 'electron';
+import { dialog as dialogIn } from 'electron';
 import { safeDump, safeLoad } from 'js-yaml';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { fs, types, util } from 'vortex-api';
 
-const app = appIn || remote.app;
-const dialog = dialogIn || remote.dialog;
+const remote = util.lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
 /**
  * persistor syncing to and from the loot userlist.yaml file
@@ -71,8 +71,8 @@ class UserlistPersistor implements types.IPersistor {
       return Promise.resolve();
     }
     this.mUserlistPath = (this.mMode === 'userlist')
-      ? path.join(app.getPath('userData'), gameMode, 'userlist.yaml')
-      : path.join(app.getPath('userData'), gameMode, 'masterlist', 'masterlist.yaml');
+      ? path.join(util.getVortexPath('userData'), gameMode, 'userlist.yaml')
+      : path.join(util.getVortexPath('userData'), gameMode, 'masterlist', 'masterlist.yaml');
 
     // read the files now and update the store
     return this.deserialize();
@@ -149,6 +149,10 @@ class UserlistPersistor implements types.IPersistor {
   }
 
   private handleInvalidList() {
+    const dialog = process.type === 'renderer'
+      ? remote.dialog
+      : dialogIn;
+
     if (this.mMode === 'masterlist') {
       dialog.showMessageBoxSync(null, {
         title: 'Masterlist invalid',
@@ -178,7 +182,7 @@ class UserlistPersistor implements types.IPersistor {
           'Quit Vortex',
         ],
       })) {
-        app.exit(1);
+        util['getApplication']().quit(1);
       }
     }
   }
