@@ -16,6 +16,7 @@ import {
   DropTarget, DropTargetConnector, DropTargetMonitor, DropTargetSpec,
 } from 'react-dnd';
 import { getEmptyImage } from 'react-dnd-html5-backend';
+import ReactMarkdown from 'react-markdown';
 import { findDOMNode } from 'react-dom';
 import { connect } from 'react-redux';
 import { Advanced, ComponentEx, log, selectors, tooltip, util } from 'vortex-api';
@@ -403,7 +404,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       : ref;
 
     if (readOnly) {
-      return <li key={name} className='rule-readonly'>{display || name}</li>;
+      return <li key={name} className='rule-readonly'><ReactMarkdown>{display || name}</ReactMarkdown></li>;
     }
 
     return (
