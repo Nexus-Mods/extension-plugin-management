@@ -1071,6 +1071,63 @@ function testRulesUnfulfilled(api: types.IExtensionApi)
     });
 }
 
+function notifyMultiplePlugins(api: types.IExtensionApi, mod: types.IMod,
+                               profile: types.IProfile, plugins: string[]) {
+  const t = api.translate;
+  const { store } = api;
+  const modName = util.renderModName(mod, { version: false });
+  api.sendNotification({
+    id: `multiple-plugins-${mod.id}`,
+    type: 'info',
+    message: t('The mod "{{ modName }}" contains multiple plugins',
+      {
+        replace: { modName },
+        ns: NAMESPACE,
+      }),
+    replace: {
+      modName,
+      modId: mod.id,
+      tag: mod.attributes?.referenceTag,
+    },
+    actions: [
+      {
+        title: 'Show',
+        action: dismiss => {
+          const stateNow: types.IState = store.getState();
+          const gameModeNow = selectors.activeGameId(stateNow);
+          if (gameModeNow === profile.gameId) {
+            api.events.emit('show-main-page', 'gamebryo-plugins');
+            store.dispatch(
+              actions.setAttributeVisible('gamebryo-plugins', 'modName', true));
+            store.dispatch(
+              actions.setAttributeFilter('gamebryo-plugins', 'modName', modName));
+          } else {
+            api.sendNotification({
+              type: 'info',
+              message: t('Please activate "{{ gameId }}" to enable plugins manually',
+                {
+                  replace: { gameId: profile.gameId },
+                  ns: NAMESPACE,
+                }),
+            });
+          }
+
+          dismiss();
+        },
+      },
+      {
+        title: 'Enable all',
+        action: dismiss => {
+          plugins.forEach(plugin => api.store.dispatch(
+            setPluginEnabled(plugin, true)));
+          dismiss();
+        },
+      },
+    ],
+  });
+
+}
+
 function init(context: IExtensionContextExt) {
   const history = new PluginHistory(context.api, makeSetPluginGhost(context.api));
 
@@ -1260,56 +1317,7 @@ function init(context: IExtensionContextExt) {
                     plugins.forEach(plugin => context.api.store.dispatch(
                       setPluginEnabled(plugin, true)));
                   } else {
-                    const t = context.api.translate;
-                    const modName = util.renderModName(mod, { version: false });
-                    context.api.sendNotification({
-                      id: `multiple-plugins-${mod.id}`,
-                      type: 'info',
-                      message: t('The mod "{{ modName }}" contains multiple plugins',
-                                {
-                                  replace: { modName },
-                                  ns: NAMESPACE,
-                                }),
-                      replace: {
-                        modName,
-                        modId: mod.id,
-                      },
-                      actions: [
-                        {
-                          title: 'Show',
-                          action: dismiss => {
-                            const stateNow: types.IState = store.getState();
-                            const gameModeNow = selectors.activeGameId(stateNow);
-                            if (gameModeNow === currentProfile.gameId) {
-                              context.api.events.emit('show-main-page', 'gamebryo-plugins');
-                              store.dispatch(
-                                actions.setAttributeVisible('gamebryo-plugins', 'modName', true));
-                              store.dispatch(
-                                actions.setAttributeFilter('gamebryo-plugins', 'modName', modName));
-                            } else {
-                              context.api.sendNotification({
-                                type: 'info',
-                                message: t('Please activate "{{ gameId }}" to enable plugins manually',
-                                {
-                                  replace: { gameId: currentProfile.gameId },
-                                  ns: NAMESPACE,
-                                }),
-                              });
-                            }
-
-                            dismiss();
-                          },
-                        },
-                        {
-                          title: 'Enable all',
-                          action: dismiss => {
-                            plugins.forEach(plugin => context.api.store.dispatch(
-                                                setPluginEnabled(plugin, true)));
-                            dismiss();
-                          },
-                        },
-                      ],
-                    });
+                    notifyMultiplePlugins(context.api, mod, currentProfile, plugins);
                   }
                 }
               })
