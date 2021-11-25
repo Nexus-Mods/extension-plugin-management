@@ -46,7 +46,7 @@ class PluginHistory implements types.IHistoryStack {
             if (profile.id !== evt.data.profileId) {
               return false;
             }
-            return state.loadOrder[evt.data.id].enabled === true;
+            return state.loadOrder[evt.data.id]?.enabled === true;
           },
           do: evt => {
             if (evt.data.wasGhost) {
@@ -71,7 +71,7 @@ class PluginHistory implements types.IHistoryStack {
             if (profile.id !== evt.data.profileId) {
               return false;
             }
-            return state.loadOrder[evt.data.id].enabled === false;
+            return state.loadOrder[evt.data.id]?.enabled === false;
           },
           do: evt => {
             if (evt.data.wasGhost) {
