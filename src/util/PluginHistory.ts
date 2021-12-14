@@ -97,6 +97,9 @@ class PluginHistory implements types.IHistoryStack {
               return false;
             }
             const plugin = state.session.plugins.pluginList[evt.data.id];
+            if (plugin === undefined) {
+              return false;
+            }
             return path.extname(plugin.filePath).toLowerCase() === GHOST_EXT;
           },
           do: evt => {
