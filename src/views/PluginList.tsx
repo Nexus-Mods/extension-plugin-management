@@ -263,7 +263,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
                 && !plugin.isLight
                 && path.extname(pluginId) === '.esp';
           }) !== undefined),
-        singleRowAction: false,
+        singleRowAction: true,
+        multiRowAction: true,
       },
       {
         icon: 'plugin-light',
@@ -276,7 +277,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             return plugin.isLight
                 && path.extname(pluginId) === '.esp';
           }) !== undefined),
-        singleRowAction: false,
+        singleRowAction: true,
+        multiRowAction: true,
       },
     ];
 
@@ -910,7 +912,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         && !plugin.isLight
         && path.extname(plugin.id) === '.esp')
       , plugin => this.eslify(plugin, true))
-    .then(() => null)
+    .then(() => {
+      this.props.onRefreshPlugins();
+    })
     .catch(err => {
       const isUserError = ['EPERM', 'EACCESS'].includes(err.code)
                        || err.message.includes('file not found')
@@ -929,7 +933,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         && plugin.isLight
         && path.extname(plugin.id) === '.esp')
       , plugin => this.eslify(plugin, false))
-    .then(() => null)
+    .then(() => {
+      this.props.onRefreshPlugins();
+    })
     .catch(err => {
       const isUserError = ['EPERM', 'EACCESS'].includes(err.code)
                        || err.message.includes('file not found')
@@ -1317,8 +1323,13 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
                       + 'order while still working as usual.')}
               onClick={canBeConverted ? () => {
                 this.eslify(plugin, !plugin.isLight)
-                  .then(() =>
-                    this.context.api.events.emit('autosort-plugins', true))
+                  .then(() => {
+                    this.props.onRefreshPlugins();
+
+                    // TODO: this was previously treated as a manual sort which caused the
+                    // autosort setting to be ignored. Was there a reason for that?
+                    this.context.api.events.emit('autosort-plugins', false);
+                  })
                   .catch(err => {
                     const hasSubstring = (subString) => err.message.indexOf(subString) !== -1;
                     // still haven't figured out why these error messages are localized
