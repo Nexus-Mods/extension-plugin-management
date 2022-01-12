@@ -25,7 +25,6 @@
     "@types/react-bootstrap": "^0.32.25",
     "@types/react-dom": "^16.0.7",
     "@types/react-faux-dom": "^4.1.1",
-    "@types/react-i18next": "^8.1.0",
     "@types/react-redux": "^6.0.6",
     "@types/react-router": "^4.0.30",
     "@types/react-select": "^1.2.1",
