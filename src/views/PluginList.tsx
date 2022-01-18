@@ -462,9 +462,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
   public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     const pluginPaths = (input: IPlugins) =>
-      Object.values(input).map(plug => plug.filePath).sort();
+      Object.values(input ?? {}).map(plug => plug.filePath).sort();
     if ((this.props.plugins === undefined)
-        || !_.isEqual(Object.keys(this.props.plugins), Object.keys(nextProps.plugins))
+        || !_.isEqual(Object.keys(this.props.plugins ?? {}), Object.keys(nextProps.plugins ?? {}))
         || !_.isEqual(pluginPaths(this.props.plugins), pluginPaths(nextProps.plugins))) {
       this.mUpdateDetailsDebounder.schedule(undefined, nextProps.plugins, nextProps.gameMode);
     }
