@@ -461,28 +461,23 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
+    const hasUserlistChange = (this.props.userlist !== nextProps.userlist);
     const pluginPaths = (input: IPlugins) =>
       Object.values(input ?? {}).map(plug => plug.filePath).sort();
     if ((this.props.plugins === undefined)
         || !_.isEqual(Object.keys(this.props.plugins ?? {}), Object.keys(nextProps.plugins ?? {}))
-        || !_.isEqual(pluginPaths(this.props.plugins), pluginPaths(nextProps.plugins))) {
+        || !_.isEqual(pluginPaths(this.props.plugins), pluginPaths(nextProps.plugins))
+        || hasUserlistChange) {
+      if (hasUserlistChange) {
+        // There's a chance that the userlist has changed (user applied a new group to a plugin, etc)
+        //  we need to apply the userlist change before scheduling the update.
+        this.applyUserlist(nextProps.userlist.plugins || [], nextProps.masterlist.plugins || []);
+      }
       this.mUpdateDetailsDebounder.schedule(undefined, nextProps.plugins, nextProps.gameMode);
     }
 
     if (this.props.loadOrder !== nextProps.loadOrder) {
       this.applyLoadOrder(nextProps.loadOrder);
-    }
-
-    if (this.props.userlist !== nextProps.userlist) {
-      this.applyUserlist(nextProps.userlist.plugins || [], nextProps.masterlist.plugins || []);
-      // We have applied a userlist change to the component state - the details update debouncer
-      //  will not kick off unless the plugins are re-sorted; unfortunately this means that the
-      //  data displayed to the user in the plugins table can be outdated. Which is why we need
-      //  to kick off the update details debouncer at this stage.
-      //
-      // Please note: Doing this on group change inside a componentDidUpdate lifecycle method
-      //  will be EXTREMELY expensive - don't do it!
-      this.mUpdateDetailsDebounder.schedule(undefined, this.props.plugins, this.props.gameMode);
     }
 
     if (this.props.forceListUpdate !== nextProps.forceListUpdate) {
