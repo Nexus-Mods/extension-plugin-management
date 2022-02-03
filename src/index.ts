@@ -9,7 +9,7 @@ import userlistReducer from './reducers/userlist';
 import userlistEditReducer from './reducers/userlistEdit';
 import { ILoadOrder } from './types/ILoadOrder';
 import { ILOOTList, ILootReference } from './types/ILOOTList';
-import { IPluginCombined, IPlugins } from './types/IPlugins';
+import { IPlugin, IPluginCombined, IPlugins } from './types/IPlugins';
 import { IStateEx } from './types/IStateEx';
 import {
   gameSupported,
@@ -262,7 +262,8 @@ function makeSetPluginGhost(api: types.IExtensionApi) {
       log('warn', 'invalid plugin id', pluginId);
       return;
     }
-    let targetPath = path.join(path.dirname(plugin.filePath), path.basename(plugin.filePath, GHOST_EXT));
+    let targetPath = path.join(path.dirname(plugin.filePath),
+                               path.basename(plugin.filePath, GHOST_EXT));
     if (ghosted) {
       targetPath += GHOST_EXT;
     }
@@ -284,7 +285,13 @@ function makeSetPluginGhost(api: types.IExtensionApi) {
   };
 }
 
-function register(context: IExtensionContextExt) {
+// TODO bad hack. converting a plugin to light or back invalidates the cache the PluginList
+// holds so we use this to force an update. The better solution would be to decouple the cache
+// from the component and update the cache directly
+const forceListUpdate = util.makeReactive({ });
+
+function register(context: IExtensionContextExt,
+                  setPluginLight: (id: string, enable: boolean) => void) {
   context.registerReducer(['session', 'plugins'], pluginsReducer);
   context.registerReducer(['loadOrder'], loadOrderReducer);
   context.registerReducer(['userlist'], userlistReducer);
@@ -302,11 +309,13 @@ function register(context: IExtensionContextExt) {
     group: 'per-game',
     visible: () => gameSupported(selectors.activeGameId(context.api.store.getState())),
     props: () => ({
+      forceListUpdate,
       nativePlugins: gameSupported(selectors.activeGameId(context.api.store.getState()))
         ? nativePlugins(selectors.activeGameId(context.api.store.getState()))
         : [],
       onRefreshPlugins: () => updateCurrentProfile(context.api.store),
       onSetPluginGhost: makeSetPluginGhost(context.api),
+      onSetPluginLight: setPluginLight,
     }),
     activity: pluginActivity,
   });
@@ -1125,13 +1134,33 @@ function notifyMultiplePlugins(api: types.IExtensionApi, mod: types.IMod,
       },
     ],
   });
-
 }
 
 function init(context: IExtensionContextExt) {
-  const history = new PluginHistory(context.api, makeSetPluginGhost(context.api));
+  const setPluginLight = (id: string, enable: boolean) => {
+    const state: IStateEx = context.api.getState();
+    const profile = selectors.activeProfile(state);
+    const plugin: IPlugin = state.session.plugins.pluginList[id];
+    if (plugin === undefined) {
+      return false;
+    }
 
-  register(context);
+    const esp = new ESPFile(plugin.filePath);
+    esp.setLightFlag(enable);
+    context.api.ext.addToHistory('plugins', {
+      type: 'plugin-eslified',
+      gameId: profile.gameId,
+      data: {
+        id,
+        enable,
+      },
+    });
+    forceListUpdate[id] = Date.now();
+  };
+
+  const history = new PluginHistory(context.api, makeSetPluginGhost(context.api), setPluginLight);
+
+  register(context, setPluginLight);
   initPersistor(context);
 
   context.registerHistoryStack('plugins', history);

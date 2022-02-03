@@ -48,9 +48,11 @@ const CLEANING_GUIDE_LINK =
   'https://tes5edit.github.io/docs/7-mod-cleaning-and-error-checking.html';
 
 interface IBaseProps {
+  forceListUpdate: any;
   nativePlugins: string[];
   onRefreshPlugins: () => void;
   onSetPluginGhost: (pluginId: string, ghosted: boolean, enabled: boolean) => void;
+  onSetPluginLight: (pluginId: string, enable: boolean) => void;
 }
 
 interface IConnectedProps {
@@ -221,12 +223,12 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
   constructor(props) {
     super(props);
-    this.state = {
+    this.initState({
       selectedPlugin: undefined,
       pluginsParsed: {},
       pluginsLoot: {},
       pluginsCombined: {},
-    };
+    });
 
     const { t, onSetAutoSortEnabled } = props;
 
@@ -439,11 +441,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const loot = this.emptyPluginLOOT();
     const combined = this.detailedPlugins(plugins, loot, parsed);
     onUpdatePluginInfo(_.cloneDeep(combined));
-    this.setState(update(this.state, {
-      pluginsParsed: { $set: parsed },
-      pluginsLoot: { $set: loot },
-      pluginsCombined: { $set: combined },
-    }));
+    this.nextState.pluginsParsed = parsed;
+    this.nextState.pluginsLoot = loot;
+    this.nextState.pluginsCombined = combined;
 
     // Will verify plugins for warning/error loot messages
     //  and notify the user if any are found.
@@ -483,6 +483,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       // Please note: Doing this on group change inside a componentDidUpdate lifecycle method
       //  will be EXTREMELY expensive - don't do it!
       this.mUpdateDetailsDebounder.schedule(undefined, this.props.plugins, this.props.gameMode);
+    }
+
+    if (this.props.forceListUpdate !== nextProps.forceListUpdate) {
+      this.mUpdateDetailsDebounder.schedule(undefined, nextProps.plugins, nextProps.gameMode);
     }
   }
 
@@ -640,11 +644,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     if ((pluginsIn === undefined) && (gameMode !== this.mCachedGameMode)) {
       // plugin list is empty after switching game, this just means we're still
       // in the process of loading the plugin list
-      this.setState(update(this.state, {
-        pluginsParsed: { $set: {} },
-        pluginsLoot: { $set: {} },
-        pluginsCombined: { $set: {} },
-      }));
+      this.nextState.pluginsParsed = {};
+      this.nextState.pluginsLoot = {};
+      this.nextState.pluginsCombined = {};
+
       return Promise.resolve();
     }
 
@@ -712,11 +715,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
         if (this.mMounted) {
           this.mCachedGameMode = this.props.gameMode;
-          this.setState(update(this.state, {
-            pluginsParsed: { $set: pluginsParsed },
-            pluginsLoot: { $set: pluginsLoot },
-            pluginsCombined: { $set: pluginsCombined },
-          }));
+          this.nextState.pluginsParsed = pluginsParsed;
+          this.nextState.pluginsLoot = pluginsLoot;
+          this.nextState.pluginsCombined = pluginsCombined;
         }
 
         const pluginsFlat = Object.keys(pluginsCombined).map(pluginId => pluginsCombined[pluginId]);
@@ -885,17 +886,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     });
 
     if (this.mMounted) {
-      this.setState(update(this.state, {
-        pluginsCombined: updateSet,
-      }));
+      this.nextState.pluginsCombined = update(this.state.pluginsCombined, updateSet);
     }
   }
 
   private eslify(plugin: IPluginCombined, enable: boolean): Promise<void> {
     try {
-      const esp = new ESPFile(plugin.filePath);
-      esp.setLightFlag(enable);
-      plugin.isLight = enable;
+      this.props.onSetPluginLight(plugin.id, enable);
+      this.nextState.pluginsCombined[plugin.id].isLight = enable;
       return Promise.resolve();
     } catch (err) {
       return Promise.reject(err);
@@ -970,9 +968,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     });
 
     if (this.mMounted) {
-      this.setState(update(this.state, {
-        pluginsCombined: updateSet,
-      }));
+      this.nextState.pluginsCombined = update(this.state.pluginsCombined,  updateSet);
     }
   }
 

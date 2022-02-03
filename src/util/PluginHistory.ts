@@ -21,7 +21,8 @@ class PluginHistory implements types.IHistoryStack {
   private mEventTypes: { [key: string]: IEventType };
 
   constructor(api: types.IExtensionApi,
-              setPluginGhost: (pluginId: string, ghosted: boolean, enabled: boolean) => void) {
+              setPluginGhost: (pluginId: string, ghosted: boolean, enabled: boolean) => void,
+              setPluginLight: (pluginId: string, enable: boolean) => void) {
     this.mApi = api;
 
     const renderAct = (data) => {
@@ -105,6 +106,42 @@ class PluginHistory implements types.IHistoryStack {
           do: evt => {
             setPluginGhost(evt.data.id, false, true);
             return Promise.resolve();
+          },
+        },
+      },
+      'plugin-eslified': {
+        describe: evt =>
+          api.translate('Plugin was converted to {{ conversion }}: {{ name }}', {
+            replace: {
+              name: evt.data.id,
+              conversion: evt.data.enable ? 'light' : 'regular',
+            },
+          }),
+        revert: {
+          describe: evt => api.translate('Convert to {{ conversion }}', {
+            replace: {
+              conversion: evt.data.enable ? 'regular' : 'light',
+            },
+          }),
+          possible: evt => {
+            const state: IStateEx = this.mApi.getState();
+            const plugin = state.session.plugins.pluginList[evt.data.id];
+            if (plugin === undefined) {
+              return false;
+            }
+            // TODO we currently only validate the plugin exist, not whether it still has the
+            // expected flag because that information is cached in PluginList and not easily
+            // accessible here.
+            // that should be refactored though
+            return true;
+          },
+          do: evt => {
+            try {
+              setPluginLight(evt.data.id, !evt.data.enable);
+              return Promise.resolve();
+            } catch (err) {
+              return Promise.reject(err);
+            }
           },
         },
       },
