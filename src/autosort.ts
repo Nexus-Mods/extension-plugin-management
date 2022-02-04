@@ -201,8 +201,15 @@ class LootInterface {
       const sorted: string[] = await this.mSortPromise;
       this.mRestarts = MAX_RESTARTS;
       const state = store.getState();
-      store.dispatch(updatePluginOrder(sorted, false, state.settings.plugins.autoEnable));
-      log('debug', 'sorting plugins finished', { elapsedMS: Date.now() - timeBefore });
+      if (sorted !== undefined) {
+        store.dispatch(updatePluginOrder(sorted, false, state.settings.plugins.autoEnable));
+        log('debug', 'sorting plugins finished', { elapsedMS: Date.now() - timeBefore });
+      } else {
+        // loot didn't return an error but an undefined result. Reviewing the code it doesn't
+        // seem to be an error on our end, don't have a clue how to even investigate further.
+        // It's also ultra rare so probably not worth the time
+        log('error', 'failed to sort plugins, empty loot result');
+      }
     } catch (err) {
       log('info', 'loot failed', { error: err.message });
       if (err.message.startsWith('Cyclic interaction')) {
