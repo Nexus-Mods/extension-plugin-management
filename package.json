@@ -6,7 +6,7 @@
   "repository": "",
   "scripts": {
     "webpack": "webpack --config webpack.config.js --progress --profile --color",
-    "webpack_async": "webpack --config webpack.config.js --entry ./node_modules/loot/async.js --output-filename async.js",
+    "webpack_async": "webpack --config webpack_async.config.js --entry ./node_modules/loot/async.js --output-filename async.js",
     "copy_esptk": "copyfiles -f ./node_modules/esptk/build/Release/esptk.node ./dist",
     "copy_loot": "copyfiles -f ./node_modules/loot/build/Release/node-loot.node ./dist && copyfiles -f ./node_modules/loot/loot_api/loot.dll ./dist",
     "copy_async": "npm run webpack_async && copyfiles -f ./node_modules/loot/bindings.js ./dist",

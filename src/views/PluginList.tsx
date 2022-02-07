@@ -263,6 +263,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             const plugin = this.state.pluginsCombined[pluginId];
             return plugin.isValidAsLightMaster
                 && !plugin.isLight
+                && plugin.deployed
                 && path.extname(pluginId) === '.esp';
           }) !== undefined),
         singleRowAction: true,
@@ -277,6 +278,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           && (instanceIds.find(pluginId => {
             const plugin = this.state.pluginsCombined[pluginId];
             return plugin.isLight
+                && plugin.deployed
                 && path.extname(pluginId) === '.esp';
           }) !== undefined),
         singleRowAction: true,
