@@ -36,7 +36,7 @@ export function getPluginFlags(plugin: IPluginCombined,
   if (supportsESL(gameMode)) {
     if (plugin.isLight) {
       result.push(t('Light'));
-    } else if (plugin.isValidAsLightMaster
+    } else if (plugin.isValidAsLightPlugin
                && (path.extname(plugin.filePath).toLowerCase() === '.esp')) {
       result.push(t('Could be light'));
     } else {
@@ -122,7 +122,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
           name='plugin-light'
           tooltip={t('Light')}
         />);
-    } else if (plugin.isValidAsLightMaster
+    } else if (plugin.isValidAsLightPlugin
       && (path.extname(plugin.filePath).toLowerCase() === '.esp')) {
       const key = `ico-couldbelight-${plugin.id}`;
       // stroke and hollow props not currently in the api typings atm

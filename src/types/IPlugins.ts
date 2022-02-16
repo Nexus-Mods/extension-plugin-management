@@ -81,7 +81,7 @@ export interface IPluginLoot {
   currentTags: Tag[];
   suggestedTags: Tag[];
   group: string;
-  isValidAsLightMaster: boolean;
+  isValidAsLightPlugin: boolean;
   requirements: ILootReference[];
   incompatibilities: ILootReference[];
   loadsArchive: boolean;

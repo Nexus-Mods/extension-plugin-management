@@ -261,7 +261,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           supportsESL(this.props.gameMode)
           && (instanceIds.find(pluginId => {
             const plugin = this.state.pluginsCombined[pluginId];
-            return plugin.isValidAsLightMaster
+            return plugin.isValidAsLightPlugin
                 && !plugin.isLight
                 && plugin.deployed
                 && path.extname(pluginId) === '.esp';
@@ -425,7 +425,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         group: '',
         currentTags: [],
         suggestedTags: [],
-        isValidAsLightMaster: false,
+        isValidAsLightPlugin: false,
         incompatibilities: [],
         requirements: [],
         loadsArchive: false,
@@ -471,8 +471,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         || !_.isEqual(pluginPaths(this.props.plugins), pluginPaths(nextProps.plugins))
         || hasUserlistChange) {
       if (hasUserlistChange) {
-        // There's a chance that the userlist has changed (user applied a new group to a plugin, etc)
-        //  we need to apply the userlist change before scheduling the update.
+        // There's a chance that the userlist has changed (user applied a new
+        // group to a plugin, etc)
+        // we need to apply the userlist change before scheduling the update.
         this.applyUserlist(nextProps.userlist.plugins || [], nextProps.masterlist.plugins || []);
       }
       this.mUpdateDetailsDebounder.schedule(undefined, nextProps.plugins, nextProps.gameMode);
@@ -903,7 +904,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       .filter(plugin =>
         (plugin !== undefined)
         && plugin.deployed
-        && plugin.isValidAsLightMaster
+        && plugin.isValidAsLightPlugin
         && !plugin.isLight
         && path.extname(plugin.id) === '.esp')
       , plugin => this.eslify(plugin, true))
@@ -1295,15 +1296,15 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         placement: 'detail',
         edit: {},
         condition: () => supportsESL(this.props.gameMode),
-        calc: (plugin: IPluginCombined) => plugin.isValidAsLightMaster,
+        calc: (plugin: IPluginCombined) => plugin.isValidAsLightPlugin,
         customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => {
           const ext = path.extname(plugin.name).toLowerCase();
-          const canBeConverted = (plugin.isValidAsLightMaster || plugin.isLight)
+          const canBeConverted = (plugin.isValidAsLightPlugin || plugin.isLight)
                               && (ext === '.esp');
           return (
             <Button
               disabled={!canBeConverted}
-              title={!plugin.isValidAsLightMaster && !plugin.isLight
+              title={!plugin.isValidAsLightPlugin && !plugin.isLight
                 ? t('This plugin can\'t be an esl since it contains form-ids '
                     + 'outside the valid range')
                 : ext !== '.esp'

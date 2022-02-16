@@ -13,7 +13,7 @@ import * as path from 'path';
 import {} from 'redux-thunk';
 import {actions, fs, log, selectors, types, util} from 'vortex-api';
 
-const LOOT_LIST_REVISION = 'v0.15';
+const LOOT_LIST_REVISION = 'v0.17';
 const MAX_RESTARTS = 3;
 
 const LootProm: any = Bluebird.promisifyAll(LootAsync);
@@ -108,7 +108,7 @@ class LootInterface {
     this.mInitPromise = this.init(gameMode, this.gamePath);
     loot = (await this.mInitPromise).loot;
 
-    return await loot.updateMasterlistAsync(
+    return await loot.updateFileAsync(
         path.join(masterlistPath, 'masterlist.yaml'),
         `https://github.com/loot/${this.convertGameId(game, true)}.git`,
         LOOT_LIST_REVISION)
@@ -433,7 +433,7 @@ class LootInterface {
       cleanliness: [],
       dirtyness: [],
       group: undefined,
-      isValidAsLightMaster: false,
+      isValidAsLightPlugin: false,
       loadsArchive: false,
       incompatibilities: [],
       requirements: [],
@@ -471,7 +471,7 @@ class LootInterface {
           group: meta?.group || '',
           requirements: (meta?.requirements || []).map(toRef),
           incompatibilities: (meta?.incompatibilities || []).map(toRef),
-          isValidAsLightMaster: pluginsLoaded && (info !== undefined) && info.isValidAsLightMaster,
+          isValidAsLightPlugin: pluginsLoaded && (info !== undefined) && info.isValidAsLightPlugin,
           loadsArchive: pluginsLoaded && (info !== undefined) && info.loadsArchive,
           version: (pluginsLoaded && (info !== undefined)) ? info.version : '',
         };
@@ -582,9 +582,13 @@ class LootInterface {
     const masterlistRepoPath = path.join(util.getVortexPath('userData'), gameMode,
                                          'masterlist');
     const masterlistPath = path.join(masterlistRepoPath, 'masterlist.yaml');
+    const preludePath = path.join(util.getVortexPath('userData'), 'loot_prelude', 'prelude.yaml');
     try {
+      await fs.ensureDirAsync(path.dirname(preludePath));
+      await loot.updateFileAsync(
+        preludePath, 'https://github.com/loot/prelude.git', LOOT_LIST_REVISION);
       await fs.ensureDirAsync(path.dirname(masterlistPath));
-      const updated = await loot.updateMasterlistAsync(
+      const updated = await loot.updateFileAsync(
           masterlistPath,
           `https://github.com/loot/${this.convertGameId(gameMode, true)}.git`,
           LOOT_LIST_REVISION);
@@ -613,9 +617,21 @@ class LootInterface {
       } catch (err) {
         mtime = null;
       }
+
+      let usePrelude: boolean = false;
+      try {
+        await fs.statAsync(preludePath);
+        usePrelude = true;
+      } catch (err) {
+        // nop
+      }
+
       // ensure masterlist is available
       await fs.statAsync(masterlistPath);
-      await loot.loadListsAsync(masterlistPath, mtime !== null ? userlistPath : '');
+      await loot.loadListsAsync(
+        masterlistPath,
+        mtime !== null ? userlistPath : '',
+        usePrelude ? preludePath : '');
       await loot.loadCurrentLoadOrderStateAsync();
       this.mUserlistTime = mtime;
     } catch (err) {
