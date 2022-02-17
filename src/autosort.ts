@@ -868,18 +868,21 @@ class LootInterface {
       const edgeGroup = this.getGroup(state, args[1]);
       const nextGroup = this.getGroup(state, args[2]);
 
-      const cyclePath: ICycleEdge[] =
-        await loot.getGroupsPathAsync(edgeGroup.group || 'default', nextGroup.group || 'default');
+      try {
+        const cyclePath: ICycleEdge[] =
+          await loot.getGroupsPathAsync(edgeGroup.group || 'default', nextGroup.group || 'default');
 
-      cyclePath.forEach((pathEdge, idx) => {
-        if ((pathEdge.typeOfEdgeToNextVertex === EdgeType.userLoadAfter)
+        cyclePath.forEach((pathEdge, idx) => {
+          if ((pathEdge.typeOfEdgeToNextVertex === EdgeType.userLoadAfter)
             || (pathEdge.typeOfEdgeToNextVertex === EdgeType.userRequirement)) {
-          const pathNext = cyclePath[(idx + 1) % cyclePath.length];
-          api.store.dispatch(
-            removeGroupRule(pathNext.name || 'default', pathEdge.name || 'default'));
-        }
-      });
-
+            const pathNext = cyclePath[(idx + 1) % cyclePath.length];
+            api.store.dispatch(
+              removeGroupRule(pathNext.name || 'default', pathEdge.name || 'default'));
+          }
+        });
+      } catch (err) {
+        log('warn', 'failed to determine path between groups', err.message);
+      }
     } else {
       api.showErrorNotification('Invalid fix instruction for cycle, please report this', key);
     }
