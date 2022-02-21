@@ -507,12 +507,21 @@ class LootInterface {
     const masterlistPath = path.join(util.getVortexPath('userData'), gameMode,
                                      'masterlist', 'masterlist.yaml');
     const userlistPath = path.join(util.getVortexPath('userData'), gameMode, 'userlist.yaml');
+    const preludePath = path.join(util.getVortexPath('userData'), 'loot_prelude', 'prelude.yaml');
 
     let mtime: Date;
     try {
       mtime = (await fs.statAsync(userlistPath)).mtime;
     } catch (err) {
       mtime = null;
+    }
+
+    let usePrelude: boolean = false;
+    try {
+      await fs.statAsync(preludePath);
+      usePrelude = true;
+    } catch (err) {
+      // nop
     }
 
     // load & evaluate lists first time we need them and whenever
@@ -529,7 +538,10 @@ class LootInterface {
       });
       try {
         await fs.statAsync(masterlistPath);
-        await loot.loadListsAsync(masterlistPath, mtime !== null ? userlistPath : '');
+        await loot.loadListsAsync(
+          masterlistPath,
+          mtime !== null ? userlistPath : '',
+          usePrelude ? preludePath : '');
         log('info', 'loaded loot lists');
         this.mUserlistTime = mtime;
       } catch (err) {
