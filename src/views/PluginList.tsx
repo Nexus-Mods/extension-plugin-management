@@ -914,8 +914,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     .catch(err => {
       const isUserError = ['EPERM', 'EACCESS'].includes(err.code)
                        || err.message.includes('file not found')
-                       || err.message.includes('Access is denied');
-      this.context.api.showErrorNotification('Failed to mark plugins as light', err,
+                       // TODO: error messages from the library are localized, this is what we
+                       //   actually want to filter by, rather than rename:
+                       // || err.message.includes('Access is denied');
+                       || err.message.includes('rename:');
+      this.context.api.showErrorNotification('Failed to convert plugin', err,
         { allowReport: !isUserError });
     });
   }
@@ -935,8 +938,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     .catch(err => {
       const isUserError = ['EPERM', 'EACCESS'].includes(err.code)
                        || err.message.includes('file not found')
-                       || err.message.includes('Access is denied');
-      this.context.api.showErrorNotification('Failed to mark plugins as regular', err,
+                       // TODO: error messages from the library are localized, this is what we
+                       //   actually want to filter by, rather than rename:
+                       // || err.message.includes('Access is denied');
+                       || err.message.includes('rename:');
+      this.context.api.showErrorNotification('Failed to convert plugin', err,
         { allowReport: !isUserError });
     });
   }
