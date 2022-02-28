@@ -1136,6 +1136,17 @@ function notifyMultiplePlugins(api: types.IExtensionApi, mod: types.IMod,
   });
 }
 
+function onDidDeploy(api: types.IExtensionApi, profileId: string): Promise<void> {
+  const state: types.IState = api.getState();
+  const profile = state.persistent.profiles[profileId];
+  return ((profile !== undefined) && gameSupported(profile.gameId))
+    ? updatePluginList(api.store, profile.modState, profile.gameId)
+      .then(() => {
+        api.events.emit('autosort-plugins', false);
+      })
+    : Promise.resolve();
+}
+
 function init(context: IExtensionContextExt) {
   const setPluginLight = (id: string, enable: boolean) => {
     const state: IStateEx = context.api.getState();
@@ -1232,14 +1243,11 @@ function init(context: IExtensionContextExt) {
           pluginsChangedQueued = false;
           context.api.events.emit('trigger-test-run', 'plugins-changed', 500);
         }
-        const state: types.IState = store.getState();
-        const profile = state.persistent.profiles[profileId];
-        return ((profile !== undefined) && gameSupported(profile.gameId))
-          ? updatePluginList(store, profile.modState, profile.gameId)
-            .then(() => {
-              context.api.events.emit('autosort-plugins', false);
-            })
-          : Promise.resolve();
+        return onDidDeploy(context.api, profileId);
+      });
+
+      context.api.onAsync('did-purge', (profileId: string) => {
+        return onDidDeploy(context.api, profileId);
       });
 
       context.api.onStateChange(['loadOrder'], () => {
