@@ -649,7 +649,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       return Promise.resolve();
     }
 
-    const pluginNames: string[] = Object.keys(pluginsIn);
+    const pluginNames: string[] = Object.keys(pluginsIn ?? {});
     const pluginsParsed: { [pluginName: string]: IPluginParsed } = {};
     let pluginsLoot;
 
