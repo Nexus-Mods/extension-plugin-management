@@ -2,6 +2,7 @@ import {updatePluginOrder} from './actions/loadOrder';
 import { removeGroupRule, removeRule, setGroup } from './actions/userlist';
 import {IPluginLoot, IPlugins, IPluginsLoot} from './types/IPlugins';
 import {gameSupported, pluginPath} from './util/gameSupport';
+import { downloadMasterlist, downloadPrelude } from './util/masterlist';
 
 import { NAMESPACE } from './statics';
 
@@ -13,7 +14,6 @@ import * as path from 'path';
 import {} from 'redux-thunk';
 import {actions, fs, log, selectors, types, util} from 'vortex-api';
 
-const LOOT_LIST_REVISION = 'v0.17';
 const MAX_RESTARTS = 3;
 
 const LootProm: any = Bluebird.promisifyAll(LootAsync);
@@ -108,13 +108,9 @@ class LootInterface {
     this.mInitPromise = this.init(gameMode, this.gamePath);
     loot = (await this.mInitPromise).loot;
 
-    return await loot.updateFileAsync(
-        path.join(masterlistPath, 'masterlist.yaml'),
-        `https://github.com/loot/${this.convertGameId(game, true)}.git`,
-        LOOT_LIST_REVISION)
-      ? null
-      // how would that happen?
-      : 'Masterlist unmodified';
+    await downloadMasterlist(this.convertGameId(game, true), masterlistPath);
+
+    return null;
   }
 
   private onSort = async (manual: boolean, callback?: (err: Error) => void) => {
@@ -590,15 +586,9 @@ class LootInterface {
     const masterlistPath = path.join(masterlistRepoPath, 'masterlist.yaml');
     const preludePath = path.join(util.getVortexPath('userData'), 'loot_prelude', 'prelude.yaml');
     try {
-      await fs.ensureDirAsync(path.dirname(preludePath));
-      await loot.updateFileAsync(
-        preludePath, 'https://github.com/loot/prelude.git', LOOT_LIST_REVISION);
-      await fs.ensureDirAsync(path.dirname(masterlistPath));
-      const updated = await loot.updateFileAsync(
-          masterlistPath,
-          `https://github.com/loot/${this.convertGameId(gameMode, true)}.git`,
-          LOOT_LIST_REVISION);
-      log('info', 'updated loot masterlist', updated);
+      await downloadPrelude(preludePath);
+      await downloadMasterlist(this.convertGameId(gameMode, true), masterlistPath);
+      log('info', 'updated loot masterlist');
       this.mExtensionApi.events.emit('did-update-masterlist');
     } catch (err) {
       const t = this.mExtensionApi.translate;
