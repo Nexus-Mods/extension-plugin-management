@@ -85,34 +85,6 @@ class LootInterface {
     }
   }
 
-  public async resetMasterlist(): Promise<string> {
-    const { store } = this.mExtensionApi;
-    // tslint:disable-next-line:prefer-const
-    let { game, loot } = await this.mInitPromise;
-
-    const state = store.getState();
-    const gameMode = selectors.activeGameId(state);
-
-    if ((gameMode !== game)
-      || !gameSupported(gameMode)
-      || (loot === undefined)
-      || loot.isClosed()) {
-      return 'LOOT not initialised';
-    }
-
-    const masterlistPath = path.join(util.getVortexPath('userData'), gameMode,
-      'masterlist');
-
-    await fs.removeAsync(masterlistPath);
-    // have to restart loot so it does refetch the masterlist
-    this.mInitPromise = this.init(gameMode, this.gamePath);
-    loot = (await this.mInitPromise).loot;
-
-    await downloadMasterlist(this.convertGameId(game, true), masterlistPath);
-
-    return null;
-  }
-
   private onSort = async (manual: boolean, callback?: (err: Error) => void) => {
     const { store } = this.mExtensionApi;
     try {

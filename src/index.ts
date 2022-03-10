@@ -341,24 +341,6 @@ function register(context: IExtensionContextExt,
       context.api.store.dispatch(openGroupEditor(true));
     });
 
-  context.registerAction('gamebryo-plugin-icons', 110, 'refresh', {}, 'Reset Masterlist',
-    () => {
-      loot.resetMasterlist()
-        .then(failReason => {
-          context.api.sendNotification({
-            id: 'masterlist-reset',
-            type: failReason !== null ? 'warning' : 'success',
-            message: failReason || 'Masterlist reset',
-            displayMS: failReason !== undefined ? undefined : 5000,
-          });
-        })
-        .catch(err => {
-          context.api.showErrorNotification('Failed to reset masterlist', err, {
-            allowReport: false,
-          });
-        });
-    });
-
   context.registerAction('gamebryo-plugin-icons', 200, 'history', {}, 'History', () => {
     context.api.ext.showHistory?.('plugins');
   });
