@@ -51,7 +51,7 @@ interface IBaseProps {
   forceListUpdate: any;
   nativePlugins: string[];
   onRefreshPlugins: () => void;
-  onSetPluginGhost: (pluginId: string, ghosted: boolean, enabled: boolean) => void;
+  onSetPluginGhost: (pluginId: string, gameId: string, ghosted: boolean, enabled: boolean) => void;
   onSetPluginLight: (pluginId: string, enable: boolean) => void;
 }
 
@@ -318,16 +318,17 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           if (value === undefined) {
             // toggle
             if (path.extname(plugin.filePath) === GHOST_EXT) {
-              this.props.onSetPluginGhost(plugin.id, false, true);
+              this.props.onSetPluginGhost(plugin.id, this.props.gameMode, false, true);
             } else {
               this.props.onSetPluginEnabled(plugin.id, !plugin.enabled);
             }
           } else {
             if (value === 'ghost') {
-              this.props.onSetPluginGhost(plugin.id, true, false);
+              this.props.onSetPluginGhost(plugin.id, this.props.gameMode, true, false);
             } else {
               if (path.extname(plugin.filePath) === GHOST_EXT) {
-                this.props.onSetPluginGhost(plugin.id, false, value === 'enabled');
+                this.props.onSetPluginGhost(
+                  plugin.id, this.props.gameMode, false, value === 'enabled');
               } else {
                 this.props.onSetPluginEnabled(plugin.id, value === 'enabled');
               }
@@ -743,7 +744,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         return;
       }
       if (path.extname(plugin.filePath) === GHOST_EXT) {
-        this.props.onSetPluginGhost(key, false, true);
+        this.props.onSetPluginGhost(key, this.props.gameMode, false, true);
       } else if (!util.getSafe(loadOrder, [key, 'enabled'], false)) {
         onSetPluginEnabled(key, true);
       }
@@ -751,7 +752,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private disableSelected = (pluginIds: string[]) => {
-    const { loadOrder, onSetPluginEnabled, plugins } = this.props;
+    const { gameMode, loadOrder, onSetPluginEnabled, plugins } = this.props;
 
     pluginIds.forEach((key: string) => {
       const plugin = plugins[key];
@@ -760,7 +761,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       }
 
       if (path.extname(plugin.filePath) === GHOST_EXT) {
-        this.props.onSetPluginGhost(key, false, false);
+        this.props.onSetPluginGhost(key, gameMode, false, false);
       } else if (util.getSafe<boolean>(loadOrder, [key, 'enabled'], false)) {
         onSetPluginEnabled(key, false);
       }
@@ -768,12 +769,12 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private ghostSelected = (pluginIds: string[]) => {
-    const { onSetPluginGhost, plugins } = this.props;
+    const { gameMode, onSetPluginGhost, plugins } = this.props;
 
     pluginIds.forEach((key: string) => {
       if ((plugins[key]?.filePath !== undefined)
           && (path.extname(plugins[key]?.filePath) !== GHOST_EXT)) {
-        onSetPluginGhost(key, true, false);
+        onSetPluginGhost(key, gameMode, true, false);
       }
     });
   }

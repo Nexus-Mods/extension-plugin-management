@@ -219,6 +219,7 @@ function updatePluginList(store: Redux.Store<any>,
 }
 
 function renamePlugin(api: types.IExtensionApi,
+                      gameId: string,
                       plugin: IPluginCombined,
                       targetPath: string): Promise<void> {
   const renameProm = fs.renameAsync(plugin.filePath, targetPath);
@@ -228,9 +229,8 @@ function renamePlugin(api: types.IExtensionApi,
     // if we have a corresponding mod we need to rename the file in the staging directory instead,
     // deployment will later figure out the file in the game directory
     const state = api.getState();
-    const gameMode = selectors.activeGameId(state);
-    const stagingPath = selectors.installPathForGame(state, gameMode);
-    const mod = state.persistent.mods[gameMode][plugin.modId];
+    const stagingPath = selectors.installPathForGame(state, gameId);
+    const mod = state.persistent.mods[gameId][plugin.modId];
     const srcName = path.basename(plugin.filePath);
     const dstName = path.basename(targetPath);
 
@@ -254,7 +254,7 @@ let refreshTimer: NodeJS.Timer;
 let deploying = false;
 
 function makeSetPluginGhost(api: types.IExtensionApi) {
-  return (pluginId: string, ghosted: boolean, enabled: boolean) => {
+  return (pluginId: string, gameMode: string, ghosted: boolean, enabled: boolean) => {
     const state = api.store.getState();
     const { pluginList } = state.session.plugins;
     const plugin: IPluginCombined = pluginList?.[pluginId];
@@ -273,7 +273,7 @@ function makeSetPluginGhost(api: types.IExtensionApi) {
       return;
     }
 
-    return renamePlugin(api, plugin, targetPath)
+    return renamePlugin(api, gameMode, plugin, targetPath)
       .then(() => {
         api.store.dispatch(setPluginFilePath(pluginId, targetPath));
         api.store.dispatch(setPluginEnabled(pluginId, enabled));
