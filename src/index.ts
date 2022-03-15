@@ -257,7 +257,7 @@ function makeSetPluginGhost(api: types.IExtensionApi) {
   return (pluginId: string, ghosted: boolean, enabled: boolean) => {
     const state = api.store.getState();
     const { pluginList } = state.session.plugins;
-    const plugin: IPluginCombined = pluginList[pluginId];
+    const plugin: IPluginCombined = pluginList?.[pluginId];
     if (plugin === undefined) {
       log('warn', 'invalid plugin id', pluginId);
       return;
