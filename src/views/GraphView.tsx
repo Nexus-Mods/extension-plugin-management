@@ -40,7 +40,7 @@ export interface IGraphViewProps {
 }
 
 function san(input: string): string {
-  let res = input.replace(/[ &]/g, '_');
+  let res = input.replace(/[^a-zA-Z0-9_-]/g, (invalid) => `_${invalid.charCodeAt(0)}_`);
   if (!res) {
     // workaround so we can open the dialog even with an empty node name
     res = '__empty';
