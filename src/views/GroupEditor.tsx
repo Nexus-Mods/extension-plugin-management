@@ -15,7 +15,7 @@ import { withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import { actions, ComponentEx, ContextMenu, Modal, types, Usage } from 'vortex-api';
+import { actions, ComponentEx, ContextMenu, log, Modal, types, Usage } from 'vortex-api';
 
 interface IConnectedProps {
   open: boolean;
@@ -151,6 +151,10 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
     if ((masterExisting !== undefined)
         && (userlist.groups.find(grp => grp.name === target) === undefined)) {
       onAddGroup(target);
+    }
+    if (masterExisting && (masterExisting.after ?? []).includes(source)) {
+      log('info', 'not adding userlist rule since it\'s already a masterlist rule');
+      return;
     }
     onAddGroupRule(target, source);
   }

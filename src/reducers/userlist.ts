@@ -108,7 +108,7 @@ const userlistReducer: types.IReducerSpec = {
           after: [ payload.reference ],
         });
       } else {
-        return (util as any).addUniqueSafe(state, ['groups', idx, 'after'], payload.reference);
+        return util.addUniqueSafe(state, ['groups', idx, 'after'], payload.reference);
       }
     },
     [actions.removeGroupRule as any]: (state, payload) => {
