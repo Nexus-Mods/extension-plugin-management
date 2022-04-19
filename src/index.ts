@@ -983,7 +983,7 @@ function testRulesUnfulfilled(api: types.IExtensionApi)
     util.setdefault(target, id, { display: name, refs: [] }).refs.push(source);
     // the loot api returns the regular file name as a fallback if no display name is specified
     // in the user-/masterlist - without escaping characters that may be special in markdown.
-    if ((entry['display'] !== undefined) && (entry['display'] !== name)) {
+    if ((!!entry['display']) && (entry['display'] !== name)) {
       target[id].display = markdownToBBCode(entry['display']);
     }
   };
