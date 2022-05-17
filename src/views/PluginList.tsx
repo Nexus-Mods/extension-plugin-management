@@ -553,8 +553,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             </FlexLayout.Flex>
             <FlexLayout.Fixed>
               <Usage infoId='deployed-plugins' persistent>
-                {t('This screen shows only deployed plugins, '
-                 + 'if you\'re missing files, try deploying manually.')}
+                {t('Automatic plugin sorting powered by ')}
+                <a onClick={this.openLOOTSite}>LOOT</a>
               </Usage>
             </FlexLayout.Fixed>
           </FlexLayout>
@@ -562,6 +562,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       </MainPage>
     );
   }
+
+  private openLOOTSite = () => util.opn('https://loot.github.io/').catch(() => null)
 
   private renderOutdated() {
     const { t } = this.props;
