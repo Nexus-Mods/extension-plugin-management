@@ -147,6 +147,13 @@ class PluginHistory implements types.IHistoryStack {
               setPluginLight(evt.data.id, !evt.data.enable);
               return Promise.resolve();
             } catch (err) {
+              if (err.code === 'ENOENT') {
+                api.showErrorNotification('File no longer exists', err, {
+                  message: err.path,
+                  allowReport: false,
+                });
+                return Promise.resolve();
+              }
               return Promise.reject(err);
             }
           },
