@@ -7,16 +7,13 @@ import { fs, log, types, util } from 'vortex-api';
 
 const gameSupportXbox = {
   skyrimse: {
-    appDataPath: path.join('Packages', 'BethesdaSoftworks.SkyrimSE-PC_3275kfvn8vcwc',
-      'LocalCache', 'Local', 'Skyrim Special Edition MS'),
+    appDataPath: 'Skyrim Special Edition MS',
   },
   fallout4: {
-    appDataPath: path.join('Packages', 'BethesdaSoftworks.Fallout4-PC_3275kfvn8vcwc',
-      'LocalCache', 'Local', 'Fallout4 MS'),
+    appDataPath: 'Fallout4 MS',
   },
   oblivion: {
-    appDataPath: path.join('Packages', 'BethesdaSoftworks.TESOblivion-PC_3275kfvn8vcwc',
-      'LocalCache', 'Local', 'Oblivion'),
+    appDataPath: 'Oblivion',
   }
 }
 
