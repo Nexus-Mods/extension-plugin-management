@@ -1509,13 +1509,14 @@ loose-envify@^1.0.0, loose-envify@^1.1.0, loose-envify@^1.4.0:
     js-tokens "^3.0.0 || ^4.0.0"
 
 loot@Nexus-Mods/node-loot:
-  version "5.0.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/a3bddf977625bdb15c453aa360396e3463dd974d"
+  version "5.0.3"
+  resolved "https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/cbb9123cfc9c74fcdb2bbed7800cbc9c7bbd5e81"
   dependencies:
     autogypi "^0.2.2"
     lodash "^4.17.21"
     node-addon-api "*"
     node-gyp "^7.1.0"
+    prebuild-install "7.1.0"
 
 lru-cache@^6.0.0:
   version "6.0.0"
@@ -1725,7 +1726,12 @@ node-abi@^3.3.0:
   dependencies:
     semver "^7.3.5"
 
-node-addon-api@*, node-addon-api@^4.0.0:
+node-addon-api@*:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-5.0.0.tgz#7d7e6f9ef89043befdb20c1989c905ebde18c501"
+  integrity sha512-CvkDw2OEnme7ybCykJpVcKH+uAOLV2qLqiyla128dN9TkEWfrYmxG6C2boDe5KcNQqZF3orkqzGgOMvZ/JNekA==
+
+node-addon-api@^4.0.0:
   version "4.3.0"
   resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-4.3.0.tgz#52a1a0b475193e0928e98e0426a0d1254782b77f"
   integrity sha512-73sE9+3UaLYYFmDsFZnqCInzPyh3MqIwZO9cw58yIqAZhONrrabrYyYe3TuIqtIiOuTXVhsGau8hcrhhwSsDIQ==
