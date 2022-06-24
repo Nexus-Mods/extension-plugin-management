@@ -904,8 +904,8 @@ esprima@^4.0.0:
   integrity sha512-eGuFFw7Upda+g4p+QHvnW0RyTX/SVeJBDM/gCtMARO0cLuT2HcEKnTPvhjV6aGeqrCB/sbNop0Kszm0jsaWU4A==
 
 esptk@Nexus-Mods/node-esptk:
-  version "2.0.3"
-  resolved "https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/579959730fcae659d00030644be0f8b73b9ba61c"
+  version "2.0.4"
+  resolved "https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/a02702d9bdb06e4910ccb4ec819823798cd983ea"
   dependencies:
     autogypi "^0.2.2"
     node-addon-api "^4.0.0"
