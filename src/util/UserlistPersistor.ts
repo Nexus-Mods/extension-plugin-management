@@ -153,23 +153,25 @@ class UserlistPersistor implements types.IPersistor {
       ? remote.dialog
       : dialogIn;
 
+    let res = 0;
     if (this.mMode === 'masterlist') {
-      dialog.showMessageBoxSync(null, {
+      res = dialog.showMessageBoxSync(null, {
         title: 'Masterlist invalid',
-        message: 'The masterlist couldn\'t be read. This might have been '
-               + 'caused by network problems. You should go to the plugins '
-               + 'tab and click the "Reset Masterlist" button, until then '
-               + 'plugin sorting will not produce correct results.',
+        message: `The masterlist "${this.mUserlistPath}" can\'t be read. `
+               + '\n\n'
+               + 'If you continue now, the masterlist will be reset.',
+
         buttons: [
-          'Understood',
+          'Reset Masterlist',
+          'Quit Vortex'
         ],
       });
     } else {
-      if (dialog.showMessageBoxSync(null, {
+      res = dialog.showMessageBoxSync(null, {
         title: 'Userlist invalid',
         message: `The LOOT userlist "${this.mUserlistPath}" can\'t be read. `
                + '\n\n'
-               + 'You should quit vortex now and repair the file.\n'
+               + 'You should quit Vortex now and repair the file.\n'
                + 'If (and only if!) you\'re certain you didn\'t modify the file yourself, '
                + 'please send in a bug report with that file attached.'
                + '\n\n'
@@ -181,9 +183,13 @@ class UserlistPersistor implements types.IPersistor {
           'Reset Userlist',
           'Quit Vortex',
         ],
-      })) {
-        util['getApplication']().quit(1);
-      }
+      });
+    }
+
+    if (res === 1) {
+      util.getApplication().quit();
+    } else {
+      fs.removeSync(this.mUserlistPath);
     }
   }
 
