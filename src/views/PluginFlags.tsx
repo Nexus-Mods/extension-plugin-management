@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 import { IPluginCombined } from '../types/IPlugins';
 import { gameSupported, minRevision, supportsESL } from '../util/gameSupport';
 
@@ -6,7 +7,6 @@ import { NAMESPACE } from '../statics';
 import { tooltip } from 'vortex-api';
 
 import I18next from 'i18next';
-import * as path from 'path';
 import * as React from 'react';
 
 type TranslationFunction = typeof I18next.t;
@@ -36,8 +36,7 @@ export function getPluginFlags(plugin: IPluginCombined,
   if (supportsESL(gameMode)) {
     if (plugin.isLight) {
       result.push(t('Light'));
-    } else if (plugin.isValidAsLightPlugin
-               && (path.extname(plugin.filePath).toLowerCase() === '.esp')) {
+    } else if (plugin.isValidAsLightPlugin && plugin.filePath.toLowerCase().endsWith('.esp')) {
       result.push(t('Could be light'));
     } else {
       result.push(t('Not light'));
@@ -122,8 +121,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
           name='plugin-light'
           tooltip={t('Light')}
         />);
-    } else if (plugin.isValidAsLightPlugin
-      && (path.extname(plugin.filePath).toLowerCase() === '.esp')) {
+    } else if (plugin.isValidAsLightPlugin && (plugin.filePath.toLowerCase().endsWith('.esp'))) {
       const key = `ico-couldbelight-${plugin.id}`;
       // stroke and hollow props not currently in the api typings atm
       const IconX: any = tooltip.Icon;
