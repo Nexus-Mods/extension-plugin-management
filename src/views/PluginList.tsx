@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 import { setPluginEnabled } from '../actions/loadOrder';
 import { setPluginInfo, updatePluginWarnings } from '../actions/plugins';
 import { setAutoSortEnabled } from '../actions/settings';
@@ -17,7 +18,7 @@ import { GHOST_EXT, NAMESPACE } from '../statics';
 
 import DependencyIcon from './DependencyIcon';
 import MasterList from './MasterList';
-import PluginFlags, { getPluginFlags } from './PluginFlags';
+import PluginFlags from './PluginFlags';
 import PluginFlagsFilter from './PluginFlagsFilter';
 import PluginStatusFilter from './PluginStatusFilter';
 
@@ -53,6 +54,10 @@ interface IBaseProps {
   onRefreshPlugins: () => void;
   onSetPluginGhost: (pluginId: string, gameId: string, ghosted: boolean, enabled: boolean) => void;
   onSetPluginLight: (pluginId: string, enable: boolean) => void;
+  isGameSupported: (gameMode: string) => boolean;
+  getMinRevision: (gameMode: string) => number;
+  doesSupportsESL: (gameMode: string) => boolean;
+  getPluginFlags(plugin: IPluginCombined, t: TranslationFunction, gameMode: string): string[];
 }
 
 interface IConnectedProps {
@@ -1087,6 +1092,13 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private makeAttributes(): Array<types.ITableAttribute<IPluginCombined>> {
+    const {
+      isGameSupported,
+      getMinRevision,
+      doesSupportsESL,
+      getPluginFlags,
+    } = this.props;
+
     return [
       {
         id: 'name',
@@ -1173,7 +1185,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         edit: {},
         isSortable: true,
         customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) =>
-          (<PluginFlags plugin={plugin} gameMode={this.props.gameMode} t={t} />),
+          (<PluginFlags
+            isGameSupported={isGameSupported}
+            doesSupportsESL={doesSupportsESL}
+            getMinRevision={getMinRevision} 
+            plugin={plugin} 
+            gameMode={this.props.gameMode} 
+            t={t} 
+          />),
         calc: (plugin: IPluginCombined, t) => getPluginFlags(plugin, t, this.props.gameMode),
         sortFunc: (lhs: string[], rhs: string[]) => lhs.length - rhs.length,
         filter: new PluginFlagsFilter(),

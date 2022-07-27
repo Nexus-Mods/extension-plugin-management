@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 import { setPluginEnabled, setPluginOrder, updatePluginOrder } from './actions/loadOrder';
 import { setPluginFilePath, setPluginList, updatePluginWarnings } from './actions/plugins';
 import { removeGroupRule, setGroup } from './actions/userlist';
@@ -15,6 +16,7 @@ import {
   gameSupported,
   initGameSupport,
   isNativePlugin,
+  minRevision,
   nativePlugins,
   pluginExtensions,
   pluginPath,
@@ -26,6 +28,7 @@ import PluginHistory from './util/PluginHistory';
 import PluginPersistor from './util/PluginPersistor';
 import toPluginId from './util/toPluginId';
 import UserlistPersistor from './util/UserlistPersistor';
+import { getPluginFlags } from "./util/getPluginFlags";
 import Connector from './views/Connector';
 import GroupEditor from './views/GroupEditor';
 import PluginList from './views/PluginList';
@@ -303,12 +306,17 @@ function register(context: IExtensionContextExt,
     ['session', 'base', 'activity', 'plugins'],
   ], (activity: string[]) => (activity !== undefined) && (activity.length > 0));
 
+  // MX DO HERE
   context.registerMainPage('plugins', 'Plugins', PluginList, {
     id: 'gamebryo-plugins',
     hotkey: 'E',
     group: 'per-game',
     visible: () => gameSupported(selectors.activeGameId(context.api.store.getState())),
     props: () => ({
+      isGameSupported: gameSupported,
+      getMinRevision: minRevision,
+      doesSupportsESL: supportsESL,
+      getPluginFlags: getPluginFlags,
       forceListUpdate,
       nativePlugins: gameSupported(selectors.activeGameId(context.api.store.getState()))
         ? nativePlugins(selectors.activeGameId(context.api.store.getState()))
