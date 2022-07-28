@@ -11,7 +11,7 @@ import {
   IPluginParsed,
   IPlugins,
 } from '../types/IPlugins';
-import { gameSupported, minRevision, revisionText, supportsESL } from '../util/gameSupport';
+import { gameSupported, revisionText, supportsESL } from '../util/gameSupport';
 import GroupFilter from '../util/GroupFilter';
 
 import { GHOST_EXT, NAMESPACE } from '../statics';
@@ -54,9 +54,9 @@ interface IBaseProps {
   onRefreshPlugins: () => void;
   onSetPluginGhost: (pluginId: string, gameId: string, ghosted: boolean, enabled: boolean) => void;
   onSetPluginLight: (pluginId: string, enable: boolean) => void;
-  isGameSupported: (gameMode: string) => boolean;
-  getMinRevision: (gameMode: string) => number;
-  doesSupportsESL: (gameMode: string) => boolean;
+  gameSupported: (gameMode: string) => boolean;
+  minRevision: (gameMode: string) => number;
+  supportsESL: (gameMode: string) => boolean;
   getPluginFlags(plugin: IPluginCombined, t: TranslationFunction, gameMode: string): string[];
 }
 
@@ -1093,9 +1093,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
   private makeAttributes(): Array<types.ITableAttribute<IPluginCombined>> {
     const {
-      isGameSupported,
-      getMinRevision,
-      doesSupportsESL,
+      gameSupported,
+      minRevision,
+      supportsESL,
       getPluginFlags,
     } = this.props;
 
@@ -1186,9 +1186,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         isSortable: true,
         customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) =>
           (<PluginFlags
-            isGameSupported={isGameSupported}
-            doesSupportsESL={doesSupportsESL}
-            getMinRevision={getMinRevision} 
+            gameSupported={gameSupported}
+            supportsESL={supportsESL}
+            minRevision={minRevision} 
             plugin={plugin} 
             gameMode={this.props.gameMode} 
             t={t} 

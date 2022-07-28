@@ -10,9 +10,9 @@ type TranslationFunction = typeof I18next.t;
 interface IBaseProps {
   plugin: IPluginCombined;
   gameMode: string;
-  isGameSupported: (gameMode: string) => boolean;
-  getMinRevision: (gameMode: string) => number;
-  doesSupportsESL: (gameMode: string) => boolean;
+  gameSupported: (gameMode: string) => boolean;
+  minRevision: (gameMode: string) => number;
+  supportsESL: (gameMode: string) => boolean;
 }
 
 type IProps = IBaseProps & {
@@ -31,14 +31,14 @@ const PluginFlags = (props: IProps): JSX.Element => {
     plugin,
     gameMode,
     t,
-    doesSupportsESL,
-    getMinRevision,
-    isGameSupported,
+    supportsESL,
+    minRevision,
+    gameSupported,
   } = props;
 
   const flags: JSX.Element[] = [];
 
-  if (!isGameSupported(gameMode)) {
+  if (!gameSupported(gameMode)) {
     return null;
   }
 
@@ -53,7 +53,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
       />);
   }
 
-  if (doesSupportsESL(gameMode)) {
+  if (supportsESL(gameMode)) {
     if (plugin.isLight) {
       const key = `ico-light-${plugin.id}`;
       flags.push(
@@ -181,7 +181,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
       />);
   }
 
-  if (plugin.revision < getMinRevision(gameMode)) {
+  if (plugin.revision < minRevision(gameMode)) {
     const key = `ico-revision-${plugin.id}`;
     flags.push(
       <tooltip.Icon

@@ -2,6 +2,7 @@
 import { IPluginCombined } from '../types/IPlugins';
 import I18next from 'i18next';
 import { gameSupported, supportsESL, minRevision } from '../util/gameSupport';
+import path from 'path';
 type TranslationFunction = typeof I18next.t;
 
 export function getPluginFlags(plugin: IPluginCombined,
@@ -20,7 +21,8 @@ export function getPluginFlags(plugin: IPluginCombined,
   if (supportsESL(gameMode)) {
     if (plugin.isLight) {
       result.push(t('Light'));
-    } else if (plugin.isValidAsLightPlugin && plugin.filePath.toLowerCase().endsWith('.esp')) {
+    } else if (plugin.isValidAsLightPlugin
+      && (path.extname(plugin.filePath).toLowerCase() === '.esp')) {
       result.push(t('Could be light'));
     } else {
       result.push(t('Not light'));

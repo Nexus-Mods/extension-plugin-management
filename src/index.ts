@@ -306,16 +306,15 @@ function register(context: IExtensionContextExt,
     ['session', 'base', 'activity', 'plugins'],
   ], (activity: string[]) => (activity !== undefined) && (activity.length > 0));
 
-  // MX DO HERE
   context.registerMainPage('plugins', 'Plugins', PluginList, {
     id: 'gamebryo-plugins',
     hotkey: 'E',
     group: 'per-game',
     visible: () => gameSupported(selectors.activeGameId(context.api.store.getState())),
     props: () => ({
-      isGameSupported: gameSupported,
-      getMinRevision: minRevision,
-      doesSupportsESL: supportsESL,
+      gameSupported,
+      minRevision,
+      supportsESL,
       getPluginFlags: getPluginFlags,
       forceListUpdate,
       nativePlugins: gameSupported(selectors.activeGameId(context.api.store.getState()))
