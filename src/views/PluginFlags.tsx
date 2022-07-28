@@ -5,17 +5,16 @@ import { tooltip } from 'vortex-api';
 import I18next from 'i18next';
 import * as React from 'react';
 
-import { gameSupported, supportsESL, minRevision } from '../util/gameSupport';
-import path from 'path';
-
 type TranslationFunction = typeof I18next.t;
 
-export function getPluginFlags(plugin: IPluginCombined,
-                               t: TranslationFunction,
-                               gameId: string): string[] {
+export function getPluginFlags(t: TranslationFunction,
+                               plugin: IPluginCombined,
+                               gameSupported: boolean,
+                               supportsESL: boolean,
+                               minRevision: number): string[] {
   const result: string[] = [];
 
-  if (!gameSupported(gameId)) {
+  if (gameSupported) {
     return result;
   }
 
@@ -23,11 +22,10 @@ export function getPluginFlags(plugin: IPluginCombined,
     result.push(t('Master'));
   }
 
-  if (supportsESL(gameId)) {
+  if (supportsESL) {
     if (plugin.isLight) {
       result.push(t('Light'));
-    } else if (plugin.isValidAsLightPlugin
-      && (path.extname(plugin.filePath).toLowerCase() === '.esp')) {
+    } else if (plugin.isValidAsLightPlugin && plugin.filePath.toLowerCase().endsWith('.esp')) {
       result.push(t('Could be light'));
     } else {
       result.push(t('Not light'));
@@ -54,7 +52,7 @@ export function getPluginFlags(plugin: IPluginCombined,
     result.push(t('Clean'));
   }
 
-  if (plugin.revision < minRevision(gameId)) {
+  if (plugin.revision < minRevision) {
     result.push(t('Incompatible'));
   }
 

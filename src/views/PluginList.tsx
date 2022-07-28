@@ -57,7 +57,13 @@ interface IBaseProps {
   gameSupported: (gameMode: string) => boolean;
   minRevision: (gameMode: string) => number;
   supportsESL: (gameMode: string) => boolean;
-  getPluginFlags(plugin: IPluginCombined, t: TranslationFunction, gameMode: string): string[];
+  getPluginFlags(
+    t: TranslationFunction,
+    plugin: IPluginCombined,
+    gameSupported: boolean,
+    supportsESL: boolean,
+    minRevision: number
+  ): string[];
 }
 
 interface IConnectedProps {
@@ -1097,7 +1103,17 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       minRevision,
       supportsESL,
       getPluginFlags,
+      gameMode,
     } = this.props;
+
+    const calcFlags = (plugin: IPluginCombined, t) => 
+      getPluginFlags(
+        t, 
+        plugin, 
+        gameSupported(gameMode),
+        supportsESL(gameMode),
+        minRevision(gameMode)
+      );
 
     return [
       {
@@ -1193,7 +1209,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             gameMode={this.props.gameMode} 
             t={t} 
           />),
-        calc: (plugin: IPluginCombined, t) => getPluginFlags(plugin, t, this.props.gameMode),
+        calc: calcFlags,
         sortFunc: (lhs: string[], rhs: string[]) => lhs.length - rhs.length,
         filter: new PluginFlagsFilter(),
         placement: 'table',
@@ -1224,7 +1240,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         id: 'flagsDetail',
         name: 'Flags',
         edit: {},
-        calc: (plugin: IPluginCombined, t) => getPluginFlags(plugin, t, this.props.gameMode),
+        calc: calcFlags,
         placement: 'detail',
       },
       {
