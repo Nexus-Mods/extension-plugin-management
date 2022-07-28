@@ -7,10 +7,10 @@ type TranslationFunction = typeof I18next.t;
 
 export function getPluginFlags(plugin: IPluginCombined,
                                t: TranslationFunction,
-                               gameMode: string): string[] {
+                               gameId: string): string[] {
   const result: string[] = [];
 
-  if (!gameSupported(gameMode)) {
+  if (!gameSupported(gameId)) {
     return result;
   }
 
@@ -18,7 +18,7 @@ export function getPluginFlags(plugin: IPluginCombined,
     result.push(t('Master'));
   }
 
-  if (supportsESL(gameMode)) {
+  if (supportsESL(gameId)) {
     if (plugin.isLight) {
       result.push(t('Light'));
     } else if (plugin.isValidAsLightPlugin
@@ -49,7 +49,7 @@ export function getPluginFlags(plugin: IPluginCombined,
     result.push(t('Clean'));
   }
 
-  if (plugin.revision < minRevision(gameMode)) {
+  if (plugin.revision < minRevision(gameId)) {
     result.push(t('Incompatible'));
   }
 
