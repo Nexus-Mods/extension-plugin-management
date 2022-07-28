@@ -28,7 +28,6 @@ import PluginHistory from './util/PluginHistory';
 import PluginPersistor from './util/PluginPersistor';
 import toPluginId from './util/toPluginId';
 import UserlistPersistor from './util/UserlistPersistor';
-import { getPluginFlags } from "./util/getPluginFlags";
 import Connector from './views/Connector';
 import GroupEditor from './views/GroupEditor';
 import PluginList from './views/PluginList';
@@ -47,6 +46,7 @@ import * as path from 'path';
 import * as Redux from 'redux';
 import * as nodeUtil from 'util';
 import { actions, fs, log, selectors, types, util } from 'vortex-api';
+import { getPluginFlags } from './views/PluginFlags';
 
 type TranslationFunction = typeof I18next.t;
 
@@ -315,7 +315,7 @@ function register(context: IExtensionContextExt,
       gameSupported,
       minRevision,
       supportsESL,
-      getPluginFlags: getPluginFlags,
+      getPluginFlags,
       forceListUpdate,
       nativePlugins: gameSupported(selectors.activeGameId(context.api.store.getState()))
         ? nativePlugins(selectors.activeGameId(context.api.store.getState()))
