@@ -1105,15 +1105,6 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       getPluginFlags,
     } = this.props;
 
-    const calcFlags = (plugin: IPluginCombined, t) => 
-      getPluginFlags(
-        t, 
-        plugin, 
-        this.props.gameSupported(this.props.gameMode),
-        this.props.supportsESL(this.props.gameMode),
-        this.props.minRevision(this.props.gameMode),
-      );
-
     return [
       {
         id: 'name',
@@ -1208,7 +1199,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             gameMode={this.props.gameMode} 
             t={t} 
           />),
-        calc: calcFlags,
+        calc: (plugin: IPluginCombined, t) => 
+          getPluginFlags(
+            t, 
+            plugin, 
+            this.props.gameSupported(this.props.gameMode),
+            this.props.supportsESL(this.props.gameMode),
+            this.props.minRevision(this.props.gameMode),
+          ),
         sortFunc: (lhs: string[], rhs: string[]) => lhs.length - rhs.length,
         filter: new PluginFlagsFilter(),
         placement: 'table',
@@ -1239,7 +1237,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         id: 'flagsDetail',
         name: 'Flags',
         edit: {},
-        calc: calcFlags,
+        calc: (plugin: IPluginCombined, t) => 
+          getPluginFlags(
+            t, 
+            plugin, 
+            this.props.gameSupported(this.props.gameMode),
+            this.props.supportsESL(this.props.gameMode),
+            this.props.minRevision(this.props.gameMode),
+          ),
         placement: 'detail',
       },
       {
