@@ -1103,16 +1103,15 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       minRevision,
       supportsESL,
       getPluginFlags,
-      gameMode,
     } = this.props;
 
     const calcFlags = (plugin: IPluginCombined, t) => 
       getPluginFlags(
         t, 
         plugin, 
-        gameSupported(gameMode),
-        supportsESL(gameMode),
-        minRevision(gameMode)
+        this.props.gameSupported(this.props.gameMode),
+        this.props.supportsESL(this.props.gameMode),
+        this.props.minRevision(this.props.gameMode),
       );
 
     return [
