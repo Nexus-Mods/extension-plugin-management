@@ -14,7 +14,7 @@ export function getPluginFlags(t: TranslationFunction,
                                minRevision: number): string[] {
   const result: string[] = [];
 
-  if (gameSupported) {
+  if (!gameSupported) {
     return result;
   }
 

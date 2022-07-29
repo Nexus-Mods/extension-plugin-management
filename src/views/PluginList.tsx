@@ -1098,13 +1098,6 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private makeAttributes(): Array<types.ITableAttribute<IPluginCombined>> {
-    const {
-      gameSupported,
-      minRevision,
-      supportsESL,
-      getPluginFlags,
-    } = this.props;
-
     return [
       {
         id: 'name',
@@ -1166,7 +1159,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         placement: 'detail',
         calc: (plugin: IPluginCombined) => plugin.revision,
         customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) =>
-          plugin.revision < minRevision(this.props.gameMode)
+          plugin.revision < this.props.minRevision(this.props.gameMode)
             ? (
               <Alert bsStyle='warning'>
                 {t(revisionText(this.props.gameMode), { ns: NAMESPACE })}
@@ -1192,15 +1185,15 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         isSortable: true,
         customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) =>
           (<PluginFlags
-            gameSupported={gameSupported}
-            supportsESL={supportsESL}
-            minRevision={minRevision} 
+            gameSupported={this.props.gameSupported}
+            supportsESL={this.props.supportsESL}
+            minRevision={this.props.minRevision} 
             plugin={plugin} 
             gameMode={this.props.gameMode} 
             t={t} 
           />),
         calc: (plugin: IPluginCombined, t) => 
-          getPluginFlags(
+          this.props.getPluginFlags(
             t, 
             plugin, 
             this.props.gameSupported(this.props.gameMode),
@@ -1238,7 +1231,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         name: 'Flags',
         edit: {},
         calc: (plugin: IPluginCombined, t) => 
-          getPluginFlags(
+          this.props.getPluginFlags(
             t, 
             plugin, 
             this.props.gameSupported(this.props.gameMode),
@@ -1343,7 +1336,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         icon: 'plugin-light',
         placement: 'detail',
         edit: {},
-        condition: () => supportsESL(this.props.gameMode),
+        condition: () => this.props.supportsESL(this.props.gameMode),
         calc: (plugin: IPluginCombined) => plugin.isValidAsLightPlugin,
         customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => {
           const ext = path.extname(plugin.name).toLowerCase();
