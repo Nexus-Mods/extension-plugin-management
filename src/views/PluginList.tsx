@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 import { setPluginEnabled } from '../actions/loadOrder';
 import { setPluginInfo, updatePluginWarnings } from '../actions/plugins';
 import { setAutoSortEnabled } from '../actions/settings';
@@ -10,14 +11,14 @@ import {
   IPluginParsed,
   IPlugins,
 } from '../types/IPlugins';
-import { gameSupported, minRevision, revisionText, supportsESL } from '../util/gameSupport';
+import { gameSupported, revisionText, supportsESL } from '../util/gameSupport';
 import GroupFilter from '../util/GroupFilter';
 
 import { GHOST_EXT, NAMESPACE } from '../statics';
 
 import DependencyIcon from './DependencyIcon';
 import MasterList from './MasterList';
-import PluginFlags, { getPluginFlags } from './PluginFlags';
+import PluginFlags from './PluginFlags';
 import PluginFlagsFilter from './PluginFlagsFilter';
 import PluginStatusFilter from './PluginStatusFilter';
 
@@ -53,6 +54,16 @@ interface IBaseProps {
   onRefreshPlugins: () => void;
   onSetPluginGhost: (pluginId: string, gameId: string, ghosted: boolean, enabled: boolean) => void;
   onSetPluginLight: (pluginId: string, enable: boolean) => void;
+  gameSupported: (gameMode: string) => boolean;
+  minRevision: (gameMode: string) => number;
+  supportsESL: (gameMode: string) => boolean;
+  getPluginFlags(
+    t: TranslationFunction,
+    plugin: IPluginCombined,
+    gameSupported: boolean,
+    supportsESL: boolean,
+    minRevision: number
+  ): string[];
 }
 
 interface IConnectedProps {
@@ -1148,7 +1159,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         placement: 'detail',
         calc: (plugin: IPluginCombined) => plugin.revision,
         customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) =>
-          plugin.revision < minRevision(this.props.gameMode)
+          plugin.revision < this.props.minRevision(this.props.gameMode)
             ? (
               <Alert bsStyle='warning'>
                 {t(revisionText(this.props.gameMode), { ns: NAMESPACE })}
@@ -1173,8 +1184,22 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         edit: {},
         isSortable: true,
         customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) =>
-          (<PluginFlags plugin={plugin} gameMode={this.props.gameMode} t={t} />),
-        calc: (plugin: IPluginCombined, t) => getPluginFlags(plugin, t, this.props.gameMode),
+          (<PluginFlags
+            gameSupported={this.props.gameSupported}
+            supportsESL={this.props.supportsESL}
+            minRevision={this.props.minRevision} 
+            plugin={plugin} 
+            gameMode={this.props.gameMode} 
+            t={t} 
+          />),
+        calc: (plugin: IPluginCombined, t) => 
+          this.props.getPluginFlags(
+            t, 
+            plugin, 
+            this.props.gameSupported(this.props.gameMode),
+            this.props.supportsESL(this.props.gameMode),
+            this.props.minRevision(this.props.gameMode),
+          ),
         sortFunc: (lhs: string[], rhs: string[]) => lhs.length - rhs.length,
         filter: new PluginFlagsFilter(),
         placement: 'table',
@@ -1205,7 +1230,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         id: 'flagsDetail',
         name: 'Flags',
         edit: {},
-        calc: (plugin: IPluginCombined, t) => getPluginFlags(plugin, t, this.props.gameMode),
+        calc: (plugin: IPluginCombined, t) => 
+          this.props.getPluginFlags(
+            t, 
+            plugin, 
+            this.props.gameSupported(this.props.gameMode),
+            this.props.supportsESL(this.props.gameMode),
+            this.props.minRevision(this.props.gameMode),
+          ),
         placement: 'detail',
       },
       {
@@ -1304,7 +1336,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         icon: 'plugin-light',
         placement: 'detail',
         edit: {},
-        condition: () => supportsESL(this.props.gameMode),
+        condition: () => this.props.supportsESL(this.props.gameMode),
         calc: (plugin: IPluginCombined) => plugin.isValidAsLightPlugin,
         customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => {
           const ext = path.extname(plugin.name).toLowerCase();

@@ -1,31 +1,20 @@
+/* eslint-disable max-lines-per-function */
 import { IPluginCombined } from '../types/IPlugins';
-import { gameSupported, minRevision, supportsESL } from '../util/gameSupport';
-
 import { NAMESPACE } from '../statics';
-
 import { tooltip } from 'vortex-api';
-
 import I18next from 'i18next';
-import * as path from 'path';
 import * as React from 'react';
 
 type TranslationFunction = typeof I18next.t;
 
-interface IBaseProps {
-  plugin: IPluginCombined;
-  gameMode: string;
-}
-
-type IProps = IBaseProps & {
-  t: TranslationFunction;
-};
-
-export function getPluginFlags(plugin: IPluginCombined,
-                               t: TranslationFunction,
-                               gameMode: string): string[] {
+export function getPluginFlags(t: TranslationFunction,
+                               plugin: IPluginCombined,
+                               gameSupported: boolean,
+                               supportsESL: boolean,
+                               minRevision: number): string[] {
   const result: string[] = [];
 
-  if (!gameSupported(gameMode)) {
+  if (!gameSupported) {
     return result;
   }
 
@@ -33,11 +22,10 @@ export function getPluginFlags(plugin: IPluginCombined,
     result.push(t('Master'));
   }
 
-  if (supportsESL(gameMode)) {
+  if (supportsESL) {
     if (plugin.isLight) {
       result.push(t('Light'));
-    } else if (plugin.isValidAsLightPlugin
-               && (path.extname(plugin.filePath).toLowerCase() === '.esp')) {
+    } else if (plugin.isValidAsLightPlugin && plugin.filePath.toLowerCase().endsWith('.esp')) {
       result.push(t('Could be light'));
     } else {
       result.push(t('Not light'));
@@ -64,13 +52,15 @@ export function getPluginFlags(plugin: IPluginCombined,
     result.push(t('Clean'));
   }
 
-  if (plugin.revision < minRevision(gameMode)) {
+  if (plugin.revision < minRevision) {
     result.push(t('Incompatible'));
   }
 
-  if (plugin.enabled
-      && (plugin.warnings !== undefined)
-      && (Object.keys(plugin.warnings).find(key => plugin.warnings[key] !== false) !== undefined)) {
+  if (
+    plugin.enabled
+    && (plugin.warnings !== undefined)
+    && (Object.keys(plugin.warnings).find(key => plugin.warnings![key] !== false) !== undefined)
+  ) {
     result.push(t('Warnings'));
   }
 
@@ -85,6 +75,18 @@ export function getPluginFlags(plugin: IPluginCombined,
   return result;
 }
 
+interface IBaseProps {
+  plugin: IPluginCombined;
+  gameMode: string;
+  gameSupported: (gameMode: string) => boolean;
+  minRevision: (gameMode: string) => number;
+  supportsESL: (gameMode: string) => boolean;
+}
+
+type IProps = IBaseProps & {
+  t: TranslationFunction;
+};
+
 function warningText(t: TranslationFunction, key: string) {
   return t({
     'missing-master': 'Plugin has missing masters',
@@ -93,7 +95,14 @@ function warningText(t: TranslationFunction, key: string) {
 }
 
 const PluginFlags = (props: IProps): JSX.Element => {
-  const { plugin, gameMode, t } = props;
+  const { 
+    plugin,
+    gameMode,
+    t,
+    supportsESL,
+    minRevision,
+    gameSupported,
+  } = props;
 
   const flags: JSX.Element[] = [];
 
@@ -122,8 +131,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
           name='plugin-light'
           tooltip={t('Light')}
         />);
-    } else if (plugin.isValidAsLightPlugin
-      && (path.extname(plugin.filePath).toLowerCase() === '.esp')) {
+    } else if (plugin.isValidAsLightPlugin && (plugin.filePath.toLowerCase().endsWith('.esp'))) {
       const key = `ico-couldbelight-${plugin.id}`;
       // stroke and hollow props not currently in the api typings atm
       const IconX: any = tooltip.Icon;

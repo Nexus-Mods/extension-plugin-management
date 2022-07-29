@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 import { setPluginEnabled, setPluginOrder, updatePluginOrder } from './actions/loadOrder';
 import { setPluginFilePath, setPluginList, updatePluginWarnings } from './actions/plugins';
 import { removeGroupRule, setGroup } from './actions/userlist';
@@ -15,6 +16,7 @@ import {
   gameSupported,
   initGameSupport,
   isNativePlugin,
+  minRevision,
   nativePlugins,
   pluginExtensions,
   pluginPath,
@@ -44,6 +46,7 @@ import * as path from 'path';
 import * as Redux from 'redux';
 import * as nodeUtil from 'util';
 import { actions, fs, log, selectors, types, util } from 'vortex-api';
+import { getPluginFlags } from './views/PluginFlags';
 
 type TranslationFunction = typeof I18next.t;
 
@@ -309,6 +312,10 @@ function register(context: IExtensionContextExt,
     group: 'per-game',
     visible: () => gameSupported(selectors.activeGameId(context.api.store.getState())),
     props: () => ({
+      gameSupported,
+      minRevision,
+      supportsESL,
+      getPluginFlags,
       forceListUpdate,
       nativePlugins: gameSupported(selectors.activeGameId(context.api.store.getState()))
         ? nativePlugins(selectors.activeGameId(context.api.store.getState()))
