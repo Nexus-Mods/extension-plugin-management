@@ -48,6 +48,7 @@ import * as Redux from 'redux';
 import * as nodeUtil from 'util';
 import { actions, fs, log, selectors, types, util } from 'vortex-api';
 import { getPluginFlags } from './views/PluginFlags';
+import { createSelector } from 'reselect';
 
 type TranslationFunction = typeof I18next.t;
 
@@ -337,6 +338,19 @@ function register(context: IExtensionContextExt,
       : '';
   }
 
+  const loadOrder = (state) => state.loadOrder;
+  const enabledPlugins = createSelector(loadOrder, selectors.activeGameId, (order, gameId) => {
+    if (!gameSupported(gameId)) {
+      return new Set<string>([]);
+    }
+    return new Set<string>([].concat(nativePlugins(gameId), Object.keys(order)
+      .filter((pluginName: string) => order[pluginName].enabled)
+      .map((pluginName: string) => pluginName.toLowerCase()),
+    ));
+  });
+
+  const installedPlugins = () => enabledPlugins(context.api.store.getState())
+
   context.registerMainPage('plugins', 'Plugins', PluginList, {
     id: 'gamebryo-plugins',
     hotkey: 'E',
@@ -355,6 +369,7 @@ function register(context: IExtensionContextExt,
       pathExtname: path.extname,
       forceListUpdate,
       safeBasename,
+      installedPlugins,
       nativePlugins: gameSupported(selectors.activeGameId(context.api.store.getState()))
         ? nativePlugins(selectors.activeGameId(context.api.store.getState()))
         : [],

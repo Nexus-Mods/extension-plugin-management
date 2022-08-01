@@ -79,7 +79,8 @@ interface IBaseProps {
   openLOOTSite: () => Promise<any>;
   getNewESPFile: (filePath: string) => ESPFile;
   pathExtname: (p: string) => string;
-  safeBasename: (filePath: string) => string
+  safeBasename: (filePath: string) => string;
+  installedPlugins: () => Set<string>;
 }
 
 interface IConnectedProps {
@@ -1403,7 +1404,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         name: 'Masters',
         edit: {},
         customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) =>
-          <MasterList masters={plugin.masterList} />,
+          <MasterList
+            masters={plugin.masterList} 
+            installedPlugins={this.props.installedPlugins()} />,
         calc: (plugin: IPluginCombined) => plugin.masterList,
         placement: 'detail',
       },
