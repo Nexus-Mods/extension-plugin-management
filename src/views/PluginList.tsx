@@ -11,7 +11,6 @@ import {
   IPluginParsed,
   IPlugins,
 } from '../types/IPlugins';
-import { gameSupported, revisionText, supportsESL } from '../util/gameSupport';
 import GroupFilter from '../util/GroupFilter';
 
 import { GHOST_EXT, NAMESPACE } from '../statics';
@@ -57,6 +56,7 @@ interface IBaseProps {
   gameSupported: (gameMode: string) => boolean;
   minRevision: (gameMode: string) => number;
   supportsESL: (gameMode: string) => boolean;
+  revisionText: (gameMode: string) => string;
   getPluginFlags(
     t: TranslationFunction,
     plugin: IPluginCombined,
@@ -168,10 +168,18 @@ interface IPluginCountProps {
   t: TranslationFunction;
   gameId: string;
   plugins: { [pluginId: string]: IPluginCombined };
+  gameSupported: (gameMode: string) => boolean;
+  supportsESL: (gameMode: string) => boolean;
 }
 
 function PluginCount(props: IPluginCountProps) {
-  const { t, gameId, plugins } = props;
+  const { 
+    t, 
+    gameId, 
+    plugins,
+    gameSupported,
+    supportsESL, 
+  } = props;
 
   if (!gameSupported(gameId)) {
     return null;
@@ -193,11 +201,11 @@ function PluginCount(props: IPluginCountProps) {
 
   let tooltipText = t('Plugins shouldn\'t exceed mod index {{maxIndex}} for a total of {{count}} '
                   + 'plugins (including base game and DLCs).', {
-      replace: {
-        maxIndex: eslGame ? '0xFD' : '0xFE',
-        count: eslGame ? 254 : 255,
-      },
-    });
+    replace: {
+      maxIndex: eslGame ? '0xFD' : '0xFE',
+      count: eslGame ? 254 : 255,
+    },
+  });
 
   if (eslGame) {
     tooltipText += '\n' + t('In addition you can have up to 4096 light plugins.');
@@ -206,8 +214,8 @@ function PluginCount(props: IPluginCountProps) {
   return (
     <div className={classes.join(' ')}>
       <a onClick={nop} className='fake-link' title={tooltipText}>
-      {t('Active: {{ count }}', { count: regular.length })}
-      {eslGame ? ' ' + t('Light: {{ count }}', { count: light.length }) : null}
+        {t('Active: {{ count }}', { count: regular.length })}
+        {eslGame ? ' ' + t('Light: {{ count }}', { count: light.length }) : null}
       </a>
     </div>
   );
@@ -269,7 +277,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         title: 'Mark as Light',
         action: this.eslifySelected,
         condition: (instanceIds: string[]) =>
-          supportsESL(this.props.gameMode)
+          this.props.supportsESL(this.props.gameMode)
           && (instanceIds.find(pluginId => {
             const plugin = this.state.pluginsCombined[pluginId];
             return plugin.isValidAsLightPlugin
@@ -285,7 +293,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         title: 'Mark as Regular',
         action: this.uneslifySelected,
         condition: (instanceIds: string[]) =>
-          supportsESL(this.props.gameMode)
+          this.props.supportsESL(this.props.gameMode)
           && (instanceIds.find(pluginId => {
             const plugin = this.state.pluginsCombined[pluginId];
             return plugin.isLight
@@ -395,6 +403,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           t: this.props.t,
           gameId: this.props.gameMode,
           plugins: this.state.pluginsCombined,
+          gameSupported: this.props.gameSupported,
+          supportsESL: this.props.supportsESL,
         }),
       },
     ];
@@ -501,10 +511,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, activity, deployProgress, gameMode, needToDeploy, onRefreshPlugins } = this.props;
+    const { t, deployProgress, gameMode, needToDeploy, onRefreshPlugins } = this.props;
     const { pluginsCombined } = this.state;
 
-    if (!gameSupported(gameMode)) {
+    if (!this.props.gameSupported(gameMode)) {
       return null;
     }
 
@@ -634,7 +644,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     if (path.extname(filePath) === GHOST_EXT) {
       filePath = path.basename(filePath, GHOST_EXT);
     }
-    const masterExts = supportsESL(this.props.gameMode)
+    const masterExts = this.props.supportsESL(this.props.gameMode)
       ? ['.esm', '.esl']
       : ['.esm'];
     return flag || (masterExts.indexOf(path.extname(filePath).toLowerCase()) !== -1);
@@ -644,7 +654,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     if (path.extname(filePath) === GHOST_EXT) {
       filePath = path.basename(filePath, GHOST_EXT);
     }
-    if (!supportsESL(this.props.gameMode)) {
+    if (!this.props.supportsESL(this.props.gameMode)) {
       return false;
     }
     return flag || (path.extname(filePath).toLowerCase() === '.esl');
@@ -1162,7 +1172,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           plugin.revision < this.props.minRevision(this.props.gameMode)
             ? (
               <Alert bsStyle='warning'>
-                {t(revisionText(this.props.gameMode), { ns: NAMESPACE })}
+                {t(this.props.revisionText(this.props.gameMode), { ns: NAMESPACE })}
               </Alert>
             )
             : null,

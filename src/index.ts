@@ -20,6 +20,7 @@ import {
   nativePlugins,
   pluginExtensions,
   pluginPath,
+  revisionText,
   supportedGames,
   supportsESL,
 } from './util/gameSupport';
@@ -316,6 +317,7 @@ function register(context: IExtensionContextExt,
       minRevision,
       supportsESL,
       getPluginFlags,
+      revisionText,
       forceListUpdate,
       nativePlugins: gameSupported(selectors.activeGameId(context.api.store.getState()))
         ? nativePlugins(selectors.activeGameId(context.api.store.getState()))
