@@ -307,6 +307,36 @@ function register(context: IExtensionContextExt,
     ['session', 'base', 'activity', 'plugins'],
   ], (activity: string[]) => (activity !== undefined) && (activity.length > 0));
 
+  const isMaster = (filePath: string, flag: boolean, gameMode: string): boolean => {
+    if (path.extname(filePath) === GHOST_EXT) {
+      filePath = path.basename(filePath, GHOST_EXT);
+    }
+    const masterExts = supportsESL(gameMode)
+      ? ['.esm', '.esl']
+      : ['.esm'];
+    return flag || (masterExts.indexOf(path.extname(filePath).toLowerCase()) !== -1);
+  };
+
+  const isLight = (filePath: string, flag: boolean, gameMode: string) => {
+    if (path.extname(filePath) === GHOST_EXT) {
+      filePath = path.basename(filePath, GHOST_EXT);
+    }
+    if (!supportsESL(gameMode)) {
+      return false;
+    }
+    return flag || (path.extname(filePath).toLowerCase() === '.esl');
+  };
+
+  const openLOOTSite = () => util.opn('https://loot.github.io/').catch(() => null)
+
+  const getNewESPFile = (filePath: string) => new ESPFile(filePath);
+
+  const safeBasename = (filePath: string) => {
+    return filePath !== undefined
+      ? path.basename(filePath, GHOST_EXT)
+      : '';
+  }
+
   context.registerMainPage('plugins', 'Plugins', PluginList, {
     id: 'gamebryo-plugins',
     hotkey: 'E',
@@ -318,7 +348,13 @@ function register(context: IExtensionContextExt,
       supportsESL,
       getPluginFlags,
       revisionText,
+      isMaster,
+      isLight,
+      openLOOTSite,
+      getNewESPFile,
+      pathExtname: path.extname,
       forceListUpdate,
+      safeBasename,
       nativePlugins: gameSupported(selectors.activeGameId(context.api.store.getState()))
         ? nativePlugins(selectors.activeGameId(context.api.store.getState()))
         : [],
