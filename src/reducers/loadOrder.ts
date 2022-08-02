@@ -13,7 +13,7 @@ export const loadOrderReducer: types.IReducerSpec = {
           ? util.setSafe(state, [payload.pluginName.toLowerCase(), 'enabled'], payload.enabled)
           : util.merge(state, [payload.pluginName.toLowerCase()], {
             name: payload.pluginName,
-            enabled: true,
+            enabled: payload.enabled,
             loadOrder: -1,
           });
         },
