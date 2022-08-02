@@ -11,7 +11,6 @@ import {
   IPluginParsed,
   IPlugins,
 } from '../types/IPlugins';
-import { gameSupported, revisionText, supportsESL } from '../util/gameSupport';
 import GroupFilter from '../util/GroupFilter';
 
 import { GHOST_EXT, NAMESPACE } from '../statics';
@@ -23,12 +22,10 @@ import PluginFlagsFilter from './PluginFlagsFilter';
 import PluginStatusFilter from './PluginStatusFilter';
 
 import Promise from 'bluebird';
-import ESPFile from 'esptk';
 import I18next, { TFunction } from 'i18next';
 import update from 'immutability-helper';
 import * as _ from 'lodash';
 import { Message, PluginCleaningData } from 'loot';
-import * as path from 'path';
 import * as React from 'react';
 import { Alert, Button, ListGroup, ListGroupItem, Panel } from 'react-bootstrap';
 import { withTranslation } from 'react-i18next';
@@ -42,8 +39,10 @@ import {ComponentEx, FlexLayout, Icon, IconBar, ITableRowAction,
   log, MainPage, selectors, Spinner,
   Table, TableTextFilter, ToolbarIcon, tooltip, types, Usage, util,
 } from 'vortex-api';
+import { IESPFile } from "../types/IESPFile";
 
 type TranslationFunction = typeof I18next.t;
+
 
 const CLEANING_GUIDE_LINK =
   'https://tes5edit.github.io/docs/7-mod-cleaning-and-error-checking.html';
@@ -57,6 +56,7 @@ interface IBaseProps {
   gameSupported: (gameMode: string) => boolean;
   minRevision: (gameMode: string) => number;
   supportsESL: (gameMode: string) => boolean;
+  revisionText: (gameMode: string) => string;
   getPluginFlags(
     t: TranslationFunction,
     plugin: IPluginCombined,
@@ -64,6 +64,12 @@ interface IBaseProps {
     supportsESL: boolean,
     minRevision: number
   ): string[];
+  isMaster: (filePath: string, flag: boolean, gameMode: string) => boolean;
+  isLight: (filePath: string, flag: boolean, gameMode: string) => boolean;
+  openLOOTSite: () => Promise<any>;
+  parseESPFile: (filePath: string) => IESPFile;
+  safeBasename: (filePath: string) => string;
+  installedPlugins: () => Set<string>;
 }
 
 interface IConnectedProps {
@@ -168,10 +174,18 @@ interface IPluginCountProps {
   t: TranslationFunction;
   gameId: string;
   plugins: { [pluginId: string]: IPluginCombined };
+  gameSupported: (gameMode: string) => boolean;
+  supportsESL: (gameMode: string) => boolean;
 }
 
 function PluginCount(props: IPluginCountProps) {
-  const { t, gameId, plugins } = props;
+  const { 
+    t, 
+    gameId, 
+    plugins,
+    gameSupported,
+    supportsESL, 
+  } = props;
 
   if (!gameSupported(gameId)) {
     return null;
@@ -193,11 +207,11 @@ function PluginCount(props: IPluginCountProps) {
 
   let tooltipText = t('Plugins shouldn\'t exceed mod index {{maxIndex}} for a total of {{count}} '
                   + 'plugins (including base game and DLCs).', {
-      replace: {
-        maxIndex: eslGame ? '0xFD' : '0xFE',
-        count: eslGame ? 254 : 255,
-      },
-    });
+    replace: {
+      maxIndex: eslGame ? '0xFD' : '0xFE',
+      count: eslGame ? 254 : 255,
+    },
+  });
 
   if (eslGame) {
     tooltipText += '\n' + t('In addition you can have up to 4096 light plugins.');
@@ -206,8 +220,8 @@ function PluginCount(props: IPluginCountProps) {
   return (
     <div className={classes.join(' ')}>
       <a onClick={nop} className='fake-link' title={tooltipText}>
-      {t('Active: {{ count }}', { count: regular.length })}
-      {eslGame ? ' ' + t('Light: {{ count }}', { count: light.length }) : null}
+        {t('Active: {{ count }}', { count: regular.length })}
+        {eslGame ? ' ' + t('Light: {{ count }}', { count: light.length }) : null}
       </a>
     </div>
   );
@@ -269,13 +283,13 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         title: 'Mark as Light',
         action: this.eslifySelected,
         condition: (instanceIds: string[]) =>
-          supportsESL(this.props.gameMode)
+          this.props.supportsESL(this.props.gameMode)
           && (instanceIds.find(pluginId => {
             const plugin = this.state.pluginsCombined[pluginId];
             return plugin.isValidAsLightPlugin
                 && !plugin.isLight
                 && plugin.deployed
-                && path.extname(pluginId) === '.esp';
+                && pluginId.toLowerCase().endsWith('.esp');
           }) !== undefined),
         singleRowAction: true,
         multiRowAction: true,
@@ -285,12 +299,12 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         title: 'Mark as Regular',
         action: this.uneslifySelected,
         condition: (instanceIds: string[]) =>
-          supportsESL(this.props.gameMode)
+          this.props.supportsESL(this.props.gameMode)
           && (instanceIds.find(pluginId => {
             const plugin = this.state.pluginsCombined[pluginId];
             return plugin.isLight
                 && plugin.deployed
-                && path.extname(pluginId) === '.esp';
+                && pluginId.toLowerCase().endsWith('.esp');
           }) !== undefined),
         singleRowAction: true,
         multiRowAction: true,
@@ -305,7 +319,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       calc: (plugin: IPluginCombined) => {
         return plugin.isNative
           ? undefined
-          : (path.extname(plugin.filePath) === GHOST_EXT)
+          : (plugin.filePath.toLowerCase().endsWith(GHOST_EXT))
           ? 'Ghost'
           : (plugin.enabled === true)
           ? 'Enabled'
@@ -328,7 +342,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
           if (value === undefined) {
             // toggle
-            if (path.extname(plugin.filePath) === GHOST_EXT) {
+            if (plugin.filePath.toLowerCase().endsWith(GHOST_EXT)) {
               this.props.onSetPluginGhost(plugin.id, this.props.gameMode, false, true);
             } else {
               this.props.onSetPluginEnabled(plugin.id, !plugin.enabled);
@@ -337,7 +351,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             if (value === 'ghost') {
               this.props.onSetPluginGhost(plugin.id, this.props.gameMode, true, false);
             } else {
-              if (path.extname(plugin.filePath) === GHOST_EXT) {
+              if (plugin.filePath.toLowerCase().endsWith(GHOST_EXT)) {
                 this.props.onSetPluginGhost(
                   plugin.id, this.props.gameMode, false, value === 'enabled');
               } else {
@@ -395,6 +409,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           t: this.props.t,
           gameId: this.props.gameMode,
           plugins: this.state.pluginsCombined,
+          gameSupported: this.props.gameSupported,
+          supportsESL: this.props.supportsESL,
         }),
       },
     ];
@@ -501,10 +517,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, activity, deployProgress, gameMode, needToDeploy, onRefreshPlugins } = this.props;
+    const { t, deployProgress, gameMode, needToDeploy, onRefreshPlugins } = this.props;
     const { pluginsCombined } = this.state;
 
-    if (!gameSupported(gameMode)) {
+    if (!this.props.gameSupported(gameMode)) {
       return null;
     }
 
@@ -565,7 +581,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             <FlexLayout.Fixed>
               <Usage infoId='deployed-plugins' persistent>
                 {t('Automatic plugin sorting powered by ')}
-                <a onClick={this.openLOOTSite}>LOOT</a>
+                <a onClick={this.props.openLOOTSite}>LOOT</a>
               </Usage>
             </FlexLayout.Fixed>
           </FlexLayout>
@@ -573,8 +589,6 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       </MainPage>
     );
   }
-
-  private openLOOTSite = () => util.opn('https://loot.github.io/').catch(() => null)
 
   private renderOutdated() {
     const { t } = this.props;
@@ -630,26 +644,6 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     this.context.api.events.emit('deploy-mods', () => undefined);
   }
 
-  private isMaster(filePath: string, flag: boolean): boolean {
-    if (path.extname(filePath) === GHOST_EXT) {
-      filePath = path.basename(filePath, GHOST_EXT);
-    }
-    const masterExts = supportsESL(this.props.gameMode)
-      ? ['.esm', '.esl']
-      : ['.esm'];
-    return flag || (masterExts.indexOf(path.extname(filePath).toLowerCase()) !== -1);
-  }
-
-  private isLight(filePath: string, flag: boolean) {
-    if (path.extname(filePath) === GHOST_EXT) {
-      filePath = path.basename(filePath, GHOST_EXT);
-    }
-    if (!supportsESL(this.props.gameMode)) {
-      return false;
-    }
-    return flag || (path.extname(filePath).toLowerCase() === '.esl');
-  }
-
   private updatePlugins(pluginsIn: IPlugins, gameMode: string) {
     const updateId = this.mUpdateId = shortid();
 
@@ -673,10 +667,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       }
       return new Promise((resolve, reject) => {
         try {
-          const esp = new ESPFile(pluginsIn[pluginName].filePath);
+          const esp = this.props.parseESPFile(pluginsIn[pluginName].filePath);
           pluginsParsed[pluginName] = {
-            isMaster: this.isMaster(pluginsIn[pluginName].filePath, esp.isMaster),
-            isLight: this.isLight(pluginsIn[pluginName].filePath, esp.isLight),
+            isMaster: this.props.isMaster(
+              pluginsIn[pluginName].filePath, esp.isMaster, this.props.gameMode
+            ),
+            isLight: this.props.isLight(
+              pluginsIn[pluginName].filePath, esp.isLight, this.props.gameMode
+            ),
             parseFailed: false,
             description: esp.description,
             author: esp.author,
@@ -756,7 +754,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       if ((plugin === undefined) || plugin.isNative) {
         return;
       }
-      if (path.extname(plugin.filePath) === GHOST_EXT) {
+      if (plugin.filePath.toLowerCase().endsWith(GHOST_EXT)) {
         this.props.onSetPluginGhost(key, this.props.gameMode, false, true);
       } else if (!util.getSafe(loadOrder, [key, 'enabled'], false)) {
         onSetPluginEnabled(key, true);
@@ -773,7 +771,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         return;
       }
 
-      if (path.extname(plugin.filePath) === GHOST_EXT) {
+      if (plugin.filePath.toLowerCase().endsWith(GHOST_EXT)) {
         this.props.onSetPluginGhost(key, gameMode, false, false);
       } else if (util.getSafe<boolean>(loadOrder, [key, 'enabled'], false)) {
         onSetPluginEnabled(key, false);
@@ -786,7 +784,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     pluginIds.forEach((key: string) => {
       if ((plugins[key]?.filePath !== undefined)
-          && (path.extname(plugins[key]?.filePath) !== GHOST_EXT)) {
+          && !plugins[key]?.filePath.toLowerCase().endsWith(GHOST_EXT)) {
         onSetPluginGhost(key, gameMode, true, false);
       }
     });
@@ -826,12 +824,6 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     return res;
   }
 
-  private safeBasename(filePath: string) {
-    return filePath !== undefined
-      ? path.basename(filePath, GHOST_EXT)
-      : '';
-  }
-
   private detailedPlugins(plugins: IPlugins,
                           pluginsLoot: { [pluginId: string]: IPluginLoot },
                           pluginsParsed: { [pluginId: string]: IPluginParsed },
@@ -853,7 +845,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         ...loadOrder[pluginId],
         ...pluginsLoot[pluginId],
         ...pluginsParsed[pluginId],
-        name: this.safeBasename(plugins[pluginId].filePath),
+        name: this.props.safeBasename(plugins[pluginId].filePath),
       };
 
       if ((userlistEntry !== undefined)
@@ -920,7 +912,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         && plugin.deployed
         && plugin.isValidAsLightPlugin
         && !plugin.isLight
-        && path.extname(plugin.id) === '.esp')
+        && plugin.id.toLowerCase().endsWith('.esp'))
       , plugin => this.eslify(plugin, true))
     .then(() => {
       this.props.onRefreshPlugins();
@@ -944,7 +936,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         (plugin !== undefined)
         && plugin.deployed
         && plugin.isLight
-        && path.extname(plugin.id) === '.esp')
+        && plugin.id.toLowerCase().endsWith('.esp'))
       , plugin => this.eslify(plugin, false))
     .then(() => {
       this.props.onRefreshPlugins();
@@ -1162,7 +1154,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           plugin.revision < this.props.minRevision(this.props.gameMode)
             ? (
               <Alert bsStyle='warning'>
-                {t(revisionText(this.props.gameMode), { ns: NAMESPACE })}
+                {t(this.props.revisionText(this.props.gameMode), { ns: NAMESPACE })}
               </Alert>
             )
             : null,
@@ -1339,16 +1331,16 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         condition: () => this.props.supportsESL(this.props.gameMode),
         calc: (plugin: IPluginCombined) => plugin.isValidAsLightPlugin,
         customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => {
-          const ext = path.extname(plugin.name).toLowerCase();
+          const isEsp = plugin.name.toLowerCase().endsWith('.esp')
           const canBeConverted = (plugin.isValidAsLightPlugin || plugin.isLight)
-                              && (ext === '.esp');
+                              && isEsp;
           return (
             <Button
               disabled={!canBeConverted}
               title={!plugin.isValidAsLightPlugin && !plugin.isLight
                 ? t('This plugin can\'t be an esl since it contains form-ids '
                     + 'outside the valid range')
-                : ext !== '.esp'
+                : !isEsp
                   ? t('Only plugins with .esp extension can be converted')
                   : plugin.isLight
                     ? t('This plugin already has the light flag set, you can unset it.')
@@ -1401,7 +1393,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         name: 'Masters',
         edit: {},
         customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) =>
-          <MasterList masters={plugin.masterList} />,
+          <MasterList
+            masters={plugin.masterList} 
+            installedPlugins={this.props.installedPlugins()} />,
         calc: (plugin: IPluginCombined) => plugin.masterList,
         placement: 'detail',
       },

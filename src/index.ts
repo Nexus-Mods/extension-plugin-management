@@ -20,6 +20,7 @@ import {
   nativePlugins,
   pluginExtensions,
   pluginPath,
+  revisionText,
   supportedGames,
   supportsESL,
 } from './util/gameSupport';
@@ -47,6 +48,8 @@ import * as Redux from 'redux';
 import * as nodeUtil from 'util';
 import { actions, fs, log, selectors, types, util } from 'vortex-api';
 import { getPluginFlags } from './views/PluginFlags';
+import { createSelector } from 'reselect';
+import { IESPFile } from './types/IESPFile';
 
 type TranslationFunction = typeof I18next.t;
 
@@ -306,6 +309,51 @@ function register(context: IExtensionContextExt,
     ['session', 'base', 'activity', 'plugins'],
   ], (activity: string[]) => (activity !== undefined) && (activity.length > 0));
 
+  const isMaster = (filePath: string, flag: boolean, gameMode: string): boolean => {
+    if (path.extname(filePath) === GHOST_EXT) {
+      filePath = path.basename(filePath, GHOST_EXT);
+    }
+    const masterExts = supportsESL(gameMode)
+      ? ['.esm', '.esl']
+      : ['.esm'];
+    return flag || (masterExts.indexOf(path.extname(filePath).toLowerCase()) !== -1);
+  };
+
+  const isLight = (filePath: string, flag: boolean, gameMode: string) => {
+    if (path.extname(filePath) === GHOST_EXT) {
+      filePath = path.basename(filePath, GHOST_EXT);
+    }
+    if (!supportsESL(gameMode)) {
+      return false;
+    }
+    return flag || (path.extname(filePath).toLowerCase() === '.esl');
+  };
+
+  const openLOOTSite = () => util.opn('https://loot.github.io/').catch(() => null)
+
+  const parseESPFile = (filePath: string): IESPFile => ({
+    ...new ESPFile(filePath)
+  })
+
+  const safeBasename = (filePath: string) => {
+    return filePath !== undefined
+      ? path.basename(filePath, GHOST_EXT)
+      : '';
+  }
+
+  const loadOrder = (state) => state.loadOrder;
+  const enabledPlugins = createSelector(loadOrder, selectors.activeGameId, (order, gameId) => {
+    if (!gameSupported(gameId)) {
+      return new Set<string>([]);
+    }
+    return new Set<string>([].concat(nativePlugins(gameId), Object.keys(order)
+      .filter((pluginName: string) => order[pluginName].enabled)
+      .map((pluginName: string) => pluginName.toLowerCase()),
+    ));
+  });
+
+  const installedPlugins = () => enabledPlugins(context.api.store.getState())
+
   context.registerMainPage('plugins', 'Plugins', PluginList, {
     id: 'gamebryo-plugins',
     hotkey: 'E',
@@ -316,7 +364,14 @@ function register(context: IExtensionContextExt,
       minRevision,
       supportsESL,
       getPluginFlags,
+      revisionText,
+      isMaster,
+      isLight,
+      openLOOTSite,
+      parseESPFile,
       forceListUpdate,
+      safeBasename,
+      installedPlugins,
       nativePlugins: gameSupported(selectors.activeGameId(context.api.store.getState()))
         ? nativePlugins(selectors.activeGameId(context.api.store.getState()))
         : [],
