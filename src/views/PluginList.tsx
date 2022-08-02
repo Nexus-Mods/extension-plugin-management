@@ -39,20 +39,10 @@ import {ComponentEx, FlexLayout, Icon, IconBar, ITableRowAction,
   log, MainPage, selectors, Spinner,
   Table, TableTextFilter, ToolbarIcon, tooltip, types, Usage, util,
 } from 'vortex-api';
-
+import { IESPFile } from "../types/IESPFile";
 
 type TranslationFunction = typeof I18next.t;
 
-type ESPFile = {
-  setLightFlag(enabled: boolean): void;
-  isMaster: boolean;
-  isLight: boolean;
-  isDummy: boolean;
-  author: string;
-  description: string;
-  masterList: string[];
-  revision: number;
-}
 
 const CLEANING_GUIDE_LINK =
   'https://tes5edit.github.io/docs/7-mod-cleaning-and-error-checking.html';
@@ -77,8 +67,7 @@ interface IBaseProps {
   isMaster: (filePath: string, flag: boolean, gameMode: string) => boolean;
   isLight: (filePath: string, flag: boolean, gameMode: string) => boolean;
   openLOOTSite: () => Promise<any>;
-  getNewESPFile: (filePath: string) => ESPFile;
-  pathExtname: (p: string) => string;
+  parseESPFile: (filePath: string) => IESPFile;
   safeBasename: (filePath: string) => string;
   installedPlugins: () => Set<string>;
 }
@@ -300,7 +289,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             return plugin.isValidAsLightPlugin
                 && !plugin.isLight
                 && plugin.deployed
-                && this.props.pathExtname(pluginId) === '.esp';
+                && pluginId.toLowerCase().endsWith('.esp');
           }) !== undefined),
         singleRowAction: true,
         multiRowAction: true,
@@ -315,7 +304,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             const plugin = this.state.pluginsCombined[pluginId];
             return plugin.isLight
                 && plugin.deployed
-                && this.props.pathExtname(pluginId) === '.esp';
+                && pluginId.toLowerCase().endsWith('.esp');
           }) !== undefined),
         singleRowAction: true,
         multiRowAction: true,
@@ -330,7 +319,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       calc: (plugin: IPluginCombined) => {
         return plugin.isNative
           ? undefined
-          : (this.props.pathExtname(plugin.filePath) === GHOST_EXT)
+          : (plugin.filePath.toLowerCase().endsWith(GHOST_EXT))
           ? 'Ghost'
           : (plugin.enabled === true)
           ? 'Enabled'
@@ -353,7 +342,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
           if (value === undefined) {
             // toggle
-            if (this.props.pathExtname(plugin.filePath) === GHOST_EXT) {
+            if (plugin.filePath.toLowerCase().endsWith(GHOST_EXT)) {
               this.props.onSetPluginGhost(plugin.id, this.props.gameMode, false, true);
             } else {
               this.props.onSetPluginEnabled(plugin.id, !plugin.enabled);
@@ -362,7 +351,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             if (value === 'ghost') {
               this.props.onSetPluginGhost(plugin.id, this.props.gameMode, true, false);
             } else {
-              if (this.props.pathExtname(plugin.filePath) === GHOST_EXT) {
+              if (plugin.filePath.toLowerCase().endsWith(GHOST_EXT)) {
                 this.props.onSetPluginGhost(
                   plugin.id, this.props.gameMode, false, value === 'enabled');
               } else {
@@ -678,7 +667,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       }
       return new Promise((resolve, reject) => {
         try {
-          const esp = this.props.getNewESPFile(pluginsIn[pluginName].filePath);
+          const esp = this.props.parseESPFile(pluginsIn[pluginName].filePath);
+          console.log('EspFile', esp);
           pluginsParsed[pluginName] = {
             isMaster: this.props.isMaster(
               pluginsIn[pluginName].filePath, esp.isMaster, this.props.gameMode
@@ -765,7 +755,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       if ((plugin === undefined) || plugin.isNative) {
         return;
       }
-      if (this.props.pathExtname(plugin.filePath) === GHOST_EXT) {
+      if (plugin.filePath.toLowerCase().endsWith(GHOST_EXT)) {
         this.props.onSetPluginGhost(key, this.props.gameMode, false, true);
       } else if (!util.getSafe(loadOrder, [key, 'enabled'], false)) {
         onSetPluginEnabled(key, true);
@@ -782,7 +772,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         return;
       }
 
-      if (this.props.pathExtname(plugin.filePath) === GHOST_EXT) {
+      if (plugin.filePath.toLowerCase().endsWith(GHOST_EXT)) {
         this.props.onSetPluginGhost(key, gameMode, false, false);
       } else if (util.getSafe<boolean>(loadOrder, [key, 'enabled'], false)) {
         onSetPluginEnabled(key, false);
@@ -795,7 +785,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     pluginIds.forEach((key: string) => {
       if ((plugins[key]?.filePath !== undefined)
-          && (this.props.pathExtname(plugins[key]?.filePath) !== GHOST_EXT)) {
+          && !plugins[key]?.filePath.toLowerCase().endsWith(GHOST_EXT)) {
         onSetPluginGhost(key, gameMode, true, false);
       }
     });
@@ -923,7 +913,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         && plugin.deployed
         && plugin.isValidAsLightPlugin
         && !plugin.isLight
-        && this.props.pathExtname(plugin.id) === '.esp')
+        && plugin.id.toLowerCase().endsWith('.esp'))
       , plugin => this.eslify(plugin, true))
     .then(() => {
       this.props.onRefreshPlugins();
@@ -947,7 +937,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         (plugin !== undefined)
         && plugin.deployed
         && plugin.isLight
-        && this.props.pathExtname(plugin.id) === '.esp')
+        && plugin.id.toLowerCase().endsWith('.esp'))
       , plugin => this.eslify(plugin, false))
     .then(() => {
       this.props.onRefreshPlugins();
@@ -1342,16 +1332,16 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         condition: () => this.props.supportsESL(this.props.gameMode),
         calc: (plugin: IPluginCombined) => plugin.isValidAsLightPlugin,
         customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => {
-          const ext = this.props.pathExtname(plugin.name).toLowerCase();
+          const isEsp = plugin.name.toLowerCase().endsWith('.esp')
           const canBeConverted = (plugin.isValidAsLightPlugin || plugin.isLight)
-                              && (ext === '.esp');
+                              && isEsp;
           return (
             <Button
               disabled={!canBeConverted}
               title={!plugin.isValidAsLightPlugin && !plugin.isLight
                 ? t('This plugin can\'t be an esl since it contains form-ids '
                     + 'outside the valid range')
-                : ext !== '.esp'
+                : !isEsp
                   ? t('Only plugins with .esp extension can be converted')
                   : plugin.isLight
                     ? t('This plugin already has the light flag set, you can unset it.')

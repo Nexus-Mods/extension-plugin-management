@@ -49,6 +49,7 @@ import * as nodeUtil from 'util';
 import { actions, fs, log, selectors, types, util } from 'vortex-api';
 import { getPluginFlags } from './views/PluginFlags';
 import { createSelector } from 'reselect';
+import { IESPFile } from './types/IESPFile';
 
 type TranslationFunction = typeof I18next.t;
 
@@ -330,7 +331,9 @@ function register(context: IExtensionContextExt,
 
   const openLOOTSite = () => util.opn('https://loot.github.io/').catch(() => null)
 
-  const getNewESPFile = (filePath: string) => new ESPFile(filePath);
+  const parseESPFile = (filePath: string): IESPFile => ({
+    ...new ESPFile(filePath)
+  })
 
   const safeBasename = (filePath: string) => {
     return filePath !== undefined
@@ -365,8 +368,7 @@ function register(context: IExtensionContextExt,
       isMaster,
       isLight,
       openLOOTSite,
-      getNewESPFile,
-      pathExtname: path.extname,
+      parseESPFile,
       forceListUpdate,
       safeBasename,
       installedPlugins,
