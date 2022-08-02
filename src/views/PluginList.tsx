@@ -668,7 +668,6 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       return new Promise((resolve, reject) => {
         try {
           const esp = this.props.parseESPFile(pluginsIn[pluginName].filePath);
-          console.log('EspFile', esp);
           pluginsParsed[pluginName] = {
             isMaster: this.props.isMaster(
               pluginsIn[pluginName].filePath, esp.isMaster, this.props.gameMode
