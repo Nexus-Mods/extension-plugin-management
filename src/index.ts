@@ -331,9 +331,18 @@ function register(context: IExtensionContextExt,
 
   const openLOOTSite = () => util.opn('https://loot.github.io/').catch(() => null)
 
-  const parseESPFile = (filePath: string): IESPFile => ({
-    ...new ESPFile(filePath)
-  })
+  const parseESPFile = (filePath: string): IESPFile => {
+    const fileInfo = new ESPFile(filePath);
+    return {
+      isMaster: fileInfo.isMaster,
+      isLight: fileInfo.isLight,
+      isDummy: fileInfo.isDummy,
+      author: fileInfo.author,
+      description: fileInfo.description,
+      masterList: fileInfo.masterList,
+      revision: fileInfo.revision,
+    };
+  };
 
   const safeBasename = (filePath: string) => {
     return filePath !== undefined
