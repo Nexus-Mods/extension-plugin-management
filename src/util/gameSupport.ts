@@ -3,7 +3,7 @@ import {PluginFormat} from '../util/PluginPersistor';
 import Promise from 'bluebird';
 import * as path from 'path';
 import * as Redux from 'redux';
-import { fs, log, types, util } from 'vortex-api';
+import { fs, log, selectors, types, util } from 'vortex-api';
 
 const gameSupportXbox = {
   skyrimse: {
@@ -14,8 +14,14 @@ const gameSupportXbox = {
   },
   oblivion: {
     appDataPath: 'Oblivion',
-  }
-}
+  },
+};
+
+const gameSupportGOG = {
+  skyrimse: {
+    appDataPath: 'Skyrim Special Edition GOG',
+  },
+};
 
 const gameSupport = {
   skyrim: {
@@ -162,8 +168,12 @@ function isXboxPath(discoveryPath: string) {
   return ['modifiablewindowsapps', '3275kfvn8vcwc'].find(hasPathElement) !== undefined;
 }
 
+let gameStoreForGame: (gameId: string) => string = () => undefined;
+
 export function initGameSupport(store: Redux.Store<any>): Promise<void> {
   let res = Promise.resolve();
+
+  gameStoreForGame = (gameId: string) => selectors.discoveryByGame(store.getState(), gameId)['store'];
 
   const state: types.IState = store.getState();
 
@@ -217,7 +227,10 @@ export function initGameSupport(store: Redux.Store<any>): Promise<void> {
 }
 
 export function pluginPath(gameMode: string): string {
-  const gamePath = gameSupport[gameMode].appDataPath;
+  const gamePath = (gameStoreForGame(gameMode) === 'gog')
+    ? gameSupportGOG[gameMode].appDataPath
+    : gameSupport[gameMode].appDataPath;
+
   return (process.env.LOCALAPPDATA !== undefined)
     ? path.join(process.env.LOCALAPPDATA, gamePath)
     : path.resolve(util.getVortexPath('appData'), '..', 'Local', gamePath);
