@@ -227,7 +227,7 @@ export function initGameSupport(store: Redux.Store<any>): Promise<void> {
 }
 
 export function pluginPath(gameMode: string): string {
-  const gamePath = (gameStoreForGame(gameMode) === 'gog')
+  const gamePath = (gameStoreForGame(gameMode) === 'gog') && !!gameSupportGOG[gameMode]
     ? gameSupportGOG[gameMode].appDataPath
     : gameSupport[gameMode].appDataPath;
 
