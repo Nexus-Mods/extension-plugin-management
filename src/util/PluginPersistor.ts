@@ -484,18 +484,20 @@ class PluginPersistor implements types.IPersistor {
 
     try {
       this.mWatch = fs.watch(this.mPluginPath, {}, (evt, fileName: string) => {
-        if (!this.mSerializing && ['loadorder.txt', 'plugins.txt'].indexOf(fileName) !== -1) {
+        if (!this.mSerializing
+            && ['loadorder.txt', 'plugins.txt'].includes(fileName)
+            && this.mPluginPath !== undefined) {
           fs.statAsync(path.join(this.mPluginPath, fileName))
-          .then(stats => {
-            if (stats.mtime > this.mLastWriteTime) {
-              this.scheduleRefresh(500);
-            }
-          })
-          .catch(util.UserCanceled, () => Promise.resolve())
-          .catch(err => (err.code === 'ENOENT')
-            ? Promise.resolve()
-            : this.mOnError(`failed to read "${fileName}"`,
-                            err, { allowReport: err.code !== 'EPERM' }));
+            .then(stats => {
+              if (stats.mtime > this.mLastWriteTime) {
+                this.scheduleRefresh(500);
+              }
+            })
+            .catch(util.UserCanceled, () => Promise.resolve())
+            .catch(err => (err.code === 'ENOENT')
+              ? Promise.resolve()
+              : this.mOnError(`failed to read "${fileName}"`,
+                err, { allowReport: err.code !== 'EPERM' }));
         }
       });
       this.mWatch.on('error', error => {
