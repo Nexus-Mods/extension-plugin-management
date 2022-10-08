@@ -244,7 +244,7 @@ export function pluginPath(gameMode: string): string {
     break;
     case 'xbox': gamePath = gameSupportXbox[gameMode]?.appDataPath || gameSupport[gameMode].appDataPath;
     break;
-    default: gameSupport[gameMode].appDataPath;
+    default: gamePath = gameSupport[gameMode].appDataPath;
   }
 
   return (process.env.LOCALAPPDATA !== undefined)
