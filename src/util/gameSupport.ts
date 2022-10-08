@@ -23,6 +23,12 @@ const gameSupportGOG = {
   },
 };
 
+const gameSupportEpic = {
+  skyrimse: {
+    appDataPath: 'Skyrim Special Edition EPIC',
+  },
+};
+
 const gameSupport = {
   skyrim: {
     appDataPath: 'Skyrim',
@@ -227,9 +233,19 @@ export function initGameSupport(store: Redux.Store<any>): Promise<void> {
 }
 
 export function pluginPath(gameMode: string): string {
-  const gamePath = (gameStoreForGame(gameMode) === 'gog') && !!gameSupportGOG[gameMode]
-    ? gameSupportGOG[gameMode].appDataPath
-    : gameSupport[gameMode].appDataPath;
+  const gameStore = gameStoreForGame(gameMode);
+  
+  let gamePath;
+  
+  switch(gameStore) {
+    case 'gog': gamePath = gameSupportGOG[gameMode]?.appDataPath || gameSupport[gameMode].appDataPath;
+    break;
+    case 'epic': gamePath = gameSupportEpic[gameMode]?.appDataPath || gameSupport[gameMode].appDataPath;
+    break;
+    case 'xbox': gamePath = gameSupportXbox[gameMode]?.appDataPath || gameSupport[gameMode].appDataPath;
+    break;
+    default: gameSupport[gameMode].appDataPath;
+  }
 
   return (process.env.LOCALAPPDATA !== undefined)
     ? path.join(process.env.LOCALAPPDATA, gamePath)
