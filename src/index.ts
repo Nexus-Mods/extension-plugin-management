@@ -1233,7 +1233,7 @@ function init(context: IExtensionContextExt) {
   // Similar to once, we need to initGameSupport from the get-go or the pluginPersistor
   //  will not use the updated appDataPath values (given that the gameSupport object
   //  wasn't previously initialized for the main application thread)
-  .onceMain(() => initGameSupport(context.api.store).then(() => {
+  .onceMain(() => initGameSupport(context.api).then(() => {
     ipcMain.on('plugin-sync', (event: Electron.IpcMainEvent, enabled: boolean) => {
       const promise = enabled ? startSync(context.api) : stopSync();
       promise
@@ -1262,7 +1262,7 @@ function init(context: IExtensionContextExt) {
 
   context
   // first thing on once, init game support for the previously discovered games
-  .once(() => initGameSupport(context.api.store)
+  .once(() => initGameSupport(context.api)
     .then(() => {
       const store = context.api.store;
 
@@ -1312,7 +1312,7 @@ function init(context: IExtensionContextExt) {
       });
 
       context.api.onStateChange(['settings', 'gameMode', 'discovered'], (previous, current) => {
-          initGameSupport(store).then(() => null);
+          initGameSupport(context.api).then(() => null);
         });
 
       context.api.events.on('set-plugin-list', (newPlugins: string[], setEnabled?: boolean) => {
