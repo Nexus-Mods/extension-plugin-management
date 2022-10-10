@@ -5,25 +5,17 @@ import * as path from 'path';
 import * as Redux from 'redux';
 import { fs, log, selectors, types, util } from 'vortex-api';
 
-const gameSupportXbox = {
-  skyrimse: {
-    appDataPath: 'Skyrim Special Edition MS',
-  },
-  fallout4: {
-    appDataPath: 'Fallout4 MS',
-  },
-  oblivion: {
-    appDataPath: 'Oblivion',
-  },
-};
+type PluginTXTFormat = 'original' | 'fallout4';
 
-const gameSupportGOG = {
-  skyrimse: {
-    appDataPath: 'Skyrim Special Edition GOG',
-  },
-};
+interface IGameSupport {
+  appDataPath: string;
+  pluginTXTFormat: PluginTXTFormat;
+  nativePlugins: string[];
+  supportsESL?: boolean;
+  minRevision?: number;
+}
 
-const gameSupport = {
+const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>({
   skyrim: {
     appDataPath: 'Skyrim',
     pluginTXTFormat: 'original',
@@ -160,33 +152,50 @@ const gameSupport = {
     ],
     supportsESL: true,
   },
-};
+}, {
+  xbox: {
+    skyrimse: {
+      appDataPath: 'Skyrim Special Edition MS',
+    },
+    fallout4: {
+      appDataPath: 'Fallout4 MS',
+    },
+    oblivion: {
+      appDataPath: 'Oblivion',
+    },
+  },
+  gog: {
+    skyrimse: {
+      appDataPath: 'Skyrim Special Edition GOG',
+    },
+  },
+  enderalseOverlay: {
+    enderalspecialedition: {
+      appDataPath: 'Skyrim Special Edition',
+    },
+  },
+}, (gameId: string) => {
+  const discovery = discoveryForGame(gameId);
+  if ((discovery?.path !== undefined)
+      && (gameId === 'enderalspecialedition')
+      && discovery.path.includes('skyrim')) {
+    return 'enderalseOverlay';
+  }
+  else {
+    return discovery?.store;
+  }
+});
 
-function isXboxPath(discoveryPath: string) {
-  const hasPathElement = (element) =>
-    discoveryPath.toLowerCase().includes(element);
-  return ['modifiablewindowsapps', '3275kfvn8vcwc'].find(hasPathElement) !== undefined;
-}
-
-let gameStoreForGame: (gameId: string) => string = () => undefined;
+let discoveryForGame: (gameId: string) => types.IDiscoveryResult = () => undefined;
 
 export function initGameSupport(store: Redux.Store<any>): Promise<void> {
   let res = Promise.resolve();
 
-  gameStoreForGame = (gameId: string) => selectors.discoveryByGame(store.getState(), gameId)['store'];
+  discoveryForGame = (gameId: string) => selectors.discoveryByGame(store.getState(), gameId);
 
   const state: types.IState = store.getState();
 
   const { discovered } = state.settings.gameMode;
-  Object.keys(gameSupportXbox).forEach(gameMode => {
-    if (discovered[gameMode]?.path !== undefined) {
-      // If the path contains 'modifiablewindowsapps' or '3275kfvn8vcwc', that's a clear
-      //  sign that the game has been installed through the xbox store.
-      if (isXboxPath(discovered[gameMode].path)) {
-        gameSupport[gameMode].appDataPath = gameSupportXbox[gameMode].appDataPath;
-      }
-    }
-  });
 
   if (discovered['skyrimse']?.path !== undefined) {
     const skyrimsecc = new Set(gameSupport['skyrimse'].nativePlugins);
@@ -215,21 +224,11 @@ export function initGameSupport(store: Redux.Store<any>): Promise<void> {
         }));
   }
 
-  if (discovered['enderalspecialedition']?.path !== undefined) {
-    // enderal discovered, may have to update appDataPath
-    if (discovered['enderalspecialedition']?.path.toLowerCase().includes('skyrim')) {
-      log('info', 'Enderal seems to be installed into the skyrim directory');
-      gameSupport['enderalspecialedition'].appDataPath = 'Skyrim Special Edition';
-    }
-  }
-
   return res;
 }
 
 export function pluginPath(gameMode: string): string {
-  const gamePath = (gameStoreForGame(gameMode) === 'gog') && !!gameSupportGOG[gameMode]
-    ? gameSupportGOG[gameMode].appDataPath
-    : gameSupport[gameMode].appDataPath;
+  const gamePath = gameSupport.get(gameMode, 'appDataPath');
 
   return (process.env.LOCALAPPDATA !== undefined)
     ? path.join(process.env.LOCALAPPDATA, gamePath)
@@ -237,7 +236,7 @@ export function pluginPath(gameMode: string): string {
 }
 
 export function pluginFormat(gameMode: string): PluginFormat {
-  return gameSupport[gameMode].pluginTXTFormat;
+  return gameSupport.get(gameMode, 'pluginTXTFormat');
 }
 
 export function supportedGames(): string[] {
@@ -245,23 +244,23 @@ export function supportedGames(): string[] {
 }
 
 export function gameSupported(gameMode: string): boolean {
-  return gameSupport[gameMode] !== undefined;
+  return gameSupport.has(gameMode);
 }
 
 export function isNativePlugin(gameMode: string, pluginName: string): boolean {
-  return gameSupport[gameMode].nativePlugins.indexOf(pluginName.toLowerCase()) !== -1;
+  return gameSupport.get(gameMode, 'nativePlugins').includes(pluginName.toLowerCase());
 }
 
 export function nativePlugins(gameMode: string): string[] {
-  return gameSupport[gameMode].nativePlugins;
+  return gameSupport.get(gameMode, 'nativePlugins');
 }
 
 export function supportsESL(gameMode: string): boolean {
-  if (gameSupport[gameMode] === undefined) {
+  if (!gameSupport.has(gameMode)) {
     return false;
   }
 
-  return gameSupport[gameMode].supportsESL || false;
+  return gameSupport.get(gameMode, 'supportsESL') ?? false;
 }
 
 export function pluginExtensions(gameMode: string): string[] {
@@ -271,7 +270,7 @@ export function pluginExtensions(gameMode: string): string[] {
 }
 
 export function minRevision(gameMode: string): number {
-  return gameSupport[gameMode].minRevision || 0;
+  return gameSupport.get(gameMode, 'minRevision') ?? 0;
 }
 
 export function revisionText(gameMode: string): string {
