@@ -172,40 +172,41 @@ class PluginHistory implements types.IHistoryStack {
 
     interface IPluginMap { [pluginId: string]: ILoadOrder; }
 
-    this.mApi.onStateChange(['loadOrder'],
-      (prev: IPluginMap, current: IPluginMap) => {
-        const allIds = Array.from(new Set<string>(
-          [].concat(Object.keys(prev), Object.keys(current))));
+    this.mApi.onStateChange(['loadOrder'], (prev: IPluginMap, current: IPluginMap) => {
+      const allIds = Array.from(new Set<string>(
+        [].concat(Object.keys(prev), Object.keys(current))));
 
-        const state: IStateEx = this.mApi.getState();
-        const gameMode = selectors.activeGameId(state);
-        const profile = selectors.activeProfile(state);
+      const state: IStateEx = this.mApi.getState();
+      const gameMode = selectors.activeGameId(state);
+      const profile = selectors.activeProfile(state);
 
+      if (profile !== undefined) {
         allIds.forEach(id => {
           if ((prev[id]?.enabled !== undefined)
-              && (prev[id]?.enabled !== current[id]?.enabled)) {
+            && (prev[id]?.enabled !== current[id]?.enabled)) {
             const plugin = state.session.plugins.pluginList?.[id];
             const ghost = (plugin !== undefined)
-                       && (path.extname(plugin.filePath).toLowerCase() === GHOST_EXT);
+              && (path.extname(plugin.filePath).toLowerCase() === GHOST_EXT);
             addToHistory('plugins', {
-                  type: current[id]?.enabled === true
-                    ? 'plugin-enabled'
-                    : ghost
-                    ? 'plugin-ghosted'
-                    : 'plugin-disabled',
-                  gameId: gameMode,
-                  data: {
-                    id,
-                    oldState: prev[id]?.enabled ?? false,
-                    name: path.basename(plugin?.filePath ?? id, GHOST_EXT),
-                    wasGhost: ghost,
-                    profileId: profile.id,
-                    profileName: profile.name,
-                  },
-                });
+              type: current[id]?.enabled === true
+                ? 'plugin-enabled'
+                : ghost
+                  ? 'plugin-ghosted'
+                  : 'plugin-disabled',
+              gameId: gameMode,
+              data: {
+                id,
+                oldState: prev[id]?.enabled ?? false,
+                name: path.basename(plugin?.filePath ?? id, GHOST_EXT),
+                wasGhost: ghost,
+                profileId: profile.id,
+                profileName: profile.name,
+              },
+            });
           }
         });
-      });
+      }
+    });
 
     this.mApi.events.on('autosort-plugins', () => {
       const state: IStateEx = this.mApi.getState();
