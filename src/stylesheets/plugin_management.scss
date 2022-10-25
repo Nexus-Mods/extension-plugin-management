@@ -227,6 +227,19 @@
     height: 64px;
   }
 }
+
+.plugin-list-loot-banner {
+  margin-top: -$half-gutter;
+  > a {
+    display: inline-flex;
+    align-items: center;
+    img {
+      width: 24px;
+      height: 24px;
+    }
+  }
+}
+
 .plugin-group-default {
   font-style: italic;
   color: $text-color-disabled;

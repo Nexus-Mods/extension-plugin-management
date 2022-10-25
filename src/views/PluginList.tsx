@@ -3,6 +3,7 @@ import { setPluginEnabled } from '../actions/loadOrder';
 import { setPluginInfo, updatePluginWarnings } from '../actions/plugins';
 import { setAutoSortEnabled } from '../actions/settings';
 import { addGroup, addGroupRule, setGroup } from '../actions/userlist';
+import { IESPFile } from '../types/IESPFile';
 import { ILoadOrder } from '../types/ILoadOrder';
 import { ILOOTList, ILOOTPlugin } from '../types/ILOOTList';
 import {
@@ -13,6 +14,7 @@ import {
 } from '../types/IPlugins';
 import GroupFilter from '../util/GroupFilter';
 
+import { LOOT_URL } from '../constants';
 import { GHOST_EXT, NAMESPACE } from '../statics';
 
 import DependencyIcon from './DependencyIcon';
@@ -26,6 +28,7 @@ import I18next, { TFunction } from 'i18next';
 import update from 'immutability-helper';
 import * as _ from 'lodash';
 import { Message, PluginCleaningData } from 'loot';
+import * as path from 'path';
 import * as React from 'react';
 import { Alert, Button, ListGroup, ListGroupItem, Panel } from 'react-bootstrap';
 import { withTranslation } from 'react-i18next';
@@ -35,11 +38,11 @@ import { Creatable } from 'react-select';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { generate as shortid } from 'shortid';
-import {ComponentEx, FlexLayout, Icon, IconBar, ITableRowAction,
+import {
+  ComponentEx, FlexLayout, Icon, IconBar, Image, ITableRowAction,
   log, MainPage, selectors, Spinner,
   Table, TableTextFilter, ToolbarIcon, tooltip, types, Usage, util,
 } from 'vortex-api';
-import { IESPFile } from "../types/IESPFile";
 
 type TranslationFunction = typeof I18next.t;
 
@@ -374,9 +377,13 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           return {
             id: 'btn-autosort-loot',
             key: 'btn-autosort-loot',
-            icon: autoSort ? 'locked' : 'unlocked',
-            text: autoSort ? t('Autosort Enabled', { ns: NAMESPACE })
+            icon: autoSort ? 'autosort-enabled' : 'autosort-disabled',
+            text: autoSort
+              ? t('Autosort Enabled', { ns: NAMESPACE })
               : t('Autosort Disabled', { ns: NAMESPACE }),
+            tooltip: autoSort
+              ? t('Disable automatic load order sorting powered by LOOT.', { ns: NAMESPACE })
+              : t('Enable automatic load order sorting powered by LOOT.', { ns: NAMESPACE }),
             state: autoSort,
             onClick: () => onSetAutoSortEnabled(!autoSort),
           };
@@ -392,6 +399,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             key: 'btn-sort',
             icon: sorting ? 'spinner' : 'loot-sort',
             text: t('Sort Now', { ns: NAMESPACE }),
+            tooltip: t('Sort your load order using LOOT.', { ns: NAMESPACE }),
             onClick: () => this.context.api.events.emit('autosort-plugins', true, () => {
               this.updatePlugins(this.props.plugins, this.props.gameMode)
               .catch(util.ProcessCanceled, () => null)
@@ -567,6 +575,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         </MainPage.Header>
         <MainPage.Body>
           <FlexLayout type='column'>
+            <FlexLayout.Fixed className='plugin-list-loot-banner'>
+              {t('Automatic load order sorting is powered by ')}
+              <a onClick={this.openLoot}>LOOT <Image srcs={[path.join(__dirname, 'loot_icon.png')]} /></a>
+            </FlexLayout.Fixed>
             <FlexLayout.Fixed>
               {needToDeploy ? this.renderOutdated() : null}
             </FlexLayout.Fixed>
@@ -588,6 +600,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         </MainPage.Body>
       </MainPage>
     );
+  }
+
+  private openLoot = () => {
+    util.opn(LOOT_URL).catch(() => null);
   }
 
   private renderOutdated() {
