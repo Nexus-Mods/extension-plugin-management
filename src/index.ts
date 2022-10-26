@@ -249,7 +249,7 @@ function renamePlugin(api: types.IExtensionApi,
 }
 
 interface IExtensionContextExt extends types.IExtensionContext {
-  registerProfileFile: (gameId: string, filePath: string) => void;
+  registerProfileFile: (gameId: string, filePath: string | (() => PromiseLike<string[]>)) => void;
 }
 
 let pluginPersistor: PluginPersistor;
@@ -391,9 +391,9 @@ function register(context: IExtensionContextExt,
     activity: pluginActivity,
   });
 
-  for (const game of supportedGames()) {
-    context.registerProfileFile(game, path.join(pluginPath(game), 'plugins.txt'));
-    context.registerProfileFile(game, path.join(pluginPath(game), 'loadorder.txt'));
+  for (const gameId of supportedGames()) {
+    context.registerProfileFile(gameId, () => Promise.resolve([path.join(pluginPath(gameId), 'plugins.txt')]));
+    context.registerProfileFile(gameId, () => Promise.resolve([path.join(pluginPath(gameId), 'loadorder.txt')]));
   }
 
   context.registerSettings('Workarounds', Settings, undefined, () => {
