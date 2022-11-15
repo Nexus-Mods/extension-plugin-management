@@ -228,14 +228,21 @@
   }
 }
 
-.plugin-list-loot-banner {
+.plugin-list-loot-banner .usage-instructions {
+  border-width: 0 0 1px;
+  margin-left: -$half-gutter;
+  margin-right: -$half-gutter;
   margin-top: -$half-gutter;
-  > a {
-    display: inline-flex;
-    align-items: center;
-    img {
-      width: 24px;
-      height: 24px;
+  padding-left: $half-gutter;
+  .usage-instructions-content > div {
+    >a {
+      display: inline-flex;
+      align-items: center;
+
+      img {
+        width: 24px;
+        height: 24px;
+      }
     }
   }
 }

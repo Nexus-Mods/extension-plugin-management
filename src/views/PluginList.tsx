@@ -381,8 +381,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
               ? t('Autosort Enabled', { ns: NAMESPACE })
               : t('Autosort Disabled', { ns: NAMESPACE }),
             tooltip: autoSort
-              ? t('Disable automatic load order sorting powered by LOOT.', { ns: NAMESPACE })
-              : t('Enable automatic load order sorting powered by LOOT.', { ns: NAMESPACE }),
+              ? t('Disable automatic load order sorting powered by LOOT', { ns: NAMESPACE })
+              : t('Enable automatic load order sorting powered by LOOT', { ns: NAMESPACE }),
             state: autoSort,
             onClick: () => onSetAutoSortEnabled(!autoSort),
           };
@@ -562,6 +562,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       }
     };
 
+    const UsageX: any = Usage;
+
     return (
       <MainPage>
         <MainPage.Header>
@@ -575,8 +577,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         <MainPage.Body>
           <FlexLayout type='column'>
             <FlexLayout.Fixed className='plugin-list-loot-banner'>
-              {t('Automatic load order sorting is powered by ')}
-              <a onClick={this.openLoot}>LOOT <Image srcs={[path.join(__dirname, 'loot_icon.png')]} /></a>
+              <UsageX infoId='sorting-with-loot' opaque>
+                {t('Auto load order sorting is powered by ')}
+                <a onClick={this.props.openLOOTSite}>LOOT <Image srcs={[path.join(__dirname, 'loot_icon.png')]} /></a>
+              </UsageX>
             </FlexLayout.Fixed>
             <FlexLayout.Fixed>
               {needToDeploy ? this.renderOutdated() : null}
@@ -589,20 +593,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
                 </Panel.Body>
               </Panel>
             </FlexLayout.Flex>
-            <FlexLayout.Fixed>
-              <Usage infoId='deployed-plugins' persistent>
-                {t('Automatic plugin sorting powered by ')}
-                <a onClick={this.props.openLOOTSite}>LOOT</a>
-              </Usage>
-            </FlexLayout.Fixed>
           </FlexLayout>
         </MainPage.Body>
       </MainPage>
     );
-  }
-
-  private openLoot = () => {
-    util.opn(LOOT_URL).catch(() => null);
   }
 
   private renderOutdated() {
