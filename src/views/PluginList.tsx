@@ -61,7 +61,6 @@ interface IBaseProps {
   supportsESL: (gameMode: string) => boolean;
   revisionText: (gameMode: string) => string;
   getPluginFlags(
-    t: TranslationFunction,
     plugin: IPluginCombined,
     gameSupported: boolean,
     supportsESL: boolean,
@@ -1202,7 +1201,6 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           />),
         calc: (plugin: IPluginCombined, t) => 
           this.props.getPluginFlags(
-            t, 
             plugin, 
             this.props.gameSupported(this.props.gameMode),
             this.props.supportsESL(this.props.gameMode),
@@ -1238,9 +1236,22 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         id: 'flagsDetail',
         name: 'Flags',
         edit: {},
+        customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => {
+          const flags = this.props.getPluginFlags(
+            plugin, 
+            this.props.gameSupported(this.props.gameMode),
+            this.props.supportsESL(this.props.gameMode),
+            this.props.minRevision(this.props.gameMode),
+          );
+
+          return (
+            <ListGroup>
+              {flags.map(flag => (<ListGroupItem key={`flags-${flag}`}>{t(flag)}</ListGroupItem>))}
+            </ListGroup>
+          );
+        },
         calc: (plugin: IPluginCombined, t) => 
           this.props.getPluginFlags(
-            t, 
             plugin, 
             this.props.gameSupported(this.props.gameMode),
             this.props.supportsESL(this.props.gameMode),

@@ -7,8 +7,7 @@ import * as React from 'react';
 
 type TranslationFunction = typeof I18next.t;
 
-export function getPluginFlags(t: TranslationFunction,
-                               plugin: IPluginCombined,
+export function getPluginFlags(plugin: IPluginCombined,
                                gameSupported: boolean,
                                supportsESL: boolean,
                                minRevision: number): string[] {
@@ -19,41 +18,41 @@ export function getPluginFlags(t: TranslationFunction,
   }
 
   if (plugin.isMaster) {
-    result.push(t('Master'));
+    result.push('Master');
   }
 
   if (supportsESL) {
     if (plugin.isLight) {
-      result.push(t('Light'));
+      result.push('Light');
     } else if (plugin.isValidAsLightPlugin && plugin.filePath.toLowerCase().endsWith('.esp')) {
-      result.push(t('Could be light'));
+      result.push('Could be light');
     } else {
-      result.push(t('Not light'));
+      result.push('Not light');
     }
   }
 
   if (plugin.parseFailed) {
-    result.push(t('Couldn\'t parse'));
+    result.push('Couldn\'t parse');
   }
 
   if (plugin.isNative) {
-    result.push(t('Native'));
+    result.push('Native');
   }
 
   if (plugin.loadsArchive) {
-    result.push(t('Loads Archive'));
+    result.push('Loads Archive');
   }
 
   if ((plugin.dirtyness !== undefined) && (plugin.dirtyness.length > 0)) {
-    result.push(t('Dirty'));
+    result.push('Dirty');
   }
 
   if ((plugin.cleanliness !== undefined) && (plugin.cleanliness.length > 0)) {
-    result.push(t('Clean'));
+    result.push('Clean');
   }
 
   if (plugin.revision < minRevision) {
-    result.push(t('Incompatible'));
+    result.push('Incompatible');
   }
 
   if (
@@ -61,15 +60,15 @@ export function getPluginFlags(t: TranslationFunction,
     && (plugin.warnings !== undefined)
     && (Object.keys(plugin.warnings).find(key => plugin.warnings![key] !== false) !== undefined)
   ) {
-    result.push(t('Warnings'));
+    result.push('Warnings');
   }
 
   if (!plugin.deployed) {
-    result.push(t('Not deployed'));
+    result.push('Not deployed');
   }
 
   if ((plugin.messages || []).length > 0) {
-    result.push(t('LOOT Messages'));
+    result.push('LOOT Messages');
   }
 
   return result;
