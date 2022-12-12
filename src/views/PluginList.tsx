@@ -398,7 +398,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             key: 'btn-sort',
             icon: sorting ? 'spinner' : 'loot-sort',
             text: t('Sort Now', { ns: NAMESPACE }),
-            tooltip: t('Sort your load order using LOOT.', { ns: NAMESPACE }),
+            tooltip: t('Sort your load order using LOOT', { ns: NAMESPACE }),
             onClick: () => this.context.api.events.emit('autosort-plugins', true, () => {
               this.updatePlugins(this.props.plugins, this.props.gameMode)
               .catch(util.ProcessCanceled, () => null)
