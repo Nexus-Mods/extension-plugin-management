@@ -181,6 +181,9 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>({
   },
 }, (gameId: string) => {
   const discovery = discoveryForGame(gameId);
+  log('info', '(debug gog path error) store type', {
+    gameId, store: discovery?.store, path: discovery?.path, setManually: discovery?.pathSetManually,
+  });
   if ((discovery?.path !== undefined)
       && (gameId === 'enderalspecialedition')
       && discovery.path.includes('skyrim')) {
@@ -234,6 +237,8 @@ export function initGameSupport(api: types.IExtensionApi): Promise<void> {
 
 export function pluginPath(gameMode: string): string {
   const gamePath = gameSupport.get(gameMode, 'appDataPath');
+
+  log('info', '(debug gog path error) plugin path', { gameMode, gamePath });
 
   return (process.env.LOCALAPPDATA !== undefined)
     ? path.join(process.env.LOCALAPPDATA, gamePath)
