@@ -3,7 +3,10 @@
   "version": "0.2.6",
   "description": "Management for gamebryo plugins",
   "main": "./out/index.js",
-  "repository": "",
+  "repository": {
+    "type": "git",
+    "url": "Nexus-Mods/extension-plugin-management"
+  },
   "scripts": {
     "webpack": "webpack --config webpack.config.js --progress --profile --color",
     "webpack_async": "webpack --config webpack_async.config.js --entry ./node_modules/loot/async.js --output-filename async.js",
@@ -30,18 +33,19 @@
     "@types/react-select": "^1.2.1",
     "@types/redux": "^3.6.0",
     "@types/redux-thunk": "^2.1.0",
-    "bluebird": "^3.5.1",
+    "bluebird": "^3.7.2",
     "copyfiles": "^2.1.1",
     "cytoscape": "^3.2.16",
     "cytoscape-cose-bilkent": "^4.0.0",
     "cytoscape-edgehandles": "^3.5.1",
-    "esptk": "Nexus-Mods/node-esptk",
+    "esptk": "NicBOMB/node-esptk",
     "i18next": "^19.8.4",
     "immutability-helper": "^2.7.1",
     "js-yaml": "^3.12.0",
     "json-loader": "^0.5.7",
-    "loot": "Nexus-Mods/node-loot",
+    "loot": "NicBOMB/node-loot",
     "markdown-ast": "^0.2.1",
+    "node-gyp": "^9.0.0",
     "prop-types": "^15.6.2",
     "react": "^16.8.6",
     "react-dnd": "^7.4.5",
@@ -50,9 +54,10 @@
     "react-select": "^1.2.1",
     "redux": "^4.0.0",
     "redux-thunk": "^2.3.0",
-    "ts-loader": "^9.2.6",
+    "ts-loader": "^9.4.2",
+    "typescript": ">=3",
     "vortex-api": "Nexus-Mods/vortex-api",
-    "webpack": "^5.66.0",
-    "webpack-cli": "^4.9.1"
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1"
   }
 }
