@@ -19,7 +19,8 @@ const MAX_RESTARTS = 3;
 const LootProm: any = Bluebird.promisifyAll(LootAsync);
 
 enum EdgeType {
-  group = 'group',
+  userGroup = 'userGroup',
+  masterlistGroup = 'masterlistGroup',
   hardcoded = 'hardcoded',
   master = 'master',
   masterFlag = 'masterFlag',
@@ -27,7 +28,8 @@ enum EdgeType {
   masterlistRequirement = 'masterlistRequirement',
   userLoadAfter = 'userlistLoadAfter',
   userRequirement = 'userlistRequirement',
-  overlap = 'overlap',
+  assetOverlap = 'assetOverlap',
+  recordOverlap = 'recordOverlap',
   tieBreak = 'tieBreak',
 }
 
@@ -661,8 +663,10 @@ class LootInterface {
         return t('custom');
       case EdgeType.hardcoded:
         return t('hardcoded');
-      case EdgeType.overlap:
-        return t('overlap');
+      case EdgeType.assetOverlap:
+        return t('overlap (asset)');
+      case EdgeType.recordOverlap:
+        return t('overlap (record)');
       case EdgeType.tieBreak:
         return t('tie breaker');
       default:
@@ -677,9 +681,11 @@ class LootInterface {
     switch (edge.typeOfEdgeToNextVertex) {
       case EdgeType.master:
       case EdgeType.masterFlag:
-        return t('{{master}} is a master and {{regular}} isn\'t', { replace: {
-          master: edge.name, regular: next.name,
-        }});
+        return t('{{master}} is a master and {{regular}} isn\'t', {
+          replace: {
+            master: edge.name, regular: next.name,
+          }
+        });
       case EdgeType.masterlistLoadAfter:
       case EdgeType.masterlistRequirement:
         return t('this is a masterlist rule');
@@ -688,22 +694,27 @@ class LootInterface {
         return t('this is a custom rule');
       case EdgeType.hardcoded:
         return t('hardcoded');
-      case EdgeType.overlap:
-        return t('overlap');
+      case EdgeType.assetOverlap:
+        return t('assets (content of BSA/BA2) overlap');
+      case EdgeType.recordOverlap:
+        return t('records (content of ESx) overlap');
       case EdgeType.tieBreak:
         return t('tie breaker');
-      case EdgeType.group: {
+      case EdgeType.userGroup:
+      case EdgeType.masterlistGroup: {
         try {
           const groupPath: ICycleEdge[] =
             await loot.getGroupsPathAsync(edgeGroup || 'default', nextGroup || 'default');
-          return t('groups are connected like this: {{path}}', { replace: {
-            path: groupPath.map(grp => {
-              const connection = grp.typeOfEdgeToNextVertex === 'hardcoded'
-                ? ''
-                : ` --(${this.renderEdge(t, grp)})->`;
-              return `${grp.name}${connection}`;
-            }).join(' '),
-          } });
+          return t('groups are connected like this: {{path}}', {
+            replace: {
+              path: groupPath.map(grp => {
+                const connection = grp.typeOfEdgeToNextVertex === 'hardcoded'
+                  ? ''
+                  : ` --(${this.renderEdge(t, grp)})->`;
+                return `${grp.name}${connection}`;
+              }).join(' '),
+            }
+          });
         } catch (err) {
           log('warn', 'failed to determine path between groups', err.message);
           return t('groups are connected');
@@ -753,16 +764,21 @@ class LootInterface {
   private async getSolutions(t: typeof i18next.t,
                              cycle: ICycleEdge[],
                              loot: typeof LootProm): Promise<types.ICheckbox[]> {
-    const user = [
+    const userTypes = [
       EdgeType.userLoadAfter,
       EdgeType.userRequirement,
+    ];
+                               
+    const groupTypes = [
+      EdgeType.masterlistGroup,
+      EdgeType.userGroup
     ];
 
     const result: types.ICheckbox[] = [];
 
     await Promise.all(cycle.map(async (edge: ICycleEdge, idx: number) => {
       const next = cycle[(idx + 1) % cycle.length];
-      if (user.indexOf(edge.typeOfEdgeToNextVertex) !== -1) {
+      if (userTypes.includes(edge.typeOfEdgeToNextVertex)) {
         result.push({
           id: `removerule:${edge.name}:${next.name}:${edge.typeOfEdgeToNextVertex}`,
           text: t('Remove custom rule between "{{name}}" and "{{next}}"', { replace: {
@@ -770,7 +786,7 @@ class LootInterface {
           } }),
           value: false,
         });
-      } else if (edge.typeOfEdgeToNextVertex === EdgeType.group) {
+      } else if (groupTypes.includes(edge.typeOfEdgeToNextVertex)) {
         const state = this.mExtensionApi.store.getState();
         const edgeGroup = this.getGroup(state, edge.name);
         const nextGroup = this.getGroup(state, next.name);
@@ -795,7 +811,7 @@ class LootInterface {
         try {
           const groupPath: ICycleEdge[] = await
             loot.getGroupsPathAsync(edgeGroup.group || 'default', nextGroup.group || 'default');
-          if (groupPath.find(iter => user.indexOf(iter.typeOfEdgeToNextVertex) !== -1)) {
+          if (groupPath.find(iter => userTypes.indexOf(iter.typeOfEdgeToNextVertex) !== -1)) {
             result.push({
               // Storing the plugin names here instead of the group directly because the plugin
               //   names are file names on disk and thus won't contain colons, meaning we can
