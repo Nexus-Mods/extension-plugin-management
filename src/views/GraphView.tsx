@@ -231,6 +231,10 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
 
         (ele.connections || []).forEach(connGroup => {
           (connGroup.connections || []).forEach(conn => {
+            if ((elements[id] === undefined) || (elements[conn] === undefined)) {
+              // invalid connection, are connections out of sync with the nodes?
+              return;
+            }
             const from = san(id);
             const to = san(conn);
             prev.push({
