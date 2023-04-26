@@ -53,6 +53,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
   private mLayout: cytoscape.LayoutManipulation;
   private mEdgeHandler: any;
   private mMousePos: { x: number, y: number } = { x: 0, y: 0 };
+  private mHoveredNode: any;
 
   public UNSAFE_componentWillReceiveProps(newProps: IGraphViewProps) {
     if (newProps.elements !== this.props.elements) {
@@ -140,6 +141,9 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
   private onKeyDown = (evt: KeyboardEvent) => {
     if (evt.keyCode === 17) {
       this.mEdgeHandler.enable();
+      if (this.mHoveredNode?.data?.()?.title !== undefined) {
+        this.mEdgeHandler.show?.(this.mHoveredNode);
+      }
       // this.mEdgeHandler.enableDrawMode();
     }
   }
@@ -189,8 +193,12 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
       snap: true,
     });
     this.mEdgeHandler.disable();
-    (this.mGraph as any).on('cxttap', this.handleContext);
-    (this.mGraph as any).on('ehcomplete', this.handleEHComplete);
+    this.mGraph.on('cxttap', this.handleContext);
+    this.mGraph.on('mouseover', (evt: cytoscape.EventObject) => {
+      this.mHoveredNode = evt.target;
+    });
+    this.mGraph.on('mouseout', () => this.mHoveredNode = undefined);
+    this.mGraph.on('ehcomplete', this.handleEHComplete as any);
   }
 
   private handleContext = (evt: cytoscape.EventObject) => {
