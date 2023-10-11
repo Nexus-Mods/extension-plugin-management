@@ -1,7 +1,7 @@
 import * as path from 'path';
 import { fs, util } from 'vortex-api';
 
-const LOOT_LIST_REVISION = 'v0.18';
+const LOOT_LIST_REVISION = 'v0.21';
 
 // TODO: this is for transitioning from loot 0.17 -> 0.18, remove it at some point
 async function tryRemoveDotGit(localPath: string) {
