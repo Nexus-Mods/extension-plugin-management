@@ -1,3 +1,4 @@
+/* eslint-disable */
 import {PluginFormat} from '../util/PluginPersistor';
 
 import Promise from 'bluebird';
@@ -11,7 +12,7 @@ interface IGameSupport {
   appDataPath: string;
   pluginTXTFormat: PluginTXTFormat;
   nativePlugins: string[];
-  supportsESL?: boolean;
+  supportsESL?: boolean | (() => boolean);
   minRevision?: number;
 }
 
@@ -68,7 +69,8 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>({
       'dragonborn.esm',
       'skyrimvr.esm',
     ],
-    // skyrim vr does *not* support esls, it's based on an older version of the engine
+    // skyrim vr does *not* support esls by default. However, it is possible to enable them
+    //  with a mod https://www.nexusmods.com/skyrimspecialedition/mods/106712
     supportsESL: false,
   },
   fallout3: {
@@ -195,7 +197,6 @@ let discoveryForGame: (gameId: string) => types.IDiscoveryResult = () => undefin
 
 export function initGameSupport(api: types.IExtensionApi): Promise<void> {
   let res = Promise.resolve();
-
   discoveryForGame = (gameId: string) => selectors.discoveryByGame(api.store.getState(), gameId);
 
   const state: types.IState = api.store.getState();
@@ -227,6 +228,13 @@ export function initGameSupport(api: types.IExtensionApi): Promise<void> {
         .then(() => {
           gameSupport['fallout4'].nativePlugins = Array.from(fallout4cc);
         }));
+  }
+
+  if (discovered['skyrimvr']?.path !== undefined) {
+    const game = selectors.gameById(state, 'skyrimvr');
+    if (game?.details?.supportsESL !== undefined) {
+      gameSupport['skyrimvr'].supportsESL = game.details.supportsESL;
+    }
   }
 
   return res;
@@ -264,8 +272,11 @@ export function supportsESL(gameMode: string): boolean {
   if (!gameSupport.has(gameMode)) {
     return false;
   }
-
-  return gameSupport.get(gameMode, 'supportsESL') ?? false;
+  const supportsESL = gameSupport.get(gameMode, 'supportsESL') ?? false;
+  if (typeof supportsESL === 'function') {
+    return supportsESL();
+  }
+  return supportsESL;
 }
 
 export function pluginExtensions(gameMode: string): string[] {
