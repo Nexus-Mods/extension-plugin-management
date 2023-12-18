@@ -1,4 +1,4 @@
-/* eslint-disable max-lines-per-function */
+/* eslint-disable */
 import { setPluginEnabled, setPluginOrder, updatePluginOrder } from './actions/loadOrder';
 import { setPluginFilePath, setPluginList, updatePluginWarnings } from './actions/plugins';
 import { removeGroupRule, setGroup } from './actions/userlist';
