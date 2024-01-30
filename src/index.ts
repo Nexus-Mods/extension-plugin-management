@@ -256,7 +256,7 @@ let pluginPersistor: PluginPersistor;
 let userlistPersistor: UserlistPersistor;
 let masterlistPersistor: UserlistPersistor;
 let loot: LootInterface;
-let refreshTimer: NodeJS.Timer;
+let refreshTimer: NodeJS.Timeout;
 let deploying = false;
 
 function makeSetPluginGhost(api: types.IExtensionApi) {
