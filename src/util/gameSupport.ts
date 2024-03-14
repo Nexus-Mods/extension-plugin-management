@@ -1,9 +1,9 @@
 /* eslint-disable */
 import {PluginFormat} from '../util/PluginPersistor';
+import memoizeOne from 'memoize-one';
 
 import Promise from 'bluebird';
 import * as path from 'path';
-import * as Redux from 'redux';
 import { fs, log, selectors, types, util } from 'vortex-api';
 
 type PluginTXTFormat = 'original' | 'fallout4';
@@ -268,7 +268,7 @@ export function nativePlugins(gameMode: string): string[] {
   return gameSupport.get(gameMode, 'nativePlugins');
 }
 
-export function supportsESL(gameMode: string): boolean {
+export const supportsESL = memoizeOne((gameMode: string): boolean => {
   if (!gameSupport.has(gameMode)) {
     return false;
   }
@@ -277,7 +277,7 @@ export function supportsESL(gameMode: string): boolean {
     return supportsESL();
   }
   return supportsESL;
-}
+});
 
 export function pluginExtensions(gameMode: string): string[] {
   return supportsESL(gameMode)
