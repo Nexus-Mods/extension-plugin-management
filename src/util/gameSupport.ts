@@ -178,6 +178,9 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>({
     skyrimse: {
       appDataPath: 'Skyrim Special Edition EPIC',
     },
+    fallout4: {
+      appDataPath: 'Fallout4 EPIC',
+    },
   },
   enderalseOverlay: {
     enderalspecialedition: {
