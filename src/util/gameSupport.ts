@@ -113,10 +113,18 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>({
       'ccbgsfo4042-bfg.esl',
       'ccbgsfo4043-doomchainsaw.esl',
       'ccbgsfo4044-hellfirepowerarmor.esl',
+      'ccbgsfo4046-tescan.esl',
+      'ccbgsfo4096-as_enclave.esl',
+      'ccbgsfo4110-ws_enclave.esl',
+      'ccbgsfo4115-x02.esl',
+      'ccbgsfo4116-heavyflamer.esl',
+      'cceejfo4001-decorationpack.esl',
+      'ccfrsfo4001-handmadeshotgun.esl',
       'ccfsvfo4001-modularmilitarybackpack.esl',
       'ccfsvfo4002-midcenturymodern.esl',
-      'ccfrsfo4001-handmadeshotgun.esl',
-      'cceejfo4001-decorationpack.esl',
+      'ccfsvfo4007-halloween.esl',
+      'ccotmfo4001-remnants.esl',
+      'ccsbjfo4003-grenade.esl',
     ],
     supportsESL: true,
   },
@@ -177,6 +185,9 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>({
   epic: {
     skyrimse: {
       appDataPath: 'Skyrim Special Edition EPIC',
+    },
+    fallout4: {
+      appDataPath: 'Fallout4 EPIC',
     },
   },
   enderalseOverlay: {

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import {updatePluginOrder} from './actions/loadOrder';
 import { removeGroupRule, removeRule, setGroup } from './actions/userlist';
 import {IPluginLoot, IPlugins, IPluginsLoot} from './types/IPlugins';
@@ -638,9 +639,18 @@ class LootInterface {
       });
   }
 
+  private mHashWarningLogged = false;
   private log = (level: number, message: string) => {
+    if (message.includes('and file with hashes') && !this.mHashWarningLogged) {
+      // Ugly hack - but hash related errors will be logged for EACH file within a
+      //  Bethesda archive which will end up spamming Vortex to Oblivion with information
+      //  the user can't even see. One instance of this is enough for us to pinpoint
+      //  a BSA/BA2 conflict in the future (if it's ever implemented)
+      this.mHashWarningLogged = true;
+      return;
+    }
     log(this.logLevel(level) as any, message);
-  }
+  };
 
   private logLevel(level: number): string {
     switch (level) {
