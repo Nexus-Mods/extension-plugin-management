@@ -641,6 +641,9 @@ class LootInterface {
 
   private mHashWarningLogged = false;
   private log = (level: number, message: string) => {
+    if (this.mHashWarningLogged) {
+      return;
+    }
     if (message.includes('and file with hashes') && !this.mHashWarningLogged) {
       // Ugly hack - but hash related errors will be logged for EACH file within a
       //  Bethesda archive which will end up spamming Vortex to Oblivion with information
