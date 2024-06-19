@@ -69,7 +69,7 @@ interface IBaseProps {
   ): string[];
   isMaster: (filePath: string, flag: boolean, gameMode: string) => boolean;
   isLight: (filePath: string, flag: boolean, gameMode: string) => boolean;
-  isMedium: (filePath: string, flag: boolean, gameMode: string) => boolean;
+  isMediumMaster: (filePath: string, flag: boolean, gameMode: string) => boolean;
   openLOOTSite: () => Promise<any>;
   parseESPFile: (filePath: string) => IESPFile;
   safeBasename: (filePath: string) => string;
@@ -205,13 +205,10 @@ function PluginCount(props: IPluginCountProps) {
     (plugins[id].enabled || plugins[id].isMedium));
 
   const eslGame = supportsESL(gameId);
-  const supportsMediumPlugs = medium.length > 0;
 
   const classes = ['gamebryo-plugin-count'];
 
-  const regLimit = supportsMediumPlugs
-    ? 253
-    : eslGame ? 254 : 255;
+  const regLimit = eslGame ? 254 : 255;
   if ((regular.length > regLimit) || (light.length > 4096)) {
     classes.push('gamebryo-plugin-limit');
   }
@@ -695,7 +692,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             isLight: this.props.isLight(
               pluginsIn[pluginName].filePath, esp.isLight, this.props.gameMode
             ),
-            isMedium: this.props.isMedium(
+            isMedium: this.props.isMediumMaster(
               pluginsIn[pluginName].filePath, esp.isMedium, this.props.gameMode
             ),
             parseFailed: false,
