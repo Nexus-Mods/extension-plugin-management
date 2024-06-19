@@ -1,6 +1,6 @@
 {
   "name": "gamebryo-plugin-management",
-  "version": "0.2.12",
+  "version": "0.3.0",
   "description": "Management for gamebryo plugins",
   "main": "./out/index.js",
   "repository": "",
@@ -35,7 +35,7 @@
     "cytoscape": "^3.2.16",
     "cytoscape-cose-bilkent": "^4.0.0",
     "cytoscape-edgehandles": "^3.5.1",
-    "esptk": "Nexus-Mods/node-esptk",
+    "esptk": "Nexus-Mods/node-esptk#15918-starfield-update",
     "i18next": "^19.8.4",
     "immutability-helper": "^2.7.1",
     "js-yaml": "^3.12.0",
