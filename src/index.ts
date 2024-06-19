@@ -9,7 +9,7 @@ import { settingsReducer } from './reducers/settings';
 import userlistReducer from './reducers/userlist';
 import userlistEditReducer from './reducers/userlistEdit';
 import { ILoadOrder } from './types/ILoadOrder';
-import { ILOOTList, ILootReference } from './types/ILOOTList';
+import { ILOOTList, ILootReference, ILOOTSortApiCall } from './types/ILOOTList';
 import { IPlugin, IPluginCombined, IPlugins } from './types/IPlugins';
 import { IStateEx } from './types/IStateEx';
 import {
@@ -130,7 +130,8 @@ function updatePluginListImpl(store: types.ThunkStore<any>,
     return Promise.resolve();
   }
 
-  const modPath = game.getModPaths(discovery.path)[''];
+  const modType = game.details?.dataModType || '';
+  const modPath = game.getModPaths(discovery.path)[modType];
 
   const enabledModIds = Object.keys(gameMods).filter(
       modId => util.getSafe(newModList, [modId, 'enabled'], false));
@@ -319,6 +320,15 @@ function register(context: IExtensionContextExt,
     return flag || (masterExts.indexOf(path.extname(filePath).toLowerCase()) !== -1);
   };
 
+  const isMediumMaster = (filePath: string, flag: boolean, gameMode: string): boolean => {
+    if (path.extname(filePath) === GHOST_EXT) {
+      filePath = path.basename(filePath, GHOST_EXT);
+    }
+    const masterExts = ['.esm'];
+    const file = new ESPFile(filePath);
+    return flag || (masterExts.indexOf(path.extname(filePath).toLowerCase()) !== -1) && file.isMedium;
+  }
+
   const isLight = (filePath: string, flag: boolean, gameMode: string) => {
     if (path.extname(filePath) === GHOST_EXT) {
       filePath = path.basename(filePath, GHOST_EXT);
@@ -336,6 +346,7 @@ function register(context: IExtensionContextExt,
     return {
       isMaster: fileInfo.isMaster,
       isLight: fileInfo.isLight,
+      isMedium: fileInfo.isMedium,
       isDummy: fileInfo.isDummy,
       author: fileInfo.author,
       description: fileInfo.description,
@@ -367,7 +378,18 @@ function register(context: IExtensionContextExt,
     id: 'gamebryo-plugins',
     hotkey: 'E',
     group: 'per-game',
-    visible: () => gameSupported(selectors.activeGameId(context.api.store.getState())),
+    visible: () => {
+      const state = context.api.store.getState();
+      const gameMode = selectors.activeGameId(state);
+      if (!gameSupported(gameMode)) {
+        return false;
+      }
+
+      // Currently only Starfield's plugin management is disabled by default.
+      const defaultVal = ['starfield'].includes(gameMode) ? false : true;
+      const profileId = selectors.lastActiveProfileForGame(state, gameMode);
+      return util.getSafe(state, ['settings', 'plugins', 'pluginManagementEnabled', profileId], defaultVal);
+    },
     props: () => ({
       gameSupported,
       minRevision,
@@ -376,6 +398,7 @@ function register(context: IExtensionContextExt,
       revisionText,
       isMaster,
       isLight,
+      isMediumMaster,
       openLOOTSite,
       parseESPFile,
       forceListUpdate,
@@ -401,6 +424,34 @@ function register(context: IExtensionContextExt,
     const gameMode = selectors.activeGameId(state);
     return supportedGames().indexOf(gameMode) !== -1;
   });
+
+  context.registerAPI('lootSortAsync', async (sortCall: ILOOTSortApiCall) => {
+    const { pluginFilePaths, onSortCallback } = sortCall;
+    if (!Array.isArray(pluginFilePaths)) {
+      log('error', 'lootSortAsync is expecting an array');
+      return;
+    }
+
+    const state = context.api.getState();
+    const plugins: IPlugins = pluginFilePaths.reduce((accum, filePath: string) => {
+      const fileName = path.basename(filePath);
+      const plugin: IPlugin = {
+        filePath,
+        isNative: nativePlugins(selectors.activeGameId(state)).some(native => native === fileName),
+        deployed: true,
+      }
+      accum[fileName] = plugin;
+      return accum;
+    }, {});
+    context.api.store.dispatch(setPluginList(plugins));
+    await util.toPromise(cb => context.api.events.emit('autosort-plugins', true, cb));
+    const sortedLO = context.api.getState()?.['loadOrder'] || {};
+    const sortedList = Object.keys(sortedLO)
+      .sort((lhs, rhs) => sortedLO[lhs].loadOrder - sortedLO[rhs].loadOrder)
+      .filter((pluginName: string) => nativePlugins(selectors.activeGameId(state)).some(native => native !== pluginName.toLowerCase()))
+      .map((pluginName: string) => sortedLO[pluginName].name);
+    onSortCallback(sortedList);
+  }, { minArguments: 1 });
 
   context.registerAction('gamebryo-plugin-icons', 100, 'connection', {}, 'Manage Rules',
     () => {

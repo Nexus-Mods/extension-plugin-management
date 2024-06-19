@@ -13,6 +13,7 @@ interface IGameSupport {
   pluginTXTFormat: PluginTXTFormat;
   nativePlugins: string[];
   supportsESL?: boolean | (() => boolean);
+  supportsMediumMasters?: boolean | (() => boolean);
   minRevision?: number;
 }
 
@@ -142,6 +143,20 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>({
     nativePlugins: [
       'falloutnv.esm',
     ],
+  },
+  starfield: {
+    appDataPath: 'Starfield',
+    pluginTXTFormat: 'fallout4',
+    nativePlugins: [
+      'starfield.esm',
+      'blueprintships-starfield.esm',
+      'sfbgs003.esm',
+      'sfbgs006.esm',
+      'sfbgs007.esm',
+      'sfbgs008.esm',
+    ],
+    supportsESL: true,
+    supportsMediumMasters: true,
   },
   oblivion: {
     appDataPath: 'oblivion',

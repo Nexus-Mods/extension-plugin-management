@@ -59,6 +59,7 @@ interface IBaseProps {
   gameSupported: (gameMode: string) => boolean;
   minRevision: (gameMode: string) => number;
   supportsESL: (gameMode: string) => boolean;
+  supportsMediumMasters: (gameMode: string) => boolean;
   revisionText: (gameMode: string) => string;
   getPluginFlags(
     plugin: IPluginCombined,
@@ -68,6 +69,7 @@ interface IBaseProps {
   ): string[];
   isMaster: (filePath: string, flag: boolean, gameMode: string) => boolean;
   isLight: (filePath: string, flag: boolean, gameMode: string) => boolean;
+  isMedium: (filePath: string, flag: boolean, gameMode: string) => boolean;
   openLOOTSite: () => Promise<any>;
   parseESPFile: (filePath: string) => IESPFile;
   safeBasename: (filePath: string) => string;
@@ -178,6 +180,7 @@ interface IPluginCountProps {
   plugins: { [pluginId: string]: IPluginCombined };
   gameSupported: (gameMode: string) => boolean;
   supportsESL: (gameMode: string) => boolean;
+  supportsMediumMasters: (gameMode: string) => boolean;
 }
 
 function PluginCount(props: IPluginCountProps) {
@@ -186,7 +189,8 @@ function PluginCount(props: IPluginCountProps) {
     gameId, 
     plugins,
     gameSupported,
-    supportsESL, 
+    supportsESL,
+    supportsMediumMasters,
   } = props;
 
   if (!gameSupported(gameId)) {
@@ -197,12 +201,17 @@ function PluginCount(props: IPluginCountProps) {
     (plugins[id].enabled || plugins[id].isNative) && !plugins[id].isLight);
   const light = Object.keys(plugins).filter(id =>
     (plugins[id].enabled || plugins[id].isNative) && plugins[id].isLight);
+  const medium = Object.keys(plugins).filter(id =>
+    (plugins[id].enabled || plugins[id].isMedium));
 
   const eslGame = supportsESL(gameId);
+  const supportsMediumPlugs = medium.length > 0;
 
   const classes = ['gamebryo-plugin-count'];
 
-  const regLimit = eslGame ? 254 : 255;
+  const regLimit = supportsMediumPlugs
+    ? 253
+    : eslGame ? 254 : 255;
   if ((regular.length > regLimit) || (light.length > 4096)) {
     classes.push('gamebryo-plugin-limit');
   }
@@ -418,6 +427,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           plugins: this.state.pluginsCombined,
           gameSupported: this.props.gameSupported,
           supportsESL: this.props.supportsESL,
+          supportsMediumMasters: this.props.supportsMediumMasters,
         }),
       },
     ];
@@ -441,6 +451,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       prev[key] = {
         isMaster: false,
         isLight: false,
+        isMedium: false,
         parseFailed: false,
         masterList: [],
         author: '',
@@ -684,6 +695,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             isLight: this.props.isLight(
               pluginsIn[pluginName].filePath, esp.isLight, this.props.gameMode
             ),
+            isMedium: this.props.isMedium(
+              pluginsIn[pluginName].filePath, esp.isMedium, this.props.gameMode
+            ),
             parseFailed: false,
             description: esp.description,
             author: esp.author,
@@ -700,6 +714,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           pluginsParsed[pluginName] = {
             isMaster: false,
             isLight: false,
+            isMedium: false,
             parseFailed: true,
             description: '',
             author: '',
@@ -1188,6 +1203,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           (<PluginFlags
             gameSupported={this.props.gameSupported}
             supportsESL={this.props.supportsESL}
+            supportsMediumPlugins={this.props.supportsMediumMasters}
             minRevision={this.props.minRevision} 
             plugin={plugin} 
             gameMode={this.props.gameMode} 

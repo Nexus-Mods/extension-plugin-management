@@ -62,6 +62,7 @@ export interface IPlugins { [key: string]: IPlugin; }
 export interface IPluginParsed {
   isMaster: boolean;
   isLight: boolean;
+  isMedium: boolean;
   parseFailed: boolean;
   masterList: string[];
   author: string;
