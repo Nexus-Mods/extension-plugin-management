@@ -1,6 +1,6 @@
 /* eslint-disable max-lines-per-function */
 import { setPluginEnabled } from '../actions/loadOrder';
-import { setPluginInfo, updatePluginWarnings } from '../actions/plugins';
+import { clearNewPluginCounter, setPluginInfo, updatePluginWarnings } from '../actions/plugins';
 import { setAutoSortEnabled } from '../actions/settings';
 import { addGroup, addGroupRule, setGroup } from '../actions/userlist';
 import { IESPFile } from '../types/IESPFile';
@@ -97,6 +97,7 @@ interface IActionProps {
   onSetGroup: (pluginName: string, group: string) => void;
   onUpdateWarnings: (id: string, warning: string, value: boolean) => void;
   onUpdatePluginInfo: (info: { [id: string]: IPluginCombined }) => void;
+  onClearNewPluginCounter: () => void;
 }
 
 interface IComponentState {
@@ -1503,6 +1504,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
       dispatch(updatePluginWarnings(pluginName, notificationId, value)),
     onUpdatePluginInfo: (info: { [id: string]: IPluginCombined }) =>
       dispatch(setPluginInfo(info)),
+    onClearNewPluginCounter: () => dispatch(clearNewPluginCounter())
   };
 }
 
