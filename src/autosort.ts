@@ -2,7 +2,7 @@
 import {updatePluginOrder} from './actions/loadOrder';
 import { removeGroupRule, removeRule, setGroup } from './actions/userlist';
 import {IPluginLoot, IPlugins, IPluginsLoot} from './types/IPlugins';
-import {gameSupported, pluginPath} from './util/gameSupport';
+import {gameSupported, nativePlugins, pluginPath} from './util/gameSupport';
 import { downloadMasterlist, downloadPrelude } from './util/masterlist';
 
 import { NAMESPACE } from './statics';
@@ -10,7 +10,7 @@ import { NAMESPACE } from './statics';
 import Bluebird from 'bluebird';
 import getVersion from 'exe-version';
 import i18next from 'i18next';
-import { LootAsync, PluginMetadata } from 'loot';
+import { LootAsync, Message, PluginMetadata } from 'loot';
 import * as path from 'path';
 import {} from 'redux-thunk';
 import {actions, fs, log, selectors, types, util} from 'vortex-api';
@@ -427,8 +427,15 @@ class LootInterface {
 
         const toRef = iter => ({ name: iter.name, display: iter.displayName });
 
+        const missingMetaMessage = 'No LOOT metadata could be found for this plugin. This is usually fine, but you may have to assign it a different Group to help LOOT sort it correctly.';
+        const lootMessage: Message = {
+          type: 0,
+          content: missingMetaMessage,
+          condition: 'always',
+          isConditional: false,
+        }
         result[pluginName] = {
-          messages: meta?.messages || [],
+          messages: !meta && !nativePlugins(gameId).includes(pluginName) ? [lootMessage] : meta?.messages || [],
           currentTags: info?.bashTags?.filter?.(tag => !!tag) || [],
           suggestedTags: meta?.tags?.filter?.(tag => !!tag) || [],
           cleanliness: meta?.cleanInfo || [],
