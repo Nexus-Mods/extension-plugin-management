@@ -7,16 +7,15 @@ import {types, util} from 'vortex-api';
  */
 export const loadOrderReducer: types.IReducerSpec = {
   reducers: {
-    [actions.setPluginEnabled as any]:
-        (state, payload) => {
-          return (state[payload.pluginName] !== undefined)
-          ? util.setSafe(state, [payload.pluginName.toLowerCase(), 'enabled'], payload.enabled)
-          : util.merge(state, [payload.pluginName.toLowerCase()], {
-            name: payload.pluginName,
-            enabled: payload.enabled,
-            loadOrder: -1,
-          });
-        },
+    [actions.setPluginEnabled as any]: (state, payload) => {
+      return (state[payload.pluginName] !== undefined)
+        ? util.setSafe(state, [payload.pluginName.toLowerCase(), 'enabled'], payload.enabled)
+        : util.merge(state, [payload.pluginName.toLowerCase()], {
+          name: payload.pluginName,
+          enabled: payload.enabled,
+          loadOrder: -1,
+        });
+    },
     [actions.setPluginOrder as any]: (state, payload) => {
       const { plugins, defaultEnable } = payload;
       const result = {};

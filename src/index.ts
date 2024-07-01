@@ -1,6 +1,6 @@
 /* eslint-disable */
 import { setPluginEnabled, setPluginOrder, updatePluginOrder } from './actions/loadOrder';
-import { setPluginFilePath, setPluginList, updatePluginWarnings } from './actions/plugins';
+import { clearNewPluginCounter, incrementNewPluginCounter, setPluginFilePath, setPluginList, updatePluginWarnings } from './actions/plugins';
 import { removeGroupRule, setGroup } from './actions/userlist';
 import { openGroupEditor, setCreateRule } from './actions/userlistEdit';
 import { loadOrderReducer } from './reducers/loadOrder';
@@ -361,8 +361,11 @@ function register(context: IExtensionContextExt,
     ));
   });
 
-  const installedPlugins = () => enabledPlugins(context.api.store.getState())
+  const pluginCounter = new util.ReduxProp(context.api, [
+    ['session', 'plugins', 'newlyAddedPlugins'],
+  ], (value: number) => (value > 0) ? value : undefined);
 
+  const installedPlugins = () => enabledPlugins(context.api.store.getState())
   context.registerMainPage('plugins', 'Plugins', PluginList, {
     id: 'gamebryo-plugins',
     hotkey: 'E',
@@ -389,6 +392,7 @@ function register(context: IExtensionContextExt,
       onSetPluginLight: setPluginLight,
     }),
     activity: pluginActivity,
+    badge: pluginCounter,
   });
 
   for (const gameId of supportedGames()) {
@@ -1315,6 +1319,13 @@ function init(context: IExtensionContextExt) {
           initGameSupport(context.api).then(() => null);
         });
 
+      context.api.onStateChange(['session', 'base', 'mainPage'], (previous, current) => {
+        if (previous !== current && current === 'gamebryo-plugins') {
+          // TODO: We could theoretically apply filters here to display the plugins that were added.
+          context.api.store.dispatch(clearNewPluginCounter());
+        }
+      });
+
       context.api.events.on('set-plugin-list', (newPlugins: string[], setEnabled?: boolean) => {
         const state = context.api.store.getState();
         store.dispatch(updatePluginOrder(
@@ -1401,11 +1412,13 @@ function init(context: IExtensionContextExt) {
                                     path.extname(fileName).toLowerCase()) !== -1)
                     .map(fileName => path.basename(fileName, GHOST_EXT));
                 if (plugins.length === 1) {
-                  context.api.store.dispatch(setPluginEnabled(plugins[0], true));
+                  const batched = [setPluginEnabled(plugins[0], true), incrementNewPluginCounter(1)];
+                  util.batchDispatch(context.api.store, batched);
                 } else if (plugins.length > 1) {
                   if (mod.attributes?.enableallplugins === true) {
-                    plugins.forEach(plugin => context.api.store.dispatch(
-                      setPluginEnabled(plugin, true)));
+                    const batched: any = plugins.map(plugin => setPluginEnabled(plugin, true));
+                    batched.push(incrementNewPluginCounter(batched.length));
+                    util.batchDispatch(context.api.store, batched);
                   } else {
                     notifyMultiplePlugins(context.api, mod, currentProfile, plugins);
                   }

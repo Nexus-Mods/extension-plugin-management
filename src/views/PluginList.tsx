@@ -1,6 +1,6 @@
 /* eslint-disable max-lines-per-function */
 import { setPluginEnabled } from '../actions/loadOrder';
-import { setPluginInfo, updatePluginWarnings } from '../actions/plugins';
+import { clearNewPluginCounter, setPluginInfo, updatePluginWarnings } from '../actions/plugins';
 import { setAutoSortEnabled } from '../actions/settings';
 import { addGroup, addGroupRule, setGroup } from '../actions/userlist';
 import { IESPFile } from '../types/IESPFile';
@@ -40,7 +40,7 @@ import { ThunkDispatch } from 'redux-thunk';
 import { generate as shortid } from 'shortid';
 import {
   ComponentEx, FlexLayout, Icon, IconBar, Image, ITableRowAction,
-  log, MainPage, selectors, Spinner,
+  log, MainPage, More, selectors, Spinner,
   Table, TableTextFilter, ToolbarIcon, tooltip, types, Usage, util,
 } from 'vortex-api';
 
@@ -97,6 +97,7 @@ interface IActionProps {
   onSetGroup: (pluginName: string, group: string) => void;
   onUpdateWarnings: (id: string, warning: string, value: boolean) => void;
   onUpdatePluginInfo: (info: { [id: string]: IPluginCombined }) => void;
+  onClearNewPluginCounter: () => void;
 }
 
 interface IComponentState {
@@ -577,9 +578,16 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         <MainPage.Body>
           <FlexLayout type='column'>
             <FlexLayout.Fixed className='plugin-list-loot-banner'>
-              <UsageX infoId='sorting-with-loot' opaque>
+              <UsageX infoId='sorting-with-loot2' opaque>
                 {t('Auto load order sorting is powered by ')}
                 <a onClick={this.props.openLOOTSite}>LOOT <Image srcs={[path.join(__dirname, 'loot_icon.png')]} /></a>
+                <More id='sorting-with-loot' name='Sorting with LOOT'>
+                {t('LOOT can automatically calculate a load order that satisfies all plugin dependencies and maximises each plugin\’s '
+                + 'impact on your game. It can also detect many issues, and provides a large number of plugin-specific usage notes. '
+                + 'While LOOT can correctly handle the vast majority of plugins without help, some plugins need additional metadata '
+                + 'to be sorted correctly, especially for mods that have yet to be added to the LOOT masterlist by volunteers. '
+                + 'If a plugin is not listed in the masterlist, you can control its load order by assigning it to the appropriate group.')}
+                </More>
               </UsageX>
             </FlexLayout.Fixed>
             <FlexLayout.Fixed>
@@ -1503,6 +1511,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
       dispatch(updatePluginWarnings(pluginName, notificationId, value)),
     onUpdatePluginInfo: (info: { [id: string]: IPluginCombined }) =>
       dispatch(setPluginInfo(info)),
+    onClearNewPluginCounter: () => dispatch(clearNewPluginCounter())
   };
 }
 
