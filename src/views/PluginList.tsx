@@ -59,15 +59,18 @@ interface IBaseProps {
   gameSupported: (gameMode: string) => boolean;
   minRevision: (gameMode: string) => number;
   supportsESL: (gameMode: string) => boolean;
+  supportsMediumMasters: (gameMode: string) => boolean;
   revisionText: (gameMode: string) => string;
   getPluginFlags(
     plugin: IPluginCombined,
     gameSupported: boolean,
     supportsESL: boolean,
+    supportsMediumMasters: boolean,
     minRevision: number
   ): string[];
   isMaster: (filePath: string, flag: boolean, gameMode: string) => boolean;
   isLight: (filePath: string, flag: boolean, gameMode: string) => boolean;
+  isMediumMaster: (filePath: string, flag: boolean, gameMode: string) => boolean;
   openLOOTSite: () => Promise<any>;
   parseESPFile: (filePath: string) => IESPFile;
   safeBasename: (filePath: string) => string;
@@ -179,6 +182,7 @@ interface IPluginCountProps {
   plugins: { [pluginId: string]: IPluginCombined };
   gameSupported: (gameMode: string) => boolean;
   supportsESL: (gameMode: string) => boolean;
+  supportsMediumMasters: (gameMode: string) => boolean;
 }
 
 function PluginCount(props: IPluginCountProps) {
@@ -187,43 +191,49 @@ function PluginCount(props: IPluginCountProps) {
     gameId, 
     plugins,
     gameSupported,
-    supportsESL, 
+    supportsESL,
+    supportsMediumMasters,
   } = props;
 
   if (!gameSupported(gameId)) {
     return null;
   }
 
-  const regular = Object.keys(plugins).filter(id =>
-    (plugins[id].enabled || plugins[id].isNative) && !plugins[id].isLight);
-  const light = Object.keys(plugins).filter(id =>
-    (plugins[id].enabled || plugins[id].isNative) && plugins[id].isLight);
+  const isValid = (id: string) => {
+    const plugin = plugins[id];
+    return plugin?.enabled || plugin?.isNative;
+  }
+  const regular = Object.keys(plugins).filter(id => isValid(id) && !plugins[id].isLight && !plugins[id].isMedium);
+  const light = Object.keys(plugins).filter(id => isValid(id) && plugins[id].isLight);
+  const medium = Object.keys(plugins).filter(id => isValid(id) && plugins[id].isMedium);
 
   const eslGame = supportsESL(gameId);
+  const mediumGame = supportsMediumMasters(gameId);
 
   const classes = ['gamebryo-plugin-count'];
 
-  const regLimit = eslGame ? 254 : 255;
-  if ((regular.length > regLimit) || (light.length > 4096)) {
+  const regLimit = mediumGame ? 253 : eslGame ? 254 : 255;
+  if ((regular.length > regLimit) || (light.length > 4096) || (medium.length > 256)) {
     classes.push('gamebryo-plugin-limit');
   }
 
   let tooltipText = t('Plugins shouldn\'t exceed mod index {{maxIndex}} for a total of {{count}} '
                   + 'plugins (including base game and DLCs).', {
     replace: {
-      maxIndex: eslGame ? '0xFD' : '0xFE',
-      count: eslGame ? 254 : 255,
+      maxIndex: mediumGame ? '0xFC' : eslGame ? '0xFD' : '0xFE',
+      count: regLimit,
     },
   });
 
-  if (eslGame) {
-    tooltipText += '\n' + t('In addition you can have up to 4096 light plugins.');
-  }
+  tooltipText += mediumGame
+    ? '\n' + t('In addition you can have up to 256 medium plugins, and 4096 light plugins.')
+    : '\n' + t('In addition you can have up to 4096 light plugins.');
 
   return (
     <div className={classes.join(' ')}>
       <a onClick={nop} className='fake-link' title={tooltipText}>
         {t('Active: {{ count }}', { count: regular.length })}
+        {mediumGame ? ' ' + t('Medium: {{ count }}', { count: medium.length }) : null}
         {eslGame ? ' ' + t('Light: {{ count }}', { count: light.length }) : null}
       </a>
     </div>
@@ -419,6 +429,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           plugins: this.state.pluginsCombined,
           gameSupported: this.props.gameSupported,
           supportsESL: this.props.supportsESL,
+          supportsMediumMasters: this.props.supportsMediumMasters,
         }),
       },
     ];
@@ -442,6 +453,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       prev[key] = {
         isMaster: false,
         isLight: false,
+        isMedium: false,
         parseFailed: false,
         masterList: [],
         author: '',
@@ -692,6 +704,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             isLight: this.props.isLight(
               pluginsIn[pluginName].filePath, esp.isLight, this.props.gameMode
             ),
+            isMedium: this.props.isMediumMaster(
+              pluginsIn[pluginName].filePath, esp.isMedium, this.props.gameMode
+            ),
             parseFailed: false,
             description: esp.description,
             author: esp.author,
@@ -708,6 +723,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           pluginsParsed[pluginName] = {
             isMaster: false,
             isLight: false,
+            isMedium: false,
             parseFailed: true,
             description: '',
             author: '',
@@ -808,7 +824,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private modIndices(pluginObjects: IPluginCombined[]): { [pluginId: string]: {
-      modIndex: number, eslIndex?: number } } {
+      modIndex: number, eslIndex?: number, mediumIndex?: number } } {
     const { nativePlugins } = this.props;
     // overly complicated?
     // This sorts the whole plugin list by the load order, inserting the installed
@@ -823,6 +839,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     let modIndex = 0;
     let eslIndex = 0;
+    let mediumIndex = 0;
     const res = {};
     byLO.forEach((plugin: IPluginCombined) => {
       if (!plugin.enabled && !plugin.isNative) {
@@ -831,6 +848,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         res[plugin.id] = {
           modIndex: 0xFE,
           eslIndex: eslIndex++,
+        };
+      } else if (plugin.isMedium) {
+        res[plugin.id] = {
+          modIndex: 0xFD,
+          mediumIndex: mediumIndex++,
         };
       } else {
         res[plugin.id] = {
@@ -879,6 +901,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       result[plugin.id] = plugin;
       result[plugin.id].modIndex = modIndices[plugin.id].modIndex;
       result[plugin.id].eslIndex = modIndices[plugin.id].eslIndex;
+      result[plugin.id].mediumIndex = modIndices[plugin.id].mediumIndex;
     });
 
     return result;
@@ -904,6 +927,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     Object.keys(modIndices).forEach(pluginId => {
       updateSet[pluginId].modIndex = { $set: modIndices[pluginId].modIndex };
       updateSet[pluginId].eslIndex = { $set: modIndices[pluginId].eslIndex };
+      updateSet[pluginId].mediumIndex = { $set: modIndices[pluginId].mediumIndex };
     });
 
     if (this.mMounted) {
@@ -1196,6 +1220,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           (<PluginFlags
             gameSupported={this.props.gameSupported}
             supportsESL={this.props.supportsESL}
+            supportsMediumPlugins={this.props.supportsMediumMasters}
             minRevision={this.props.minRevision} 
             plugin={plugin} 
             gameMode={this.props.gameMode} 
@@ -1206,6 +1231,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             plugin, 
             this.props.gameSupported(this.props.gameMode),
             this.props.supportsESL(this.props.gameMode),
+            this.props.supportsMediumMasters(this.props.gameMode),
             this.props.minRevision(this.props.gameMode),
           ),
         sortFunc: (lhs: string[], rhs: string[]) => lhs.length - rhs.length,
@@ -1218,12 +1244,12 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         icon: 'flag',
         customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => (
           <div className='plugin-tags'>
-          {t('Current')}
-          <div>{(plugin.currentTags ?? [])
-            .filter(tag => tag !== undefined).map(tag => tag.name).join(', ')}</div>
-          {t('Suggested (by LOOT)')}
-          <div>{(plugin.suggestedTags ?? [])
-            .filter(tag => tag !== undefined).map(tag => tag.name).join(', ')}</div>
+            {t('Current')}
+            <div>{(plugin.currentTags ?? [])
+              .filter(tag => tag !== undefined).map(tag => tag.name).join(', ')}</div>
+            {t('Suggested (by LOOT)')}
+            <div>{(plugin.suggestedTags ?? [])
+              .filter(tag => tag !== undefined).map(tag => tag.name).join(', ')}</div>
           </div>
         ),
         calc: (plugin: IPluginCombined) =>
@@ -1240,9 +1266,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         edit: {},
         customRenderer: (plugin: IPluginCombined, detail: boolean, t: TranslationFunction) => {
           const flags = this.props.getPluginFlags(
-            plugin, 
+            plugin,
             this.props.gameSupported(this.props.gameMode),
             this.props.supportsESL(this.props.gameMode),
+            this.props.supportsMediumMasters(this.props.gameMode),
             this.props.minRevision(this.props.gameMode),
           );
 
@@ -1257,6 +1284,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             plugin, 
             this.props.gameSupported(this.props.gameMode),
             this.props.supportsESL(this.props.gameMode),
+            this.props.supportsMediumMasters(this.props.gameMode),
             this.props.minRevision(this.props.gameMode),
           ),
         placement: 'detail',
@@ -1287,10 +1315,12 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           if (!plugin.enabled && !plugin.isNative) {
             return undefined;
           }
-          if (plugin.eslIndex === undefined) {
+          if (plugin.eslIndex === undefined && plugin.mediumIndex === undefined) {
             return toHex(plugin.modIndex, 2);
-          } else {
+          } else if (plugin.isLight) {
             return `${toHex(plugin.modIndex, 2)} (${toHex(plugin.eslIndex, 3)})`;
+          } else if (plugin.isMedium) {
+            return `${toHex(plugin.modIndex, 2)} (${toHex(plugin.mediumIndex, 2)})`;
           }
         },
         placement: 'table',

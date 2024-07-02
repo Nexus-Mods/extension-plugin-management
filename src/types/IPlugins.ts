@@ -62,6 +62,7 @@ export interface IPlugins { [key: string]: IPlugin; }
 export interface IPluginParsed {
   isMaster: boolean;
   isLight: boolean;
+  isMedium: boolean;
   parseFailed: boolean;
   masterList: string[];
   author: string;
@@ -115,6 +116,7 @@ export type IPluginCombined = IPlugin & ILoadOrder & IPluginParsed
    */
   modIndex: number,
   eslIndex?: number,
+  mediumIndex?: number,
 };
 
 export interface IPluginDependencies {

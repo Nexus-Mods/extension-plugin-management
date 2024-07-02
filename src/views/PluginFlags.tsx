@@ -10,6 +10,7 @@ type TranslationFunction = typeof I18next.t;
 export function getPluginFlags(plugin: IPluginCombined,
                                gameSupported: boolean,
                                supportsESL: boolean,
+                               supportsMediumMasters: boolean,
                                minRevision: number): string[] {
   const result: string[] = [];
 
@@ -80,6 +81,7 @@ interface IBaseProps {
   gameSupported: (gameMode: string) => boolean;
   minRevision: (gameMode: string) => number;
   supportsESL: (gameMode: string) => boolean;
+  supportsMediumPlugins: (gameMode: string) => boolean;
 }
 
 type IProps = IBaseProps & {
@@ -99,6 +101,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
     gameMode,
     t,
     supportsESL,
+    supportsMediumPlugins,
     minRevision,
     gameSupported,
   } = props;

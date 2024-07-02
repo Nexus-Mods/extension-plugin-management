@@ -13,6 +13,7 @@ interface IGameSupport {
   pluginTXTFormat: PluginTXTFormat;
   nativePlugins: string[];
   supportsESL?: boolean | (() => boolean);
+  supportsMediumMasters?: boolean | (() => boolean);
   minRevision?: number;
 }
 
@@ -142,6 +143,22 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>({
     nativePlugins: [
       'falloutnv.esm',
     ],
+  },
+  starfield: {
+    appDataPath: 'Starfield',
+    pluginTXTFormat: 'fallout4',
+    nativePlugins: [
+      'starfield.esm',
+      'constellation.esm',
+      'oldmars.esm',
+      'blueprintships-starfield.esm',
+      'sfbgs003.esm',
+      'sfbgs006.esm',
+      'sfbgs007.esm',
+      'sfbgs008.esm',
+    ],
+    supportsESL: true,
+    supportsMediumMasters: true,
   },
   oblivion: {
     appDataPath: 'oblivion',
@@ -291,6 +308,17 @@ export const supportsESL = memoizeOne((gameMode: string): boolean => {
     return supportsESL();
   }
   return supportsESL;
+});
+
+export const supportsMediumMasters = memoizeOne((gameMode: string): boolean => {
+  if (!gameSupport.has(gameMode)) {
+    return false;
+  }
+  const supportsMediumMasters = gameSupport.get(gameMode, 'supportsMediumMasters') ?? false;
+  if (typeof supportsMediumMasters === 'function') {
+    return supportsMediumMasters();
+  }
+  return supportsMediumMasters;
 });
 
 export function pluginExtensions(gameMode: string): string[] {
