@@ -116,6 +116,7 @@ export type IPluginCombined = IPlugin & ILoadOrder & IPluginParsed
    */
   modIndex: number,
   eslIndex?: number,
+  mediumIndex?: number,
 };
 
 export interface IPluginDependencies {

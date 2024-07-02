@@ -23,6 +23,7 @@ import {
   revisionText,
   supportedGames,
   supportsESL,
+  supportsMediumMasters,
 } from './util/gameSupport';
 import { markdownToBBCode } from './util/mdtobb';
 import PluginHistory from './util/PluginHistory';
@@ -394,6 +395,7 @@ function register(context: IExtensionContextExt,
       gameSupported,
       minRevision,
       supportsESL,
+      supportsMediumMasters,
       getPluginFlags,
       revisionText,
       isMaster,
@@ -894,14 +896,19 @@ function testExceededPluginLimit(api: types.IExtensionApi, infoCache: PluginInfo
     return accum;
   }, {});
 
-  const regular = Object.keys(plugins).filter(id =>
-    (plugins[id].deployed || plugins[id].isNative) && !plugins[id].isLight);
-  const light = Object.keys(plugins).filter(id =>
-    (plugins[id].deployed || plugins[id].isNative) && plugins[id].isLight);
+  const isValid = (id: string) => {
+    const plugin = plugins[id];
+    return plugin?.deployed || plugin?.isNative;
+  }
+
+  const regular = Object.keys(plugins).filter(id => (isValid(id)) && !plugins[id].isLight);
+  const light = Object.keys(plugins).filter(id => (isValid(id)) && plugins[id].isLight);
+  const medium = Object.keys(plugins).filter(id => isValid(id) && plugins[id].isMedium);
 
   const eslGame = supportsESL(gameMode);
-  const regLimit = eslGame ? 254 : 255;
-  return ((regular.length > regLimit) || (light.length > 4096))
+  const mediumGame = supportsMediumMasters(gameMode);
+  const regLimit = mediumGame ? 253 : eslGame ? 254 : 255;
+  return ((regular.length > regLimit) || (medium.length > 256) || (light.length > 4096))
     ? Promise.resolve({
       description: {
         short: 'You\'ve exceeded the plugin limit for your game',
@@ -911,8 +918,8 @@ function testExceededPluginLimit(api: types.IExtensionApi, infoCache: PluginInfo
                   + 'Please disable or attempt to mark plugins as light (if applicable) '
                   + 'in the Plugins page', {
           replace: {
-            maxIndex: eslGame ? '0xFD' : '0xFE',
-            count: eslGame ? 254 : 255,
+            maxIndex: mediumGame ? '0xFC' : eslGame ? '0xFD' : '0xFE',
+            count: regLimit,
           },
         }),
       },
