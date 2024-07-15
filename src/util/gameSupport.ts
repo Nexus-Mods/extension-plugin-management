@@ -268,7 +268,7 @@ export function initGameSupport(api: types.IExtensionApi): Promise<void> {
         .then(data => data.toString().split('\r\n').filter(plugin => plugin !== '').forEach(
           plugin => starfieldcc.add(plugin.toLowerCase())))
         .catch(err => {
-          log('info', 'failed to read Fallout4.ccc', err.message);
+          log('info', 'failed to read Starfield.ccc', err.message);
         })
         .then(() => {
           gameSupport['starfield'].nativePlugins = Array.from(starfieldcc);
