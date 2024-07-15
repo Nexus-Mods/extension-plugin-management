@@ -261,6 +261,20 @@ export function initGameSupport(api: types.IExtensionApi): Promise<void> {
         }));
   }
 
+  if (discovered['starfield']?.path !== undefined) {
+    const starfieldcc = new Set(gameSupport['starfield'].nativePlugins);
+    res = res
+      .then(() => fs.readFileAsync(path.join(discovered['starfield'].path, 'Starfield.ccc'))
+        .then(data => data.toString().split('\r\n').filter(plugin => plugin !== '').forEach(
+          plugin => starfieldcc.add(plugin.toLowerCase())))
+        .catch(err => {
+          log('info', 'failed to read Fallout4.ccc', err.message);
+        })
+        .then(() => {
+          gameSupport['starfield'].nativePlugins = Array.from(starfieldcc);
+        }));
+  }
+
   if (discovered['skyrimvr']?.path !== undefined) {
     const game = selectors.gameById(state, 'skyrimvr');
     if (game?.details?.supportsESL !== undefined) {
