@@ -72,7 +72,7 @@ interface IBaseProps {
   isLight: (filePath: string, flag: boolean, gameMode: string) => boolean;
   isMediumMaster: (filePath: string, flag: boolean, gameMode: string) => boolean;
   openLOOTSite: () => Promise<any>;
-  parseESPFile: (filePath: string) => IESPFile;
+  parseESPFile: (filePath: string, gameMode: string) => IESPFile;
   safeBasename: (filePath: string) => string;
   installedPlugins: () => Set<string>;
 }
@@ -696,7 +696,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       }
       return new Promise((resolve, reject) => {
         try {
-          const esp = this.props.parseESPFile(pluginsIn[pluginName].filePath);
+          const esp = this.props.parseESPFile(pluginsIn[pluginName].filePath, this.props.gameMode);
           pluginsParsed[pluginName] = {
             isMaster: this.props.isMaster(
               pluginsIn[pluginName].filePath, esp.isMaster, this.props.gameMode
