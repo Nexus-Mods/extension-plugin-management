@@ -883,8 +883,8 @@ esprima@^4.0.0:
   integrity sha512-eGuFFw7Upda+g4p+QHvnW0RyTX/SVeJBDM/gCtMARO0cLuT2HcEKnTPvhjV6aGeqrCB/sbNop0Kszm0jsaWU4A==
 
 esptk@Nexus-Mods/node-esptk#15918-starfield-update:
-  version "2.1.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/1f44e5e2a8df283286170eef34c9546543f4a0fc"
+  version "2.1.2"
+  resolved "https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/066d6c806f0c31597d663e6df3b089d3ef01be67"
   dependencies:
     autogypi "^0.2.2"
     node-addon-api "^4.0.0"
@@ -2063,9 +2063,9 @@ semver@^7.3.4:
     lru-cache "^6.0.0"
 
 semver@^7.3.5:
-  version "7.6.2"
-  resolved "https://registry.yarnpkg.com/semver/-/semver-7.6.2.tgz#1e3b34759f896e8f14d6134732ce798aeb0c6e13"
-  integrity sha512-FNAIBWCx9qcRhoHcgcJ0gvU7SN1lYU2ZXuSfl04bSC5OpvDHFyJCjdNHomPXxjQlCBU67YW64PzY7/VIEH7F2w==
+  version "7.6.3"
+  resolved "https://registry.yarnpkg.com/semver/-/semver-7.6.3.tgz#980f7b5550bc175fb4dc09403085627f9eb33143"
+  integrity sha512-oVekP1cKtI+CTDvHWYFUcMtsK/00wmAEfyqKfNdARm8u1wNVhSgaX7A8d4UuIlUI5e84iEwOhs7ZPYRmzU9U6A==
 
 serialize-javascript@^6.0.1:
   version "6.0.2"
