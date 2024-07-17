@@ -326,7 +326,7 @@ function register(context: IExtensionContextExt,
       filePath = path.basename(filePath, GHOST_EXT);
     }
     const masterExts = ['.esm'];
-    const file = new ESPFile(filePath);
+    const file = new ESPFile(filePath, gameMode);
     return flag || (masterExts.indexOf(path.extname(filePath).toLowerCase()) !== -1) && file.isMedium;
   }
 
@@ -342,8 +342,8 @@ function register(context: IExtensionContextExt,
 
   const openLOOTSite = () => util.opn('https://loot.github.io/').catch(() => null)
 
-  const parseESPFile = (filePath: string): IESPFile => {
-    const fileInfo = new ESPFile(filePath);
+  const parseESPFile = (filePath: string, gameMode: string): IESPFile => {
+    const fileInfo = new ESPFile(filePath, gameMode);
     return {
       isMaster: fileInfo.isMaster,
       isLight: fileInfo.isLight,
@@ -486,7 +486,7 @@ function register(context: IExtensionContextExt,
     return undefined;
   });
 
-  const pluginInfoCache = new PluginInfoCache();
+  const pluginInfoCache = new PluginInfoCache(context.api);
 
   context.registerTest('plugins-locked', 'gamemode-activated',
     () => testPluginsLocked(selectors.activeGameId(context.api.store.getState())));
@@ -943,6 +943,10 @@ interface IESPInfo {
 //   instead of duplicating the work
 class PluginInfoCache {
   private mCache: { [id: string]: { lastModified: number, lastINO: bigint, info: IESPInfo } } = {};
+  private mAPI: types.IExtensionApi;
+  constructor(api: types.IExtensionApi) {
+    this.mAPI = api;
+  }
 
   public getInfo(filePath: string): IESPInfo {
     const id = this.fileId(filePath);
@@ -956,10 +960,11 @@ class PluginInfoCache {
       mtime = Date.now();
     }
 
+    const activeGameMode = selectors.activeGameId(this.mAPI.getState());
     if ((this.mCache[id] === undefined)
         || (mtime !== this.mCache[id].lastModified)
         || (ino !== this.mCache[id].lastINO)) {
-      const info = new ESPFile(filePath);
+      const info = new ESPFile(filePath, activeGameMode);
       this.mCache[id] = {
         lastModified: mtime,
         lastINO: ino,
@@ -1271,7 +1276,7 @@ function init(context: IExtensionContextExt) {
       return false;
     }
 
-    const esp = new ESPFile(plugin.filePath);
+    const esp = new ESPFile(plugin.filePath, profile.gameId);
     esp.setLightFlag(enable);
     context.api.ext.addToHistory('plugins', {
       type: 'plugin-eslified',
