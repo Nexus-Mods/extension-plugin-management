@@ -225,11 +225,11 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>({
 });
 
 let discoveryForGame: (gameId: string) => types.IDiscoveryResult = () => undefined;
-
+let getApi: () => types.IExtensionApi = () => undefined;
 export function initGameSupport(api: types.IExtensionApi): Promise<void> {
   let res = Promise.resolve();
   discoveryForGame = (gameId: string) => selectors.discoveryByGame(api.store.getState(), gameId);
-
+  getApi = () => api;
   const state: types.IState = api.store.getState();
 
   const { discovered } = state.settings.gameMode;
@@ -261,6 +261,20 @@ export function initGameSupport(api: types.IExtensionApi): Promise<void> {
         }));
   }
 
+  if (discovered['starfield']?.path !== undefined) {
+    const starfieldcc = new Set(gameSupport['starfield'].nativePlugins);
+    res = res
+      .then(() => fs.readFileAsync(path.join(discovered['starfield'].path, 'Starfield.ccc'))
+        .then(data => data.toString().split('\r\n').filter(plugin => plugin !== '').forEach(
+          plugin => starfieldcc.add(plugin.toLowerCase())))
+        .catch(err => {
+          log('info', 'failed to read Starfield.ccc', err.message);
+        })
+        .then(() => {
+          gameSupport['starfield'].nativePlugins = Array.from(starfieldcc);
+        }));
+  }
+
   if (discovered['skyrimvr']?.path !== undefined) {
     const game = selectors.gameById(state, 'skyrimvr');
     if (game?.details?.supportsESL !== undefined) {
@@ -288,6 +302,12 @@ export function supportedGames(): string[] {
 }
 
 export function gameSupported(gameMode: string): boolean {
+  const state = getApi().getState();
+  const defaultVal = ['starfield'].includes(gameMode) ? false : true;
+  const profileId = selectors.lastActiveProfileForGame(state, gameMode);
+  if (!util.getSafe(state, ['settings', 'plugins', 'pluginManagementEnabled', profileId], defaultVal)) {
+    return false;
+  }
   return gameSupport.has(gameMode);
 }
 
