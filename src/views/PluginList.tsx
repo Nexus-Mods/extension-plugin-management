@@ -435,7 +435,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     ];
 
     this.mUpdateDetailsDebounder = new util.Debouncer((pluginList: IPlugins, gameId: string) => {
-      if (this.props.modActivity.length > 0) {
+      if (this.props.modActivity !== undefined && this.props.modActivity.length > 0) {
         log('debug', 'deferring update plugin details because mod activity');
         this.mUpdateDetailsDebounder.schedule(undefined, pluginList, gameId);
         return Promise.resolve();

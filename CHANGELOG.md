@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.4] - 2024-07-24
+- Fixed plugins page update being blocked on startup (if no mod activity has been recorded yet)
+
 ## [0.3.0] - 2024-06-20
 
 - Added a plugin counter "badge" to the plugins page button for when new plugins
