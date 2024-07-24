@@ -301,7 +301,13 @@ export function supportedGames(): string[] {
   return Object.keys(gameSupport);
 }
 
-export function gameSupported(gameMode: string): boolean {
+export function gameSupported(gameMode: string, sort?: boolean): boolean {
+  if (sort) {
+    // We don't want to block the sort mechanism from running even if the
+    //  plugin management is disabled. In this case we just make sure we
+    //  have a value for the game.
+    return gameSupport.has(gameMode);
+  }
   const state = getApi().getState();
   const defaultVal = ['starfield'].includes(gameMode) ? false : true;
   const profileId = selectors.lastActiveProfileForGame(state, gameMode);

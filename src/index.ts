@@ -433,8 +433,9 @@ function register(context: IExtensionContextExt,
 
   context.registerAPI('lootSortAsync', async (sortCall: ILOOTSortApiCall) => {
     const { pluginFilePaths, onSortCallback } = sortCall;
-    if (!Array.isArray(pluginFilePaths)) {
-      log('error', 'lootSortAsync is expecting an array');
+    if (!Array.isArray(pluginFilePaths) || onSortCallback === undefined) {
+      log('error', 'incorrect lootSortAsync call parameters');
+      onSortCallback([]);
       return;
     }
 
