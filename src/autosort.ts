@@ -97,9 +97,15 @@ class LootInterface {
 
         const gameMode = selectors.activeGameId(store.getState());
         if ((gameMode !== game)
-            || !gameSupported(gameMode)
-            || (loot === undefined)
+            || (!gameSupported(gameMode, true))) {
+          return;
+        }
+
+        if  ((loot === undefined)
             || loot.isClosed()) {
+          if (callback !== undefined) {
+            callback(new Error('LOOT is uninitialized/closed'));
+          }
           return;
         }
 
@@ -311,7 +317,7 @@ class LootInterface {
       }, 5000);
     }
     const gamePath = this.gamePath;
-    if (gameSupported(gameMode)) {
+    if (gameSupported(gameMode, true)) {
       try {
         this.mInitPromise = this.init(gameMode, gamePath);
       } catch (err) {
@@ -637,7 +643,7 @@ class LootInterface {
         if (this.mRestarts > 0) {
           const gameMode = selectors.activeGameId(this.mExtensionApi.store.getState());
           --this.mRestarts;
-          if (gameSupported(gameMode)) {
+          if (gameSupported(gameMode, true)) {
             this.mInitPromise = this.init(gameMode, this.gamePath);
           }
         } else {
