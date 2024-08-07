@@ -435,7 +435,7 @@ function register(context: IExtensionContextExt,
     const { pluginFilePaths, onSortCallback } = sortCall;
     if (!Array.isArray(pluginFilePaths) || onSortCallback === undefined) {
       log('error', 'incorrect lootSortAsync call parameters');
-      onSortCallback([]);
+      onSortCallback(new Error('incorrect lootSortAsync call parameters'), []);
       return;
     }
 
@@ -451,13 +451,19 @@ function register(context: IExtensionContextExt,
       return accum;
     }, {});
     context.api.store.dispatch(setPluginList(plugins));
-    await util.toPromise(cb => context.api.events.emit('autosort-plugins', true, cb));
+    await util.toPromise(cb => context.api.events.emit('autosort-plugins', true, (err: Error) => {
+      if (err) {
+        onSortCallback(err, []);
+      }
+      cb();
+      return;
+    }));
     const sortedLO = context.api.getState()?.['loadOrder'] || {};
     const sortedList = Object.keys(sortedLO)
       .sort((lhs, rhs) => sortedLO[lhs].loadOrder - sortedLO[rhs].loadOrder)
       .filter((pluginName: string) => nativePlugins(selectors.activeGameId(state)).some(native => native !== pluginName.toLowerCase()))
       .map((pluginName: string) => sortedLO[pluginName].name);
-    onSortCallback(sortedList);
+    onSortCallback(null, sortedList);
   }, { minArguments: 1 });
 
   context.registerAction('gamebryo-plugin-icons', 100, 'connection', {}, 'Manage Rules',

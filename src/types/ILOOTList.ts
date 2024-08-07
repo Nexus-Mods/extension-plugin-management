@@ -64,5 +64,5 @@ export interface ILOOTList {
 
 export interface ILOOTSortApiCall {
   pluginFilePaths: string[];
-  onSortCallback: (result: string[]) => void;
+  onSortCallback: (err: Error, result: string[]) => void;
 }
