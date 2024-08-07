@@ -1052,7 +1052,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       0: 'info',
       1: 'warning',
       2: 'danger',
-    }[input];
+    }[input] || 'info';
   }
 
   private prepareMessage(input: string | Array<{ text: string, language: string }>,

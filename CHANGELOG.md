@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.6] - 2024-08-07
+
+- Fixed inability to filter by _relevant_ loot messages on the plugins page
+
+## [0.3.5] - 2024-08-06
+
+- Fixed inability to sort via LOOT through the FBLO component (Starfield only)
+
 ## [0.3.4] - 2024-07-24
 - Fixed plugins page update being blocked on startup (if no mod activity has been recorded yet)
 

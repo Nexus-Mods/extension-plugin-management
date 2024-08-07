@@ -69,7 +69,10 @@ export function getPluginFlags(plugin: IPluginCombined,
   }
 
   if ((plugin.messages || []).length > 0) {
-    result.push('LOOT Messages');
+    const hasRelevantMessages = plugin.messages.some(msg => msg.type !== -1);
+    if (hasRelevantMessages) {
+      result.push('LOOT Messages');
+    }
   }
 
   return result;
@@ -264,16 +267,19 @@ const PluginFlags = (props: IProps): JSX.Element => {
 
   if ((plugin.messages || []).length > 0) {
     const hasWarnings = plugin.messages.find(msg => msg.type > 0) !== undefined;
+    const hasRelevantMessages = plugin.messages.some(msg => msg.type !== -1)
 
     const key = `ico-messages-${plugin.id}`;
-    flags.push(
-      <tooltip.Icon
-        id={key}
-        key={key}
-        name='comments'
-        tooltip={t('LOOT Messages', { ns: NAMESPACE })}
-        className={hasWarnings ? 'loot-messages-warnings' : undefined}
-      />);
+    if (hasRelevantMessages) {
+      flags.push(
+        <tooltip.Icon
+          id={key}
+          key={key}
+          name='comments'
+          tooltip={t('LOOT Messages', { ns: NAMESPACE })}
+          className={hasWarnings ? 'loot-messages-warnings' : undefined}
+        />);
+    }
   }
 
   return (

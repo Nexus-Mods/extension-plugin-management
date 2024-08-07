@@ -435,7 +435,7 @@ class LootInterface {
 
         const missingMetaMessage = 'No LOOT metadata could be found for this plugin. This is usually fine, but you may have to assign it a different Group to help LOOT sort it correctly.';
         const lootMessage: Message = {
-          type: 0,
+          type: -1,
           content: missingMetaMessage,
           condition: 'always',
           isConditional: false,
