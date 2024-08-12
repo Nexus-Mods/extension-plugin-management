@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## [0.3.6] - 2024-08-07
 
 - Fixed inability to filter by _relevant_ loot messages on the plugins page
+- Improved error handling when sorting through FBLO
 
 ## [0.3.5] - 2024-08-06
 
