@@ -1,4 +1,4 @@
-/* eslint-disable max-lines-per-function */
+/* eslint-disable */
 import { setPluginEnabled } from '../actions/loadOrder';
 import { clearNewPluginCounter, setPluginInfo, updatePluginWarnings } from '../actions/plugins';
 import { setAutoSortEnabled } from '../actions/settings';
@@ -14,7 +14,6 @@ import {
 } from '../types/IPlugins';
 import GroupFilter from '../util/GroupFilter';
 
-import { LOOT_URL } from '../constants';
 import { GHOST_EXT, NAMESPACE } from '../statics';
 
 import DependencyIcon from './DependencyIcon';
@@ -1077,15 +1076,16 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     return text.replace(/%1%/g, `"${plugin.name}"`);
   }
 
-  private renderLootMessages(plugin: IPluginCombined) {
+  private renderLootMessages(plugin: IPluginCombined, relevantOnly?: boolean) {
     if (plugin?.messages === undefined) {
       return null;
     }
 
+    const filtered = (relevantOnly === true) ? plugin.messages.filter(msg => msg.type !== -1) : plugin.messages;
     return (
       <ListGroup className='loot-message-list'>
         {
-          plugin.messages.map((msg: Message, idx: number) => (
+          filtered.map((msg: Message, idx: number) => (
             <ListGroupItem key={idx}>
               <Alert bsStyle={this.translateLootMessageType(msg.type)}>
               <ReactMarkdown>{this.prepareMessage(msg.content, plugin)}</ReactMarkdown>
@@ -1485,7 +1485,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         id: 'loot_messages_extra',
         name: 'LOOT Messages (inlined)',
         edit: {},
-        customRenderer: (plugin: IPluginCombined) => this.renderLootMessages(plugin),
+        customRenderer: (plugin: IPluginCombined) => this.renderLootMessages(plugin, true),
         calc: (plugin: IPluginCombined) => plugin.messages,
         placement: 'inline' as any,
         isToggleable: true,
