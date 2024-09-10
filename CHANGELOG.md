@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.8] - 2024-09-10
+
+- libloot updated to 0.23.1
+
 ## [0.3.7] - 2024-08-07
 
 - Non-relevant LOOT messages are no longer shown in the inlined view
