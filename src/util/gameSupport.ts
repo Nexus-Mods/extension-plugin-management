@@ -6,12 +6,15 @@ import Promise from 'bluebird';
 import * as path from 'path';
 import { fs, log, selectors, types, util } from 'vortex-api';
 
+import { patternMatchNativePlugins } from './patternMatchNativePlugins';
+
 type PluginTXTFormat = 'original' | 'fallout4';
 
-interface IGameSupport {
+export interface IGameSupport {
   appDataPath: string;
   pluginTXTFormat: PluginTXTFormat;
   nativePlugins: string[];
+  nativePluginsPatterns?: string[];
   supportsESL?: boolean | (() => boolean);
   supportsMediumMasters?: boolean | (() => boolean);
   minRevision?: number;
@@ -158,6 +161,7 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>({
       'sfbgs007.esm',
       'sfbgs008.esm',
     ],
+    nativePluginsPatterns: ['^sfbgs\\d{3}\.esm$'],
     supportsESL: true,
     supportsMediumMasters: true,
   },
@@ -261,11 +265,16 @@ export function initGameSupport(api: types.IExtensionApi): Promise<void> {
           gameSupport['fallout4'].nativePlugins = Array.from(fallout4cc);
         }));
   }
-
   if (discovered['starfield']?.path !== undefined) {
     const starfieldcc = new Set(gameSupport['starfield'].nativePlugins);
     res = res
-      .then(() => fs.readFileAsync(path.join(discovered['starfield'].path, 'Starfield.ccc'))
+      .then(() => patternMatchNativePlugins('starfield', discovered['starfield'], gameSupport['starfield'])
+      .then((patternMatched) => {
+        for (const fileName of patternMatched) {
+          starfieldcc.add(fileName.toLowerCase());
+        }
+        return fs.readFileAsync(path.join(discovered['starfield'].path, 'Starfield.ccc'))
+      })
         .then(data => data.toString().split('\r\n').filter(plugin => plugin !== '').forEach(
           plugin => starfieldcc.add(plugin.toLowerCase())))
         .catch(err => {
