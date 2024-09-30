@@ -154,6 +154,7 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>({
       'starfield.esm',
       'constellation.esm',
       'oldmars.esm',
+      'shatteredspace.esm',
       'blueprintships-starfield.esm',
       'sfbgs003.esm',
       'sfbgs004.esm',
