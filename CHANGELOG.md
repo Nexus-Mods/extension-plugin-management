@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.10] - 2024-10-02
+
+- fixed Starfield CC plugins erroneously highlighted as "native" plugins
+
+## [0.3.9] - 2024-10-01
+
+- Added ability to resolve a game's native plugins based on regular expressions.
+
 ## [0.3.8] - 2024-09-10
 
 - libloot updated to 0.23.1

@@ -162,7 +162,7 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>({
       'sfbgs007.esm',
       'sfbgs008.esm',
     ],
-    nativePluginsPatterns: ['^sfbgs\\d{3}\.esm$'],
+    nativePluginsPatterns: ['^sfbgs00[0-8]\.esm$'],
     supportsESL: true,
     supportsMediumMasters: true,
   },
@@ -267,23 +267,25 @@ export function initGameSupport(api: types.IExtensionApi): Promise<void> {
         }));
   }
   if (discovered['starfield']?.path !== undefined) {
-    const starfieldcc = new Set(gameSupport['starfield'].nativePlugins);
+    const game = selectors.gameById(state, 'starfield');
+    const nativePlugins = game?.details?.nativePlugins || gameSupport['starfield'].nativePlugins;
+    const starfieldcc = new Set(nativePlugins);
     res = res
-      .then(() => patternMatchNativePlugins('starfield', discovered['starfield'], gameSupport['starfield'])
+      .then(() => patternMatchNativePlugins('starfield', discovered['starfield'], gameSupport['starfield']))
       .then((patternMatched) => {
         for (const fileName of patternMatched) {
           starfieldcc.add(fileName.toLowerCase());
         }
         return fs.readFileAsync(path.join(discovered['starfield'].path, 'Starfield.ccc'))
       })
-        .then(data => data.toString().split('\r\n').filter(plugin => plugin !== '').forEach(
-          plugin => starfieldcc.add(plugin.toLowerCase())))
-        .catch(err => {
-          log('info', 'failed to read Starfield.ccc', err.message);
-        })
-        .then(() => {
-          gameSupport['starfield'].nativePlugins = Array.from(starfieldcc);
-        }));
+      .then(data => data.toString().split('\r\n').filter(plugin => plugin !== '').forEach(
+        plugin => starfieldcc.add(plugin.toLowerCase())))
+      .catch(err => {
+        log('info', 'failed to read Starfield.ccc', err.message);
+      })
+      .then(() => {
+        gameSupport['starfield'].nativePlugins = Array.from(starfieldcc);
+      });
   }
 
   if (discovered['skyrimvr']?.path !== undefined) {
