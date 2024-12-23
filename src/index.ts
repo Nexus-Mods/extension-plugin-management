@@ -82,7 +82,7 @@ function isPlugin(filePath: string, fileName: string, gameMode: string): Promise
   }
 
   if (!fileName
-    || (pluginExtensions(gameMode).indexOf(path.extname(fileName).toLowerCase()) === -1)) {
+    || (pluginExtensions(gameMode).indexOf(path.extname(path.basename(fileName)).toLowerCase()) === -1)) {
     return Promise.resolve(false);
   }
   return isFile(path.join(filePath, fileName))
@@ -148,12 +148,13 @@ function updatePluginListImpl(store: types.ThunkStore<any>,
       log('error', 'mod not found', { gameId, modId });
       return;
     }
+    const isOverriden = (fileName: string) => (mod.fileOverrides ?? []).some(override => path.basename(override) === fileName);
     const modInstPath = path.join(installBasePath, mod.installationPath);
     return fs.readdirAsync(modInstPath)
       .map(fileName => (activator !== undefined)
          ? (activator as any).getDeployedPath(fileName)
          : fileName)
-      .filter((fileName: string) => isPlugin(modInstPath, fileName, gameId))
+      .filter((fileName: string) => isPlugin(modInstPath, fileName, gameId).then((res) => Promise.resolve(res && !isOverriden(fileName))))
       .each((fileName: string) => {
         pluginSources[fileName] = mod.id;
         return setPluginState(modInstPath, fileName, false);
