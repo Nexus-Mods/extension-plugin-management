@@ -1137,7 +1137,6 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         name: 'Name',
         isToggleable: false,
         edit: {},
-        isDefaultFilter: true,
         isSortable: true,
         calc: (plugin: IPluginCombined) => plugin.name,
         placement: 'both',
@@ -1295,7 +1294,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         description: 'The order in which plugins are loaded. '
                    + 'Plugins with higher number overwrite those with lower ones.',
         icon: 'sort-numeric-asc',
-        isToggleable: true,
+        isDefaultFilter: true,
+        isToggleable: false,
         edit: {},
         isSortable: true,
         calc: (plugin: IPluginCombined) => plugin.loadOrder !== -1 ? plugin.loadOrder : '?',
