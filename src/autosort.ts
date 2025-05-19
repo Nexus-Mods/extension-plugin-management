@@ -2,7 +2,7 @@
 import {updatePluginOrder} from './actions/loadOrder';
 import { removeGroupRule, removeRule, setGroup } from './actions/userlist';
 import {IPluginLoot, IPlugins, IPluginsLoot} from './types/IPlugins';
-import {gameSupported, nativePlugins, pluginPath} from './util/gameSupport';
+import { gameSupported, nativePlugins, pluginPath } from './util/gameSupport';
 import { downloadMasterlist, downloadPrelude } from './util/masterlist';
 
 import { NAMESPACE } from './statics';
@@ -164,6 +164,21 @@ class LootInterface {
     return discovery.path;
   }
 
+  private get dataPath() {
+    const { store } = this.mExtensionApi;
+    const activeGameId = selectors.activeGameId(store.getState());
+    const discovery = selectors.discoveryByGame(store.getState(), activeGameId);
+    const game = util.getGame(activeGameId);
+    if (!game || !discovery?.path) {
+      // no game selected
+      return undefined;
+    }
+
+    const modType = game.details?.dataModType || '';
+    const dataPath = game.getModPaths(discovery.path)[modType];
+    return dataPath ?? path.join(discovery.path, 'data');
+  }
+
   private async doSort(pluginNames: string[], gameMode: string, loot: typeof LootProm) {
     const { store } = this.mExtensionApi;
     try {
@@ -202,7 +217,7 @@ class LootInterface {
           });
         };
         try {
-          await fs.statAsync(path.join(this.gamePath, 'data', pluginName));
+          await fs.statAsync(path.join(this.dataPath, pluginName));
           reportErr();
         } catch (err) {
           const idx = pluginNames.indexOf(pluginName);
@@ -229,7 +244,7 @@ class LootInterface {
           let fileSize = 0;
           let md5sum = '';
           let version = '';
-          const filePath = path.resolve(this.gamePath, 'data', match[1]);
+          const filePath = path.resolve(this.dataPath, match[1]);
 
           const report = () => {
             err.message +=
@@ -538,6 +553,8 @@ class LootInterface {
       return 'fallout4';
     } else if (masterlist && (gameMode === 'skyrimvr')) {
       return 'skyrimse';
+    } else if (masterlist && (gameMode === 'oblivionremastered')) {
+      return 'oblivion';
     } else if (gameMode === 'enderal') {
       return masterlist ? 'enderal' : 'skyrim';
     } else if (gameMode === 'enderalspecialedition') {

@@ -439,32 +439,29 @@ function register(context: IExtensionContextExt,
       onSortCallback(new Error('incorrect lootSortAsync call parameters'), []);
       return;
     }
+    const profile = selectors.activeProfile(context.api.store.getState());
+    try {
+      await updatePluginList(context.api.store, profile.modState, profile.gameId);
+      await new Promise((resolve, reject) => {
+        const pluginList = util.getSafe(context.api.getState(), ['session', 'plugins', 'pluginList'], {});
+        context.api.events.emit('plugin-details', profile.gameId, Object.keys(pluginList ?? {}), resolve);
+      });
+      context.api.events.emit('autosort-plugins', true, (err: Error) => {
+        if (err) {
+          onSortCallback(err, []);
+        }
+        const sortedLO = context.api.getState()?.['loadOrder'] || {};
+        const sortedList = Object.keys(sortedLO)
+          .sort((lhs, rhs) => sortedLO[lhs].loadOrder - sortedLO[rhs].loadOrder)
+          .map((pluginName: string) => pluginName.toLowerCase());
 
-    const state = context.api.getState();
-    const plugins: IPlugins = pluginFilePaths.reduce((accum, filePath: string) => {
-      const fileName = path.basename(filePath);
-      const plugin: IPlugin = {
-        filePath,
-        isNative: nativePlugins(selectors.activeGameId(state)).some(native => native === fileName),
-        deployed: true,
-      }
-      accum[fileName] = plugin;
-      return accum;
-    }, {});
-    context.api.store.dispatch(setPluginList(plugins));
-    await util.toPromise(cb => context.api.events.emit('autosort-plugins', true, (err: Error) => {
-      if (err) {
-        onSortCallback(err, []);
-      }
-      cb();
+        onSortCallback(null, sortedList);
+      });
+    } catch (err) {
+      log('error', 'failed to update plugin list', err);
+      onSortCallback(err, []);
       return;
-    }));
-    const sortedLO = context.api.getState()?.['loadOrder'] || {};
-    const sortedList = Object.keys(sortedLO)
-      .sort((lhs, rhs) => sortedLO[lhs].loadOrder - sortedLO[rhs].loadOrder)
-      .filter((pluginName: string) => nativePlugins(selectors.activeGameId(state)).some(native => native !== pluginName.toLowerCase()))
-      .map((pluginName: string) => sortedLO[pluginName].name);
-    onSortCallback(null, sortedList);
+    }
   }, { minArguments: 1 });
 
   context.registerAction('gamebryo-plugin-icons', 100, 'connection', {}, 'Manage Rules',
