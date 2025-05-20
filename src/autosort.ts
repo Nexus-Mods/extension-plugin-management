@@ -2,7 +2,7 @@
 import {updatePluginOrder} from './actions/loadOrder';
 import { removeGroupRule, removeRule, setGroup } from './actions/userlist';
 import {IPluginLoot, IPlugins, IPluginsLoot} from './types/IPlugins';
-import { gameSupported, nativePlugins, pluginPath } from './util/gameSupport';
+import { gameDataPath, gameSupported, nativePlugins, pluginPath } from './util/gameSupport';
 import { downloadMasterlist, downloadPrelude } from './util/masterlist';
 
 import { NAMESPACE } from './statics';
@@ -77,6 +77,28 @@ class LootInterface {
     api.events.on('plugin-details',
       (gameId: string, plugins: string[], callback: (result: IPluginsLoot) => void) =>
         this.pluginDetails(api, gameId, plugins, callback));
+  }
+
+  public async downloadMasterlist(gameMode: string): Promise<void> {
+    const masterlistRepoPath = path.join(util.getVortexPath('userData'), gameMode, 'masterlist');
+    const masterlistPath = path.join(masterlistRepoPath, 'masterlist.yaml');
+    const preludePath = path.join(util.getVortexPath('userData'), 'loot_prelude', 'prelude.yaml');
+    try {
+      await downloadPrelude(preludePath);
+      await downloadMasterlist(this.convertGameId(gameMode, true), masterlistPath);
+      log('info', 'updated loot masterlist');
+      this.mExtensionApi.events.emit('did-update-masterlist');
+    } catch (err) {
+      const t = this.mExtensionApi.translate;
+      this.mExtensionApi.showErrorNotification('Failed to update masterlist', {
+        message: t('This might be a temporary network error. '
+              + 'If it persists, please delete "{{masterlistPath}}" to force Vortex to '
+              + 'download a new copy.', { replace: { masterlistPath: masterlistRepoPath } }),
+        error: err,
+      }, {
+          allowReport: false,
+        });
+    }
   }
 
   public async wait(): Promise<void> {
@@ -168,15 +190,12 @@ class LootInterface {
     const { store } = this.mExtensionApi;
     const activeGameId = selectors.activeGameId(store.getState());
     const discovery = selectors.discoveryByGame(store.getState(), activeGameId);
-    const game = util.getGame(activeGameId);
-    if (!game || !discovery?.path) {
+    if (!discovery?.path) {
       // no game selected
       return undefined;
     }
 
-    const modType = game.details?.dataModType || '';
-    const dataPath = game.getModPaths(discovery.path)[modType];
-    return dataPath ?? path.join(discovery.path, 'data');
+    return gameDataPath(activeGameId);
   }
 
   private async doSort(pluginNames: string[], gameMode: string, loot: typeof LootProm) {
@@ -494,6 +513,55 @@ class LootInterface {
     });
   }
 
+  public loadLists = async (gameMode: string, loot: typeof LootProm) => {
+    const masterlistPath = path.join(util.getVortexPath('userData'), gameMode,
+                                     'masterlist', 'masterlist.yaml');
+    const userlistPath = path.join(util.getVortexPath('userData'), gameMode, 'userlist.yaml');
+    const preludePath = path.join(util.getVortexPath('userData'), 'loot_prelude', 'prelude.yaml');
+
+    let mtime: Date;
+    try {
+      mtime = (await fs.statAsync(userlistPath)).mtime;
+    } catch (err) {
+      mtime = null;
+    }
+
+    let usePrelude: boolean = false;
+    try {
+      await fs.statAsync(preludePath);
+      usePrelude = true;
+    } catch (err) {
+      // nop
+    }
+
+    // load & evaluate lists first time we need them and whenever
+    // the userlist has changed
+    if ((mtime !== null) &&
+        // this.mUserlistTime could be undefined or null
+        (!this.mUserlistTime ||
+         (this.mUserlistTime.getTime() !== mtime.getTime()))) {
+      log('info', '(re-)loading loot lists', {
+        mtime,
+        masterlistPath,
+        userlistPath,
+        last: this.mUserlistTime,
+      });
+      try {
+        await fs.statAsync(masterlistPath);
+        await loot.loadListsAsync(
+          masterlistPath,
+          mtime !== null ? userlistPath : '',
+          usePrelude ? preludePath : '');
+        log('info', 'loaded loot lists');
+        this.mUserlistTime = mtime;
+      } catch (err) {
+        this.mExtensionApi.showErrorNotification('Failed to load master-/userlist', err, {
+            allowReport: false,
+          } as any);
+      }
+    }
+  }
+
   // tslint:disable-next-line:member-ordering
   private readLists = Bluebird.method(async (gameMode: string, loot: typeof LootProm) => {
     const t = this.mExtensionApi.translate;
@@ -586,26 +654,10 @@ class LootInterface {
       } as any);
       return { game: gameMode, loot: undefined };
     }
-    const masterlistRepoPath = path.join(util.getVortexPath('userData'), gameMode,
-                                         'masterlist');
+    const masterlistRepoPath = path.join(util.getVortexPath('userData'), gameMode, 'masterlist');
     const masterlistPath = path.join(masterlistRepoPath, 'masterlist.yaml');
     const preludePath = path.join(util.getVortexPath('userData'), 'loot_prelude', 'prelude.yaml');
-    try {
-      await downloadPrelude(preludePath);
-      await downloadMasterlist(this.convertGameId(gameMode, true), masterlistPath);
-      log('info', 'updated loot masterlist');
-      this.mExtensionApi.events.emit('did-update-masterlist');
-    } catch (err) {
-      const t = this.mExtensionApi.translate;
-      this.mExtensionApi.showErrorNotification('Failed to update masterlist', {
-        message: t('This might be a temporary network error. '
-              + 'If it persists, please delete "{{masterlistPath}}" to force Vortex to '
-              + 'download a new copy.', { replace: { masterlistPath: masterlistRepoPath } }),
-        error: err,
-      }, {
-          allowReport: false,
-        });
-    }
+    await this.downloadMasterlist(gameMode);
 
     try {
       // we need to ensure lists get loaded at least once. before sorting there

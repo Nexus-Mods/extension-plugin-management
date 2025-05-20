@@ -13,7 +13,10 @@ import { ILOOTList, ILootReference, ILOOTSortApiCall } from './types/ILOOTList';
 import { IPlugin, IPluginCombined, IPlugins } from './types/IPlugins';
 import { IStateEx } from './types/IStateEx';
 import {
+  gameDataPath,
   gameSupported,
+  getGameSupport,
+  IGameSupport,
   initGameSupport,
   isNativePlugin,
   minRevision,
@@ -21,6 +24,7 @@ import {
   pluginExtensions,
   pluginPath,
   revisionText,
+  syncGameSupport,
   supportedGames,
   supportsESL,
   supportsMediumMasters,
@@ -51,6 +55,7 @@ import { actions, fs, log, selectors, types, util } from 'vortex-api';
 import { getPluginFlags } from './views/PluginFlags';
 import { createSelector } from 'reselect';
 import { IESPFile } from './types/IESPFile';
+import { masterlistExists } from './util/masterlist';
 
 type TranslationFunction = typeof I18next.t;
 
@@ -386,14 +391,7 @@ function register(context: IExtensionContextExt,
     visible: () => {
       const state = context.api.store.getState();
       const gameMode = selectors.activeGameId(state);
-      if (!gameSupported(gameMode)) {
-        return false;
-      }
-
-      // Currently only Starfield's plugin management is disabled by default.
-      const defaultVal = ['starfield'].includes(gameMode) ? false : true;
-      const profileId = selectors.lastActiveProfileForGame(state, gameMode);
-      return util.getSafe(state, ['settings', 'plugins', 'pluginManagementEnabled', profileId], defaultVal);
+      return gameSupported(gameMode);
     },
     props: () => ({
       gameSupported,
@@ -441,6 +439,10 @@ function register(context: IExtensionContextExt,
     }
     const profile = selectors.activeProfile(context.api.store.getState());
     try {
+      const masterListExists = await masterlistExists(profile.gameId);
+      if (!masterListExists) {
+        await loot.downloadMasterlist(profile.gameId);
+      }
       await updatePluginList(context.api.store, profile.modState, profile.gameId);
       await new Promise((resolve, reject) => {
         const pluginList = util.getSafe(context.api.getState(), ['session', 'plugins', 'pluginList'], {});
@@ -476,6 +478,23 @@ function register(context: IExtensionContextExt,
 
   context.registerAction('gamebryo-plugin-icons', 200, 'history', {}, 'History', () => {
     context.api.ext.showHistory?.('plugins');
+  });
+
+  context.registerActionCheck('GAMEBRYO_SET_PLUGIN_MANAGEMENT_ENABLED', (state: any, action: any) => {
+    // Bit of a hack - we need to let the plugin persistor
+    //  know that the plugin management is enabled for this profile.
+    if (process.type === 'renderer') {
+      const { profileId, enabled } = action.payload;
+      const profile = selectors.profileById(state, profileId);
+      const currentState = util.getSafe(state, ['pluginManagementEnabled', profileId], false);
+      if (currentState !== enabled) {
+        if (enabled) {
+          ipcRenderer.send('gamebryo-gamesupport-sync-state', profile.gameId, getGameSupport()[profile.gameId]);
+        }
+        sendStartStopSync(enabled);
+      }
+      return undefined;
+    }
   });
 
   context.registerActionCheck('ADD_USERLIST_RULE', (state: any, action: any) => {
@@ -681,13 +700,7 @@ function startSync(api: types.IExtensionApi): Promise<void> {
   let prom: Promise<void> = Promise.resolve();
 
   if (pluginPersistor !== undefined) {
-    const gameDiscovery = selectors.currentGameDiscovery(store.getState());
-    let dataPath: string;
-    if ((gameDiscovery !== undefined) && (gameDiscovery.path !== undefined)) {
-      dataPath = path.join(gameDiscovery.path, 'data');
-    }
-
-    prom = pluginPersistor.loadFiles(gameId, dataPath);
+    prom = pluginPersistor.loadFiles(gameId);
   }
 
   if (userlistPersistor !== undefined) {
@@ -1152,10 +1165,11 @@ function testRulesUnfulfilled(api: types.IExtensionApi)
   // since I don't know where the inconsistency in LOOT comes from this may be doing redundant
   // checks.
 
+  const dataPath = gameDataPath(gameMode);
   const exists = (id: string): Promise<boolean> =>
     ['.esp', '.esl', '.esm'].includes(path.extname(id))
     ? Promise.resolve(pluginsSet.has(id))
-    : fs.statAsync(path.resolve(discovery.path, 'Data', id)).then(() => true).catch((err) => false);
+    : fs.statAsync(path.resolve(dataPath, id)).then(() => true).catch((err) => false);
 
   return Promise.map(Object.keys(reqCheck), reqId =>
     exists(reqId).then(existsRes => {
@@ -1330,6 +1344,10 @@ function init(context: IExtensionContextExt) {
                (event: Electron.Event, knownPlugins: { [pluginId: string]: string }) => {
       pluginPersistor.setKnownPlugins(knownPlugins);
     });
+
+    ipcMain.on('gamebryo-gamesupport-sync-state', (event, gameMode: string, gameData: IGameSupport) => {
+      syncGameSupport(gameMode, gameData);
+    });
   }));
 
   context
@@ -1337,6 +1355,10 @@ function init(context: IExtensionContextExt) {
   .once(() => initGameSupport(context.api)
     .then(() => {
       const store = context.api.store;
+      const current = getGameSupport();
+      Object.entries(current).forEach(([gameMode, gameData]) => {
+        ipcRenderer.send('gamebryo-gamesupport-sync-state', gameMode, gameData);
+      });
 
       ipcRenderer.on('plugin-sync-ret', (event, error: Error) => {
         if (remotePromise !== undefined) {
@@ -1429,6 +1451,10 @@ function init(context: IExtensionContextExt) {
           });
 
       context.api.events.on('profile-did-change', (newProfileId: string) => {
+        const current = getGameSupport();
+      Object.entries(current).forEach(([gameMode, gameData]) => {
+        ipcRenderer.send('gamebryo-gamesupport-sync-state', gameMode, gameData);
+      });
         const newProfile =
             util.getSafe(store.getState(),
                         ['persistent', 'profiles', newProfileId], undefined);

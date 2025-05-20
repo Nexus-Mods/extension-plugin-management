@@ -12,8 +12,16 @@ import { patternMatchNativePlugins } from './patternMatchNativePlugins';
 type PluginTXTFormat = 'original' | 'fallout4';
 
 export interface IGameSupport {
+  // The general path to the game's app data folder within the
+  //  local app folder.
   appDataPath: string;
+
+  // The path to the plugins.txt file.
   pluginsPath?: string;
+
+  // the path to the game's data folder (where the .esm/.esp files are)
+  gameDataPath?: string;
+
   pluginTXTFormat: PluginTXTFormat;
   nativePlugins: string[];
   nativePluginsPatterns?: string[];
@@ -281,6 +289,17 @@ function applyNativePlugins(api: types.IExtensionApi, gameMode: string, fileName
   }
 }
 
+export function getGameSupport() {
+  return gameSupport;
+}
+
+export function syncGameSupport(gameId: string, gameSupportData: IGameSupport): void {
+  if (process.type === 'browser' && gameSupport.has(gameId)) {
+    // Synchronize the game support data with the one in the renderer.
+    Object.assign(gameSupport[gameId], gameSupportData);
+  }
+}
+
 let discoveryForGame: (gameId: string) => types.IDiscoveryResult = () => undefined;
 let getApi: () => types.IExtensionApi = () => undefined;
 export function initGameSupport(api: types.IExtensionApi): Promise<void> {
@@ -304,16 +323,18 @@ export function initGameSupport(api: types.IExtensionApi): Promise<void> {
         }
       }
       if (discovered['oblivionremastered']?.path !== undefined) {
-        const discovery = discovered['oblivionremastered'];
-        const game = util.getGame('oblivionremastered');
+        const game = selectors.gameById(state, 'oblivionremastered');
         const dataModType = game?.details?.dataModType;
-        if (dataModType) {
-          const pluginsPath = game.getModPaths(discovery.path)[dataModType];
+        if (dataModType && process.type === 'renderer') {
+          // The main thread can't deal with most selectors. We rely on the IPC channels
+          //  to sync the data over to it.
+          const pluginsPath = selectors.modPathsForGame(state, 'oblivionremastered')[dataModType];
           gameSupport['oblivionremastered'].pluginsPath = pluginsPath;
+          gameSupport['oblivionremastered'].gameDataPath = pluginsPath;
         }
       }
-    })
-    .then(() => undefined);
+      return Promise.resolve();
+    });
 }
 
 export function appDataPath(gameMode: string): string {
@@ -322,6 +343,15 @@ export function appDataPath(gameMode: string): string {
   return (process.env.LOCALAPPDATA !== undefined)
     ? path.join(process.env.LOCALAPPDATA, dataPath)
     : path.resolve(util.getVortexPath('appData'), '..', 'Local', dataPath);
+}
+
+export function gameDataPath(gameMode: string): string {
+  const customDataPath = gameSupport.get(gameMode, 'gameDataPath');
+  if (customDataPath) {
+    return customDataPath;
+  }
+  const discovery = discoveryForGame(gameMode);
+  return path.join(discovery.path, 'Data');
 }
 
 export function pluginPath(gameMode: string): string {
