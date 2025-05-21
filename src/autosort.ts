@@ -514,8 +514,7 @@ class LootInterface {
   }
 
   public loadLists = async (gameMode: string, loot: typeof LootProm) => {
-    const masterlistPath = path.join(util.getVortexPath('userData'), gameMode,
-                                     'masterlist', 'masterlist.yaml');
+    const masterlistPath = path.join(util.getVortexPath('userData'), gameMode, 'masterlist', 'masterlist.yaml');
     const userlistPath = path.join(util.getVortexPath('userData'), gameMode, 'userlist.yaml');
     const preludePath = path.join(util.getVortexPath('userData'), 'loot_prelude', 'prelude.yaml');
 

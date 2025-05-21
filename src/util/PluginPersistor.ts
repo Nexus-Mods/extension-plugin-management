@@ -103,6 +103,7 @@ class PluginPersistor implements types.IPersistor {
   public setKnownPlugins(knownPlugins: { [pluginId: string]: string }) {
     this.mKnownPlugins = knownPlugins;
     this.updateNative();
+    this.serialize();
   }
 
   public setResetCallback(cb: () => any) {

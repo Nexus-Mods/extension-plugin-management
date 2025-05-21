@@ -1452,9 +1452,9 @@ function init(context: IExtensionContextExt) {
 
       context.api.events.on('profile-did-change', (newProfileId: string) => {
         const current = getGameSupport();
-      Object.entries(current).forEach(([gameMode, gameData]) => {
-        ipcRenderer.send('gamebryo-gamesupport-sync-state', gameMode, gameData);
-      });
+        Object.entries(current).forEach(([gameMode, gameData]) => {
+          ipcRenderer.send('gamebryo-gamesupport-sync-state', gameMode, gameData);
+        });
         const newProfile =
             util.getSafe(store.getState(),
                         ['persistent', 'profiles', newProfileId], undefined);
@@ -1462,7 +1462,6 @@ function init(context: IExtensionContextExt) {
         if ((newProfile !== undefined) && gameSupported(newProfile.gameId)) {
           updatePluginList(store, newProfile.modState, newProfile.gameId)
               .then(() => startSync(context.api))
-              .then(() => context.api.events.emit('autosort-plugins', false))
               .catch(err => {
                 context.api.showErrorNotification('Failed to change profile', err);
               });
