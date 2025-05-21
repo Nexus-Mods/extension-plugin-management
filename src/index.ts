@@ -1280,9 +1280,12 @@ function onDidDeploy(api: types.IExtensionApi, profileId: string): Promise<void>
   const profile = state.persistent.profiles[profileId];
   return ((profile !== undefined) && gameSupported(profile.gameId))
     ? updatePluginList(api.store, profile.modState, profile.gameId)
-      .then(() => {
-        api.events.emit('autosort-plugins', false);
-      })
+      .then(() => new Promise((resolve, reject) => {
+        const pluginList = util.getSafe(api.getState(), ['session', 'plugins', 'pluginList'], {});
+        api.events.emit('plugin-details', profile.gameId, Object.keys(pluginList ?? {}), resolve);
+      }))
+      .then(() => api.events.emit('autosort-plugins', false))
+      .then(() => Promise.resolve())
     : Promise.resolve();
 }
 
