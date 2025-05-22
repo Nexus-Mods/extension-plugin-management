@@ -3,6 +3,7 @@ import {PluginFormat} from '../util/PluginPersistor';
 import memoizeOne from 'memoize-one';
 
 import Promise from 'bluebird';
+
 import * as path from 'path';
 import { fs, log, selectors, types, util } from 'vortex-api';
 
@@ -11,7 +12,16 @@ import { patternMatchNativePlugins } from './patternMatchNativePlugins';
 type PluginTXTFormat = 'original' | 'fallout4';
 
 export interface IGameSupport {
+  // The general path to the game's app data folder within the
+  //  local app folder.
   appDataPath: string;
+
+  // The path to the plugins.txt file.
+  pluginsPath?: string;
+
+  // the path to the game's data folder (where the .esm/.esp files are)
+  gameDataPath?: string;
+
   pluginTXTFormat: PluginTXTFormat;
   nativePlugins: string[];
   nativePluginsPatterns?: string[];
@@ -173,6 +183,26 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>({
       'oblivion.esm',
     ],
   },
+  oblivionremastered: {
+    appDataPath: 'Oblivion Remastered',
+    pluginTXTFormat: 'original',
+    nativePlugins: [
+      'oblivion.esm',
+      'dlcbattlehorncastle.esp',
+      'dlcfrostcrag.esp',
+      'dlchorsearmor.esp',
+      'dlcmehrunesrazor.esp',
+      'dlcorrery.esp',
+      'dlcshiveringisles.esp',
+      'dlcspelltomes.esp',
+      'dlcthievesden.esp',
+      'dlcvilelair.esp',
+      'knights.esp',
+      'altarespmain.esp',
+      'altardeluxe.esp',
+      'altaresplocal.esp',
+    ],
+  },
   enderalspecialedition: {
     appDataPath: 'Enderal Special Edition',
     pluginTXTFormat: 'fallout4',
@@ -230,80 +260,108 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>({
   }
 });
 
+function applyNativePlugins(api: types.IExtensionApi, gameMode: string, fileName: string): Promise<void> {
+  const state = api.store.getState();
+  const game = selectors.gameById(state, gameMode);
+  const nativePlugins = game?.details?.nativePlugins || gameSupport[gameMode].nativePlugins;
+  const gameNativePlugins = new Set<string>(nativePlugins);
+  const discovery = discoveryForGame(gameMode);
+  if (discovery?.path === undefined || !game) {
+    return Promise.resolve();
+  } else {
+    const cccFilePath = path.join(discovery.path, fileName);
+    return Promise.resolve()
+      .then(() => patternMatchNativePlugins(gameMode, discovery, gameSupport[gameMode]))
+      .then((patternMatched) => {
+        patternMatched.forEach(fileName => { gameNativePlugins.add(fileName.toLowerCase()); });
+        return fs.readFileAsync(cccFilePath);
+      })
+      .then((data) => {
+        const lines = data.toString().split('\r\n').filter(plugin => plugin !== '');
+        lines.forEach(plugin => { gameNativePlugins.add(plugin.toLowerCase()); });
+      })
+      .catch((err) => {
+        log('info', `failed to read ${fileName}`, err.message);
+      })
+      .finally(() => {
+        gameSupport[gameMode].nativePlugins = Array.from(gameNativePlugins);
+      });
+  }
+}
+
+export function getGameSupport() {
+  return gameSupport;
+}
+
+export function syncGameSupport(gameId: string, gameSupportData: IGameSupport): void {
+  if (process.type === 'browser' && gameSupport.has(gameId)) {
+    // Synchronize the game support data in the main thread with the one in the renderer.
+    Object.assign(gameSupport[gameId], gameSupportData);
+  }
+}
+
 let discoveryForGame: (gameId: string) => types.IDiscoveryResult = () => undefined;
 let getApi: () => types.IExtensionApi = () => undefined;
 export function initGameSupport(api: types.IExtensionApi): Promise<void> {
-  let res = Promise.resolve();
   discoveryForGame = (gameId: string) => selectors.discoveryByGame(api.store.getState(), gameId);
   getApi = () => api;
   const state: types.IState = api.store.getState();
-
   const { discovered } = state.settings.gameMode;
 
-  if (discovered['skyrimse']?.path !== undefined) {
-    const skyrimsecc = new Set(gameSupport['skyrimse'].nativePlugins);
-    res = res
-      .then(() => fs.readFileAsync(path.join(discovered['skyrimse'].path, 'Skyrim.ccc'))
-        .then(data => data.toString().split('\r\n').filter(plugin => plugin !== '').forEach(
-          plugin => skyrimsecc.add(plugin.toLowerCase())))
-        .catch(err => {
-          log('info', 'failed to read Skyrim.ccc', err.message);
-        })
-        .then(() => {
-          gameSupport['skyrimse'].nativePlugins = Array.from(skyrimsecc);
-        }));
-  }
-  if (discovered['fallout4']?.path !== undefined) {
-    const fallout4cc = new Set(gameSupport['fallout4'].nativePlugins);
-    res = res
-      .then(() => fs.readFileAsync(path.join(discovered['fallout4'].path, 'Fallout4.ccc'))
-        .then(data => data.toString().split('\r\n').filter(plugin => plugin !== '').forEach(
-          plugin => fallout4cc.add(plugin.toLowerCase())))
-        .catch(err => {
-          log('info', 'failed to read Fallout4.ccc', err.message);
-        })
-        .then(() => {
-          gameSupport['fallout4'].nativePlugins = Array.from(fallout4cc);
-        }));
-  }
-  if (discovered['starfield']?.path !== undefined) {
-    const game = selectors.gameById(state, 'starfield');
-    const nativePlugins = game?.details?.nativePlugins || gameSupport['starfield'].nativePlugins;
-    const starfieldcc = new Set(nativePlugins);
-    res = res
-      .then(() => patternMatchNativePlugins('starfield', discovered['starfield'], gameSupport['starfield']))
-      .then((patternMatched) => {
-        for (const fileName of patternMatched) {
-          starfieldcc.add(fileName.toLowerCase());
+  return Promise.resolve()
+    .then(() => Promise.all([
+      applyNativePlugins(api, 'skyrimse', 'Skyrim.ccc'),
+      applyNativePlugins(api, 'fallout4', 'Fallout4.ccc'),
+      applyNativePlugins(api, 'starfield', 'Starfield.ccc'),
+      applyNativePlugins(api, 'oblivionremastered', 'Oblivion.ccc'),
+    ]))
+    .then(() => {
+      if (discovered['skyrimvr']?.path !== undefined) {
+        const game = selectors.gameById(state, 'skyrimvr');
+        if (game?.details?.supportsESL !== undefined) {
+          gameSupport['skyrimvr'].supportsESL = game.details.supportsESL;
         }
-        return fs.readFileAsync(path.join(discovered['starfield'].path, 'Starfield.ccc'))
-      })
-      .then(data => data.toString().split('\r\n').filter(plugin => plugin !== '').forEach(
-        plugin => starfieldcc.add(plugin.toLowerCase())))
-      .catch(err => {
-        log('info', 'failed to read Starfield.ccc', err.message);
-      })
-      .then(() => {
-        gameSupport['starfield'].nativePlugins = Array.from(starfieldcc);
-      });
-  }
+      }
+      if (discovered['oblivionremastered']?.path !== undefined) {
+        const game = selectors.gameById(state, 'oblivionremastered');
+        const dataModType = game?.details?.dataModType;
+        if (dataModType && process.type === 'renderer') {
+          // The main thread can't deal with most selectors. We rely on the IPC channels
+          //  to sync the data over to it.
+          const pluginsPath = selectors.modPathsForGame(state, 'oblivionremastered')[dataModType];
+          gameSupport['oblivionremastered'].pluginsPath = pluginsPath;
+          gameSupport['oblivionremastered'].gameDataPath = pluginsPath;
+        }
+      }
+      return Promise.resolve();
+    });
+}
 
-  if (discovered['skyrimvr']?.path !== undefined) {
-    const game = selectors.gameById(state, 'skyrimvr');
-    if (game?.details?.supportsESL !== undefined) {
-      gameSupport['skyrimvr'].supportsESL = game.details.supportsESL;
-    }
-  }
+export function appDataPath(gameMode: string): string {
+  const dataPath = gameSupport.get(gameMode, 'appDataPath');
 
-  return res;
+  return (process.env.LOCALAPPDATA !== undefined)
+    ? path.join(process.env.LOCALAPPDATA, dataPath)
+    : path.resolve(util.getVortexPath('appData'), '..', 'Local', dataPath);
+}
+
+export function gameDataPath(gameMode: string): string {
+  const customDataPath = gameSupport.get(gameMode, 'gameDataPath');
+  if (customDataPath) {
+    return customDataPath;
+  }
+  const discovery = discoveryForGame(gameMode);
+  return path.join(discovery.path, 'Data');
 }
 
 export function pluginPath(gameMode: string): string {
-  const gamePath = gameSupport.get(gameMode, 'appDataPath');
-
-  return (process.env.LOCALAPPDATA !== undefined)
-    ? path.join(process.env.LOCALAPPDATA, gamePath)
-    : path.resolve(util.getVortexPath('appData'), '..', 'Local', gamePath);
+  // The path of the plugins.txt file, not the path to where the game
+  //  stores its plugins.
+  const pluginsPath = gameSupport.get(gameMode, 'pluginsPath');
+  if (pluginsPath) {
+    return pluginsPath;
+  }
+  return appDataPath(gameMode);
 }
 
 export function pluginFormat(gameMode: string): PluginFormat {
@@ -322,7 +380,7 @@ export function gameSupported(gameMode: string, sort?: boolean): boolean {
     return gameSupport.has(gameMode);
   }
   const state = getApi().getState();
-  const defaultVal = ['starfield'].includes(gameMode) ? false : true;
+  const defaultVal = ['starfield', 'oblivionremastered'].includes(gameMode) ? false : true;
   const profileId = selectors.lastActiveProfileForGame(state, gameMode);
   if (!util.getSafe(state, ['settings', 'plugins', 'pluginManagementEnabled', profileId], defaultVal)) {
     return false;
