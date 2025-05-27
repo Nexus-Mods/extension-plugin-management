@@ -2,13 +2,13 @@
 import path from 'path';
 import memoizeOne from 'memoize-one';
 import { fs, types } from 'vortex-api';
-import { IGameSupport, pluginExtensions } from './gameSupport';
+import { gameDataPath, IGameSupport, pluginExtensions } from './gameSupport';
 
 export const patternMatchNativePlugins = memoizeOne(async (gameMode: string, discovery: types.IDiscoveryResult, gameSupport: IGameSupport): Promise<string[]> => {
   if (!discovery?.path || !gameSupport?.nativePluginsPatterns) {
     return [];
   }
-  const pluginsPath = path.join(discovery.path, 'Data');
+  const pluginsPath = gameDataPath(gameMode);
   const files = await fs.readdirAsync(pluginsPath);
   const supportedPluginsExt = pluginExtensions(gameMode);
   const filtered = files.filter(file => supportedPluginsExt.includes(path.extname(file.toLowerCase())));

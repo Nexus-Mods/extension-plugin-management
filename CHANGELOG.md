@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.13] - 2024-05-20
+
+- fixed game support data synchronization between the main and renderer threads.
+- fixed missing masterlist when sorting through API call.
+- now supports dynamic plugins.txt file path.
+- updated masterlist to revision 0.26
+
 ## [0.3.11] - 2024-12-23
 
 - fixed plugin page displaying overriden mod as source

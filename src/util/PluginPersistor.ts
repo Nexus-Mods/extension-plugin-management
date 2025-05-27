@@ -1,5 +1,6 @@
 import {ILoadOrder} from '../types/ILoadOrder';
 import {
+  gameDataPath,
   gameSupported,
   nativePlugins,
   pluginFormat,
@@ -76,12 +77,12 @@ class PluginPersistor implements types.IPersistor {
     }));
   }
 
-  public loadFiles(gameMode: string, dataPath: string): Promise<void> {
+  public loadFiles(gameMode: string): Promise<void> {
     return this.enqueue(() => {
       if (!gameSupported(gameMode)) {
         return Promise.resolve();
       }
-      this.mDataPath = dataPath;
+      this.mDataPath = gameDataPath(gameMode);
       this.mPluginPath = pluginPath(gameMode);
       this.mPluginFormat = pluginFormat(gameMode);
       this.mNativePlugins = nativePlugins(gameMode);
@@ -102,6 +103,7 @@ class PluginPersistor implements types.IPersistor {
   public setKnownPlugins(knownPlugins: { [pluginId: string]: string }) {
     this.mKnownPlugins = knownPlugins;
     this.updateNative();
+    this.serialize();
   }
 
   public setResetCallback(cb: () => any) {
