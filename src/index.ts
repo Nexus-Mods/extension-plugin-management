@@ -489,7 +489,7 @@ function register(context: IExtensionContextExt,
       const currentState = util.getSafe(state, ['pluginManagementEnabled', profileId], false);
       if (currentState !== enabled) {
         if (enabled) {
-          ipcRenderer.send('gamebryo-gamesupport-sync-state', profile.gameId, getGameSupport()[profile.gameId]);
+          ipcRenderer.send('gamebryo-gamesupport-sync-state', profile.gameId, sanitizeForIPC(getGameSupport()[profile.gameId]));
         }
         sendStartStopSync(enabled);
       }
@@ -1289,6 +1289,10 @@ function onDidDeploy(api: types.IExtensionApi, profileId: string): Promise<void>
     : Promise.resolve();
 }
 
+function sanitizeForIPC(obj: any) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
 function init(context: IExtensionContextExt) {
   const setPluginLight = (id: string, enable: boolean) => {
     const state: IStateEx = context.api.getState();
@@ -1360,7 +1364,7 @@ function init(context: IExtensionContextExt) {
       const store = context.api.store;
       const current = getGameSupport();
       Object.entries(current).forEach(([gameMode, gameData]) => {
-        ipcRenderer.send('gamebryo-gamesupport-sync-state', gameMode, gameData);
+        ipcRenderer.send('gamebryo-gamesupport-sync-state', gameMode, sanitizeForIPC(gameData));
       });
 
       ipcRenderer.on('plugin-sync-ret', (event, error: Error) => {
@@ -1456,7 +1460,7 @@ function init(context: IExtensionContextExt) {
       context.api.events.on('profile-did-change', (newProfileId: string) => {
         const current = getGameSupport();
         Object.entries(current).forEach(([gameMode, gameData]) => {
-          ipcRenderer.send('gamebryo-gamesupport-sync-state', gameMode, gameData);
+          ipcRenderer.send('gamebryo-gamesupport-sync-state', gameMode, sanitizeForIPC(gameData));
         });
         const newProfile =
             util.getSafe(store.getState(),
