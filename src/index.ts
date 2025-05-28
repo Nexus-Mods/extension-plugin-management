@@ -1364,7 +1364,14 @@ function init(context: IExtensionContextExt) {
       const store = context.api.store;
       const current = getGameSupport();
       Object.entries(current).forEach(([gameMode, gameData]) => {
-        ipcRenderer.send('gamebryo-gamesupport-sync-state', gameMode, sanitizeForIPC(gameData));
+        // Omit functions and non-serializeable properties from gameData before sending over IPC
+        const sanitizedGameData = Object.fromEntries(
+          Object.entries(gameData).filter(([key, value]) =>
+            typeof value !== 'function' &&
+            typeof value !== 'symbol'
+          )
+        );
+        ipcRenderer.send('gamebryo-gamesupport-sync-state', gameMode, sanitizeForIPC(sanitizedGameData));
       });
 
       ipcRenderer.on('plugin-sync-ret', (event, error: Error) => {

@@ -296,7 +296,9 @@ export function getGameSupport() {
 export function syncGameSupport(gameId: string, gameSupportData: IGameSupport): void {
   if (process.type === 'browser' && gameSupport.has(gameId)) {
     // Synchronize the game support data in the main thread with the one in the renderer.
-    Object.assign(gameSupport[gameId], gameSupportData);
+    const currentSupportData = gameSupport[gameId];
+    const mergedSupportData = { ...currentSupportData, ...gameSupportData };
+    Object.assign(gameSupport[gameId], mergedSupportData);
   }
 }
 
