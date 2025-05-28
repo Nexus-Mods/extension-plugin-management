@@ -1290,7 +1290,14 @@ function onDidDeploy(api: types.IExtensionApi, profileId: string): Promise<void>
 }
 
 function sanitizeForIPC(obj: any) {
-  return JSON.parse(JSON.stringify(obj));
+  // Omit functions and non-serializeable properties from gameData before sending over IPC
+  const sanitizedGameData = Object.fromEntries(
+    Object.entries(obj).filter(([key, value]) =>
+      typeof value !== 'function' &&
+      typeof value !== 'symbol'
+    )
+  );
+  return JSON.parse(JSON.stringify(sanitizedGameData));
 }
 
 function init(context: IExtensionContextExt) {
@@ -1364,14 +1371,7 @@ function init(context: IExtensionContextExt) {
       const store = context.api.store;
       const current = getGameSupport();
       Object.entries(current).forEach(([gameMode, gameData]) => {
-        // Omit functions and non-serializeable properties from gameData before sending over IPC
-        const sanitizedGameData = Object.fromEntries(
-          Object.entries(gameData).filter(([key, value]) =>
-            typeof value !== 'function' &&
-            typeof value !== 'symbol'
-          )
-        );
-        ipcRenderer.send('gamebryo-gamesupport-sync-state', gameMode, sanitizeForIPC(sanitizedGameData));
+        ipcRenderer.send('gamebryo-gamesupport-sync-state', gameMode, sanitizeForIPC(gameData));
       });
 
       ipcRenderer.on('plugin-sync-ret', (event, error: Error) => {
