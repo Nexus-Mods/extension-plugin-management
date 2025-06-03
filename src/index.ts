@@ -670,7 +670,7 @@ function startSyncRemote(api: types.IExtensionApi): Promise<void> {
 
               refreshTimer = setTimeout(() => {
                 updateCurrentProfile(store)
-                  .then(() => api.events.emit('autosort-plugins', false));
+                  .then(() => api.events.emit('autosort-plugins', true));
                 refreshTimer = undefined;
               }, 500);
             }
