@@ -1400,9 +1400,9 @@ loose-envify@^1.0.0, loose-envify@^1.1.0, loose-envify@^1.4.0:
   dependencies:
     js-tokens "^3.0.0 || ^4.0.0"
 
-loot@Nexus-Mods/node-loot:
-  version "6.0.11"
-  resolved "https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/59ebc202fe430a106ce6924403ed5c016e6eb4b3"
+loot@Nexus-Mods/node-loot#libloot-0-26-3:
+  version "6.0.12"
+  resolved "https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/97a9134ab9904221e7fdfc9f4d6e09daf21c1bd0"
   dependencies:
     autogypi "^0.2.2"
     lodash "^4.17.21"
