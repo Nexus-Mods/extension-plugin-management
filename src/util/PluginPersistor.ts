@@ -273,7 +273,7 @@ class PluginPersistor implements types.IPersistor {
           { encoding: 'latin1' });
       })
       .then(() => {
-        if ((this.mPluginFormat === 'original') && this.mControlOrder()) {
+        if ((this.mPluginFormat === 'original' && this.mGameId !== 'oblivionremastered') && this.mControlOrder()) {
           const offset = 946684800;
           const oneDay = 24 * 60 * 60;
           return Promise.mapSeries(sorted, (fileName, idx) => {
