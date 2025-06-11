@@ -1031,7 +1031,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     if (mod === undefined) {
       return '';
     }
-    return path.basename(plugin.filePath);
+    return util.renderModName(mod, { version: false });
   }
 
   private highlightMod = (evt: React.MouseEvent<any>) => {
