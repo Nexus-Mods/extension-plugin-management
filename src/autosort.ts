@@ -110,9 +110,24 @@ class LootInterface {
     }
   }
 
+  private shouldDeferLootActivities = () => {
+    const state = this.mExtensionApi.store.getState();
+    const deferOnActivities = ['installing_dependencies', 'mods'];
+    const isActivityRunning = (activity: string) => util.getSafe(state, ['session', 'base', 'activity', activity], []).length > 0;
+    const deferActivities = deferOnActivities.filter(activity => isActivityRunning(activity));
+    return deferActivities.length > 0;
+  }
+
   private onSort = async (manual: boolean, callback?: (err: Error) => void) => {
     const { store } = this.mExtensionApi;
     try {
+      if (this.shouldDeferLootActivities()) {
+        // Defer - the plugins will be sorted once the activity is done
+        if (callback !== undefined) {
+          callback(null);
+        }
+        return Promise.resolve();
+      }
       if (manual || store.getState().settings.plugins.autoSort) {
         // ensure initialisation is done
         const { game, loot } = await this.mInitPromise;
@@ -379,18 +394,23 @@ class LootInterface {
 
   private pluginDetails = async (api: types.IExtensionApi, gameId: string,
                                  plugins: string[], cb: (result: IPluginsLoot) => void) => {
-    log('debug', 'requesting plugin info', plugins);
     const callback = (res: IPluginsLoot)  => {
       api.events.emit('trigger-test-run', 'loot-info-updated');
       cb(res);
     };
+    if (this.shouldDeferLootActivities()) {
+      // Defer - the plugins will be updated once the activity is done
+      callback({});
+      return;
+    }
 
     const { game, loot } = await this.getLoot(api, gameId);
     if ((loot === undefined) || loot.isClosed()) {
       callback({});
       return;
     }
-
+    
+    log('debug', 'requesting plugin info', plugins);
     try {
       // not really interested in these messages but apparently it's the only way to make the api
       // drop its cache of _all_ previously evaluated conditions
