@@ -5,7 +5,7 @@ import {IPluginLoot, IPlugins, IPluginsLoot} from './types/IPlugins';
 import { gameDataPath, gameSupported, nativePlugins, pluginPath } from './util/gameSupport';
 import { downloadMasterlist, downloadPrelude } from './util/masterlist';
 
-import { NAMESPACE } from './statics';
+import { GHOST_EXT, NAMESPACE } from './statics';
 
 import Bluebird from 'bluebird';
 import getVersion from 'exe-version';
@@ -164,7 +164,7 @@ class LootInterface {
           // from all plugins
           .keys(pluginList)
           // sort only the ones that are deployed
-          .filter((pluginId: string) => pluginList[pluginId].deployed)
+          .filter((pluginId: string) => pluginList[pluginId].deployed && path.extname(pluginList[pluginId].filePath) !== GHOST_EXT)
           // apply existing ordering (as far as available)
           .sort((lhs, rhs) => lo(lhs) - lo(rhs));
 
