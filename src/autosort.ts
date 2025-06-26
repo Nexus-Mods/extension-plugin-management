@@ -160,11 +160,19 @@ class LootInterface {
         const lo = (pluginKey: string) =>
           (state.loadOrder[pluginKey] || { loadOrder: -1 }).loadOrder;
 
+        const isValid = (pluginKey: string) => {
+          const isEnabled = state.loadOrder?.[pluginKey]?.enabled || false;
+          const isNative = pluginList[pluginKey]?.isNative || false;
+          return isEnabled || isNative;
+        }
+
         let pluginIds: string[] = Object
           // from all plugins
           .keys(pluginList)
           // sort only the ones that are deployed
-          .filter((pluginId: string) => pluginList[pluginId].deployed && path.extname(pluginList[pluginId].filePath) !== GHOST_EXT)
+          .filter((pluginId: string) => isValid(pluginId)
+            && (pluginList[pluginId].deployed
+            && path.extname(pluginList[pluginId].filePath) !== GHOST_EXT))
           // apply existing ordering (as far as available)
           .sort((lhs, rhs) => lo(lhs) - lo(rhs));
 
@@ -178,6 +186,9 @@ class LootInterface {
         const pluginNames = pluginIds
           .map((pluginId: string) => path.basename(pluginList[pluginId].filePath));
 
+        if (pluginNames.length !== Object.keys(pluginList).length) {
+          await loot.loadPluginsAsync(pluginNames, true);
+        }
         await this.doSort(pluginNames, gameMode, loot);
       }
       if (callback !== undefined) {
@@ -250,18 +261,14 @@ class LootInterface {
               { replace: { msg: err.message }, ns: NAMESPACE }),
           });
         };
-        try {
-          await fs.statAsync(path.join(this.dataPath, pluginName));
-          reportErr();
-        } catch (err) {
-          const idx = pluginNames.indexOf(pluginName);
-          if (idx !== -1) {
-            const newList = pluginNames.slice();
-            newList.splice(idx, 1);
-            return await this.doSort(newList, gameMode, loot);
-          } else {
-            reportErr();
-          }
+        // Invalid plugins shouldn't block the sort from finishing.
+        // await fs.statAsync(path.join(this.dataPath, pluginName));
+        reportErr();
+        const idx = pluginNames.indexOf(pluginName);
+        if (idx !== -1) {
+          const newList = pluginNames.slice();
+          newList.splice(idx, 1);
+          return this.doSort(newList, gameMode, loot);
         }
       } else if (err.message.match(/The group "[^"]*" does not exist/)) {
         this.mExtensionApi.sendNotification({
@@ -473,6 +480,11 @@ class LootInterface {
       }
       try {
         const meta: PluginMetadata = await loot.getPluginMetadataAsync(pluginName);
+        if (!meta) {
+          // no metadata available, this is not an error, just means loot doesn't know about it
+          result[pluginName] = createEmpty();
+          return;
+        }
         let info;
         try {
           const id = pluginName.toLowerCase();
