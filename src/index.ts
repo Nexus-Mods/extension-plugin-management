@@ -670,7 +670,6 @@ function startSyncRemote(api: types.IExtensionApi): Promise<void> {
 
               refreshTimer = setTimeout(() => {
                 updateCurrentProfile(store)
-                  .then(() => api.events.emit('autosort-plugins', true));
                 refreshTimer = undefined;
               }, 500);
             }
@@ -1416,6 +1415,11 @@ function init(context: IExtensionContextExt) {
           pluginsChangedQueued = true;
         } else {
           context.api.events.emit('trigger-test-run', 'plugins-changed', 500);
+          updateCurrentProfile(store)
+            .then(() => context.api.events.emit('autosort-plugins', false))
+            .catch(err => {
+              context.api.showErrorNotification('Failed to update plugin list', err);
+            });
         }
       });
 

@@ -1298,7 +1298,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         isToggleable: false,
         edit: {},
         isSortable: true,
-        calc: (plugin: IPluginCombined) => plugin.loadOrder !== -1 ? plugin.loadOrder : '?',
+        calc: (plugin: IPluginCombined) => plugin.loadOrder !== -1
+          ? plugin.loadOrder
+          : this.props.loadOrder[plugin.id]?.loadOrder ?? '?',
         sortFuncRaw: (lhs, rhs) => this.sortByLoadOrder(this.installedNative, lhs, rhs),
         placement: 'table',
       },
