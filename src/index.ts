@@ -56,6 +56,7 @@ import { getPluginFlags } from './views/PluginFlags';
 import { createSelector } from 'reselect';
 import { IESPFile } from './types/IESPFile';
 import { masterlistExists } from './util/masterlist';
+import { IExtensionApi } from 'vortex-api/lib/types/IExtensionContext';
 
 type TranslationFunction = typeof I18next.t;
 
@@ -92,6 +93,16 @@ function isPlugin(filePath: string, fileName: string, gameMode: string): Promise
   }
   return isFile(path.join(filePath, fileName))
     .catch(util.UserCanceled, () => false);
+}
+
+function updatePlugins(api: IExtensionApi): Promise<void> {
+    const profile = selectors.activeProfile(api.getState());
+    return new Promise<void>(async (resolve, reject) => {
+      await updatePluginList(api.store, profile.modState, profile.gameId);
+      const pluginList = util.getSafe(api.getState(), ['session', 'plugins', 'pluginList'], {});
+      api.events.emit('plugin-details', profile.gameId, Object.keys(pluginList ?? {}), resolve);
+    })
+    .tap(() => api.events.emit('autosort-plugins', false));
 }
 
 /**
@@ -411,7 +422,7 @@ function register(context: IExtensionContextExt,
       nativePlugins: gameSupported(selectors.activeGameId(context.api.store.getState()))
         ? nativePlugins(selectors.activeGameId(context.api.store.getState()))
         : [],
-      onRefreshPlugins: () => updateCurrentProfile(context.api.store),
+      onRefreshPlugins: () => updateCurrentProfile(context.api),
       onSetPluginGhost: makeSetPluginGhost(context.api),
       onSetPluginLight: setPluginLight,
     }),
@@ -567,20 +578,24 @@ function initPersistor(context: IExtensionContextExt) {
 /**
  * update the plugin list for the currently active profile
  */
-function updateCurrentProfile(store: Redux.Store<any>): Promise<void> {
-  const gameId = selectors.activeGameId(store.getState());
+function updateCurrentProfile(api: IExtensionApi): Promise<void> {
+  const gameId = selectors.activeGameId(api.getState());
 
   if (!gameSupported(gameId)) {
     return Promise.resolve();
   }
 
-  const profile = selectors.activeProfile(store.getState());
+  const profile = selectors.activeProfile(api.getState());
   if (profile === undefined) {
     log('warn', 'no profile active');
     return Promise.resolve();
   }
 
-  return updatePluginList(store, profile.modState, gameId);
+  return new Promise<void>(async (resolve, reject) => {
+    await updatePluginList(api.store, profile.modState, profile.gameId);
+    const pluginList = util.getSafe(api.getState(), ['session', 'plugins', 'pluginList'], {});
+    api.events.emit('plugin-details', profile.gameId, Object.keys(pluginList ?? {}), resolve);
+  });
 }
 
 let watcher: fs.FSWatcher;
@@ -669,7 +684,7 @@ function startSyncRemote(api: types.IExtensionApi): Promise<void> {
               }
 
               refreshTimer = setTimeout(() => {
-                updateCurrentProfile(store)
+                updateCurrentProfile(api)
                 refreshTimer = undefined;
               }, 500);
             }
@@ -1415,11 +1430,6 @@ function init(context: IExtensionContextExt) {
           pluginsChangedQueued = true;
         } else {
           context.api.events.emit('trigger-test-run', 'plugins-changed', 500);
-          updateCurrentProfile(store)
-            .then(() => context.api.events.emit('autosort-plugins', false))
-            .catch(err => {
-              context.api.showErrorNotification('Failed to update plugin list', err);
-            });
         }
       });
 
