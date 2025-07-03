@@ -14,6 +14,7 @@ import { LootAsync, Message, PluginMetadata } from 'loot';
 import * as path from 'path';
 import {} from 'redux-thunk';
 import {actions, fs, log, selectors, types, util} from 'vortex-api';
+import { pl } from 'date-fns/locale';
 
 const MAX_RESTARTS = 3;
 
@@ -186,9 +187,6 @@ class LootInterface {
         const pluginNames = pluginIds
           .map((pluginId: string) => path.basename(pluginList[pluginId].filePath));
 
-        if (pluginNames.length !== Object.keys(pluginList).length) {
-          await loot.loadPluginsAsync(pluginNames, true);
-        }
         await this.doSort(pluginNames, gameMode, loot);
       }
       if (callback !== undefined) {
@@ -261,14 +259,18 @@ class LootInterface {
               { replace: { msg: err.message }, ns: NAMESPACE }),
           });
         };
-        // Invalid plugins shouldn't block the sort from finishing.
-        // await fs.statAsync(path.join(this.dataPath, pluginName));
-        reportErr();
-        const idx = pluginNames.indexOf(pluginName);
-        if (idx !== -1) {
-          const newList = pluginNames.slice();
-          newList.splice(idx, 1);
-          return this.doSort(newList, gameMode, loot);
+        try {
+          // You just can't sort with invalid plugins that are present in the 
+          //  data folder.
+          await fs.statAsync(path.join(this.dataPath, pluginName));
+          reportErr();
+        } catch (fsErr) {
+          const idx = pluginNames.indexOf(pluginName);
+          if (idx !== -1) {
+            const newList = pluginNames.slice();
+            newList.splice(idx, 1);
+            return this.doSort(newList, gameMode, loot);
+          }
         }
       } else if (err.message.match(/The group "[^"]*" does not exist/)) {
         this.mExtensionApi.sendNotification({
@@ -504,7 +506,6 @@ class LootInterface {
           type: -1,
           content: missingMetaMessage,
           condition: 'always',
-          isConditional: false,
         }
         result[pluginName] = {
           messages: !meta && !nativePlugins(gameId).includes(pluginName) ? [lootMessage] : meta?.messages || [],
