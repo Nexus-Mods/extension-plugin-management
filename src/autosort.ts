@@ -113,7 +113,7 @@ class LootInterface {
 
   private shouldDeferLootActivities = () => {
     const state = this.mExtensionApi.store.getState();
-    const deferOnActivities = ['installing_dependencies', 'mods'];
+    const deferOnActivities = ['installing_dependencies'];
     const isActivityRunning = (activity: string) => util.getSafe(state, ['session', 'base', 'activity', activity], []).length > 0;
     const deferActivities = deferOnActivities.filter(activity => isActivityRunning(activity));
     return deferActivities.length > 0;

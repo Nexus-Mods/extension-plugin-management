@@ -95,16 +95,6 @@ function isPlugin(filePath: string, fileName: string, gameMode: string): Promise
     .catch(util.UserCanceled, () => false);
 }
 
-function updatePlugins(api: IExtensionApi): Promise<void> {
-    const profile = selectors.activeProfile(api.getState());
-    return new Promise<void>(async (resolve, reject) => {
-      await updatePluginList(api.store, profile.modState, profile.gameId);
-      const pluginList = util.getSafe(api.getState(), ['session', 'plugins', 'pluginList'], {});
-      api.events.emit('plugin-details', profile.gameId, Object.keys(pluginList ?? {}), resolve);
-    })
-    .tap(() => api.events.emit('autosort-plugins', false));
-}
-
 /**
  * updates the list of known plugins for the managed game
  */
@@ -1298,6 +1288,7 @@ function onDidDeploy(api: types.IExtensionApi, profileId: string): Promise<void>
         const pluginList = util.getSafe(api.getState(), ['session', 'plugins', 'pluginList'], {});
         api.events.emit('plugin-details', profile.gameId, Object.keys(pluginList ?? {}), resolve);
       }))
+      .then(() => Promise.delay(1000)) // wait a bit for the plugin details to be updated
       .then(() => api.events.emit('autosort-plugins', false))
       .then(() => Promise.resolve())
     : Promise.resolve();
