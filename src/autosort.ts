@@ -482,11 +482,6 @@ class LootInterface {
       }
       try {
         const meta: PluginMetadata = await loot.getPluginMetadataAsync(pluginName);
-        if (!meta) {
-          // no metadata available, this is not an error, just means loot doesn't know about it
-          result[pluginName] = createEmpty();
-          return;
-        }
         let info;
         try {
           const id = pluginName.toLowerCase();
