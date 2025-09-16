@@ -1145,8 +1145,8 @@ eslint-scope@5.1.1:
     estraverse "^4.1.1"
 
 esptk@Nexus-Mods/node-esptk#fix-node22:
-  version "2.2.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/70477b6fba62167795675e2f748ee4c23d371a8e"
+  version "2.2.1"
+  resolved "https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/122f055857623724eea4b7d14499309e121a483a"
   dependencies:
     autogypi "^0.2.2"
     node-addon-api "^7.0.0"
