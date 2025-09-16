@@ -34,7 +34,7 @@
     "cytoscape": "^3.29.2",
     "cytoscape-cose-bilkent": "^4.1.0",
     "cytoscape-edgehandles": "^3.6.0",
-    "esptk": "Nexus-Mods/node-esptk#15918-starfield-update",
+    "esptk": "Nexus-Mods/node-esptk#fix-node22",
     "i18next": "^19.8.4",
     "immutability-helper": "^3.1.1",
     "js-yaml": "^4.1.0",

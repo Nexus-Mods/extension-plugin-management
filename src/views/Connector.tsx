@@ -55,4 +55,4 @@ function mapStateToProps(state: any): IConnectorProps {
   };
 }
 
-export default connect(mapStateToProps)(ConnectorImpl) as React.ComponentClass<{}>;
+export default connect(mapStateToProps)(ConnectorImpl) as any;

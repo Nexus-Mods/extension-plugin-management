@@ -404,7 +404,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       : ref;
 
     if (readOnly) {
-      return <li key={name} className='rule-readonly'><ReactMarkdown>{display || name}</ReactMarkdown></li>;
+      return <li key={String(name)} className='rule-readonly'>{(ReactMarkdown as any)({ children: display || name })}</li>;
     }
 
     return (
@@ -499,4 +499,4 @@ function mapDispatchToProps(dispatch): IActionProps {
 
 export default
   connect(mapStateToProps, mapDispatchToProps)(
-      DependencyIconDrag) as React.ComponentClass<IBaseProps>;
+      DependencyIconDrag) as any;

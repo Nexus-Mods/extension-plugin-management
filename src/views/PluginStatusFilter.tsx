@@ -25,7 +25,7 @@ export class PluginStatusFilterComponent extends React.Component<types.IFilterPr
       options={currentFilters}
       value={filter || ''}
       onChange={this.changeFilter}
-      searchable={false}
+      isSearchable={false}
       onInputChange={nop}
     />);
   }

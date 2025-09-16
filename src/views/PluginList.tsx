@@ -33,7 +33,7 @@ import { Alert, Button, ListGroup, ListGroupItem, Panel } from 'react-bootstrap'
 import { withTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import { connect } from 'react-redux';
-import { Creatable } from 'react-select';
+import CreatableSelect from 'react-select/creatable';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { generate as shortid } from 'shortid';
@@ -151,14 +151,14 @@ class GroupSelect extends React.PureComponent<IGroupSelectProps, {}> {
       }) !== undefined;
 
     return (
-      <Creatable
+      <CreatableSelect
         // TODO: for some reason the value doesn't actually show - anywhere. Guess
         //   we have to update react-select at some point...
-        value={isCustom ? group : undefined}
+        value={isCustom ? { label: group, value: group } : null}
         placeholder={group || 'default'}
-        onChange={this.changeGroup}
+        onChange={(newValue: any) => this.changeGroup(newValue)}
         options={options}
-        promptTextCreator={this.createPrompt}
+        formatCreateLabel={this.createPrompt}
       />
     );
   }
@@ -168,7 +168,7 @@ class GroupSelect extends React.PureComponent<IGroupSelectProps, {}> {
     return t('Create Group: {{group}}', { replace: { group: label } });
   }
 
-  private changeGroup = (selection: { name: string, value: string }) => {
+  private changeGroup = (selection: { label: string, value: string } | null) => {
     const { plugins, onSetGroup } = this.props;
     plugins.forEach(plugin => onSetGroup(plugin.name,
       selection ? selection.value : undefined));
@@ -657,7 +657,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         });
     return (
       <Alert bsStyle={clean ? 'success' : 'warning'}>
-        <ReactMarkdown>{message}</ReactMarkdown>
+        {(ReactMarkdown as any)({ children: message })}
         {clean ? null : (
           <a href={CLEANING_GUIDE_LINK}>
             <Icon name='launch' />
@@ -1088,7 +1088,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           filtered.map((msg: Message, idx: number) => (
             <ListGroupItem key={idx}>
               <Alert bsStyle={this.translateLootMessageType(msg.type)}>
-              <ReactMarkdown>{this.prepareMessage(msg.content, plugin)}</ReactMarkdown>
+              {(ReactMarkdown as any)({ children: this.prepareMessage(msg.content, plugin) })}
               </Alert>
             </ListGroupItem>
           ))
