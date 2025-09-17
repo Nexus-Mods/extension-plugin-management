@@ -32,7 +32,7 @@ export interface IGraphViewProps {
   elements: { [id: string]: IGraphElement };
   className: string;
   style?: any;
-  visualStyle: cytoscape.Stylesheet[];
+  visualStyle: any[];
   onConnect: (source: string, target: string) => void;
   onDisconnect: (source: string, target: string) => void;
   onRemove: (id: string) => void;

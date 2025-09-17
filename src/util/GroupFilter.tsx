@@ -25,12 +25,11 @@ class GroupFilterComponent extends React.Component<IProps, {}> {
 
     return (
       <Select
-        multi
+        isMulti
         className='select-compact'
         options={options}
         value={filter}
         onChange={this.changeFilter}
-        autosize={false}
       />
     );
   }
@@ -57,7 +56,7 @@ function mapStateToProps(state: any): IConnectedProps {
 }
 
 const GroupFilterComponentConn = connect(mapStateToProps)(
-  GroupFilterComponent) as React.ComponentClass<types.IFilterProps>;
+  GroupFilterComponent) as any;
 
 class GroupFilter implements types.ITableFilter {
   public component = GroupFilterComponentConn;
