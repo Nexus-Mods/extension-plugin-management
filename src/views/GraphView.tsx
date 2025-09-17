@@ -96,7 +96,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
               .addClass(newProps.elements[id].class);
           }
           // node content changed
-          Object.keys(changed[id].connections).forEach((connGroupIdx: string) => {
+          Object.keys(changed[id]?.connections || {}).forEach((connGroupIdx: string) => {
             const connGroup = changed[id].connections[connGroupIdx];
             Object.keys(connGroup.connections)
               .sort((lhs, rhs) => (lhs[0] !== rhs[0])
