@@ -1144,9 +1144,9 @@ eslint-scope@5.1.1:
     esrecurse "^4.3.0"
     estraverse "^4.1.1"
 
-esptk@Nexus-Mods/node-esptk#fix-node22:
+esptk@Nexus-Mods/node-esptk:
   version "2.2.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/122f055857623724eea4b7d14499309e121a483a"
+  resolved "https://codeload.github.com/Nexus-Mods/node-esptk/tar.gz/6b8900658d66438fe92ac55bc182a45404e8bf3f"
   dependencies:
     autogypi "^0.2.2"
     node-addon-api "^7.0.0"
@@ -1599,9 +1599,9 @@ loose-envify@^1.1.0, loose-envify@^1.4.0:
   dependencies:
     js-tokens "^3.0.0 || ^4.0.0"
 
-loot@Nexus-Mods/node-loot#node22-cpp-2022-update:
+loot@Nexus-Mods/node-loot:
   version "6.1.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/510106deb4d954e1a22ef484921ba0f1971cd92b"
+  resolved "https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/7f992e86f798903ba2c11bb5773fb3ca298883d5"
   dependencies:
     autogypi "^0.2.2"
     lodash "^4.17.21"
