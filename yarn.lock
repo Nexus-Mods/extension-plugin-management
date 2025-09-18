@@ -2594,9 +2594,9 @@ void-elements@3.1.0:
   resolved "https://registry.yarnpkg.com/void-elements/-/void-elements-3.1.0.tgz#614f7fbf8d801f0bb5f0661f5b2f5785750e4f09"
   integrity sha1-YU9/v42AHwu18GYfWy9XhXUOTwk=
 
-vortex-api@Nexus-Mods/vortex-api#fix-node22:
+vortex-api@Nexus-Mods/vortex-api:
   version "1.9.0"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/1fdcea7f34152a397d9301512ee127726dbd1f8c"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/f3b48029033618c82ffe310547b49e313cea5654"
 
 watchpack@^2.4.1:
   version "2.4.4"
