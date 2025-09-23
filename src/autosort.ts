@@ -190,6 +190,12 @@ class LootInterface {
       if (callback !== undefined) {
         callback(null);
       }
+      this.mExtensionApi.sendNotification({
+        id: 'loot-sorted',
+        type: 'success',
+        message: 'LOOT sorting successful',
+        displayMS: 3000,
+      });
       return Promise.resolve();
     } catch (err) {
       if (callback !== undefined) {
