@@ -54,82 +54,115 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
   private mEdgeHandler: any;
   private mMousePos: { x: number, y: number } = { x: 0, y: 0 };
   private mHoveredNode: any;
+  private mRecentlyCreatedEdges: Set<string> = new Set();
+  private mIsHandlingEdgeCreation: boolean = false;
 
-  public UNSAFE_componentWillReceiveProps(newProps: IGraphViewProps) {
-    if (newProps.elements !== this.props.elements) {
-      const changed = util.objDiff(this.props.elements, newProps.elements);
+  public componentDidUpdate(prevProps: IGraphViewProps) {
+    if (!this.mGraph) return;
+    if (prevProps.elements === this.props.elements) return;
+    if (this.mIsHandlingEdgeCreation) return;
 
-      Object.keys(changed).forEach(id => {
-        if (id[0] === '+') {
-          // node added
-          this.mGraph.add({
-            data: { id: san(id.slice(1)), title: changed[id].title } as any,
-            classes: changed[id].class,
-            position: this.mMousePos,
-          });
+    const elements = this.props.elements;
+    let needsLayout = false;
 
-          changed[id].connections.forEach(connGroup => {
-            connGroup.connections.forEach(conn => {
-              const from = san(id.slice(1));
-              const to = san(conn);
-              this.mGraph.add({
-                data: {
-                  id: `${from}-to-${to}`,
-                  source: to,
-                  sourceOrig: conn,
-                  target: from,
-                  targetOrig: id.slice(1),
-                } as any,
-                classes: connGroup.class,
-              });
+    // Sync nodes
+    Object.keys(elements).forEach(id => {
+      const node = elements[id];
+      const nodeId = san(id);
+      const existing = this.mGraph!.getElementById(nodeId);
+      if (existing.empty()) {
+        this.mGraph!.add({
+          data: { id: nodeId, title: node.title, readonly: node.readonly },
+          classes: node.class,
+          position: this.mMousePos,
+        });
+        needsLayout = true;
+      } else if (prevProps.elements[id]?.class !== node.class) {
+        existing.removeClass(prevProps.elements[id].class).addClass(node.class);
+      }
+
+      // Sync edges for this node - only consider outgoing edges (where this node is the source)
+      // since those are the ones controlled by this node's connections array
+      const existingEdges = this.mGraph!.edges(`[source = "${nodeId}"]`);
+      const currentConnections = new Set<string>();
+      
+      // Add new edges from current connections
+      (node.connections || []).forEach(connGroup => {
+        (connGroup.connections || []).forEach(conn => {
+          if (!elements[conn]) return;
+          const from = nodeId;     // current node is the source
+          const to = san(conn);    // dependency is the target
+          const edgeId = `${from}-to-${to}`;
+          currentConnections.add(edgeId);
+          
+          const existingEdge = this.mGraph!.getElementById(edgeId);
+          if (existingEdge.empty()) {
+            this.mGraph!.add({
+              data: {
+                id: edgeId,
+                source: from,
+                target: to,
+                sourceOrig: id,      // current node is the source original
+                targetOrig: conn,    // dependency is the target original
+                readonly: node.readonly,
+              },
+              classes: connGroup.class,
             });
-          });
-        } else if (id[0] === '-') {
-          // node removed
-          this.mGraph.remove('#' + san(id.slice(1)));
-        } else {
-          // updated classes
-          const nodeId = san(id);
-          if (this.props.elements[id].class !== newProps.elements[id].class) {
-            this.mGraph.$(`node#${nodeId}, edge[target = "${nodeId}"]`)
-              .removeClass(this.props.elements[id].class)
-              .addClass(newProps.elements[id].class);
+            needsLayout = true;
+          } else {
+            // Update the existing edge data to ensure consistency
+            existingEdge.data('sourceOrig', id);
+            existingEdge.data('targetOrig', conn);
+            existingEdge.data('readonly', node.readonly);
+            
+            // Update classes if they changed - remove all classes and add the new one
+            const currentClasses = existingEdge.classes();
+            currentClasses.forEach(cls => existingEdge.removeClass(cls));
+            existingEdge.addClass(connGroup.class);
           }
-          // node content changed
-          Object.keys(changed[id].connections).forEach((connGroupIdx: string) => {
-            const connGroup = changed[id].connections[connGroupIdx];
-            Object.keys(connGroup.connections)
-              .sort((lhs, rhs) => (lhs[0] !== rhs[0])
-                ? lhs[0] === '-' ? -1 : 1
-                : lhs.localeCompare(rhs))
-              .forEach(refId => {
-                const conn = connGroup.connections[refId];
-                const from = san(id);
-                const to = san(conn);
-                const connId = `${from}-to-${to}`;
-                if ((connGroupIdx[0] === '-') || (refId[0] === '-')) {
-                  this.mGraph.remove('#' + connId);
-                } else {
-                  this.mGraph.add({
-                    data: {
-                      id: connId,
-                      source: to,
-                      sourceOrig: conn,
-                      target: from,
-                      targetOrig: id,
-                    } as any,
-                    classes: newProps.elements[id].connections[parseInt(connGroupIdx, 10)]?.class,
-                  });
-                }
-              });
-          });
+        });
+      });
+      
+      // Remove edges that are no longer in the connections
+      // But be careful not to remove edges that were just created
+      existingEdges.forEach(edge => {
+        const edgeData = edge.data();
+        if (!currentConnections.has(edgeData.id) && !this.mRecentlyCreatedEdges.has(edgeData.id)) {
+          edge.remove();
         }
       });
+    });
+
+    // Remove nodes no longer present
+    Object.keys(prevProps.elements).forEach(id => {
+      if (!elements[id]) {
+        this.mGraph!.remove(`#${san(id)}`);
+        needsLayout = true;
+      }
+    });
+
+    // Force a layout update if nodes or edges were added/removed
+    if (needsLayout) {
+      this.mGraph.fit();
+      this.mLayout?.stop();
+      this.mLayout = this.mGraph.layout({
+        name: 'cose-bilkent',
+        nodeDimensionsIncludeLabels: true,
+        randomize: false,
+      } as any);
+      this.mLayout.run();
     }
   }
 
   public layout() {
     this.mLayout.run();
+  }
+
+  public forceUpdate() {
+    if (this.mGraph) {
+      this.mGraph.forceRender();
+      this.mGraph.fit();
+    }
   }
 
   public render(): JSX.Element {
@@ -206,7 +239,14 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
     if (evt.target.data !== undefined) {
       const data = evt.target.data();
       if (data.source !== undefined) {
-        selection = { source: data.sourceOrig, target: data.targetOrig, readonly: data.readonly };
+        // For connections, provide both original format and new format for compatibility
+        selection = { 
+          source: data.sourceOrig, 
+          target: data.targetOrig, 
+          sourceOrig: data.sourceOrig,
+          targetOrig: data.targetOrig,
+          readonly: data.readonly 
+        };
       } else if (data.title !== undefined) {
         selection = { id: data.title, readonly: data.readonly };
       }
@@ -216,11 +256,51 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
   }
 
   private handleEHComplete = (evt, source, target, added) => {
-    this.props.onConnect(source.data().title, target.data().title);
-    // remove the automatically created edge so we can add our own, in sync with the backend data
+    // Prevent sync conflicts during edge creation
+    this.mIsHandlingEdgeCreation = true;
+    
+    const sourceTitle = source.data().title;
+    const targetTitle = target.data().title;
+    
+    // For newly created connections, invert the direction
+    // When user drags from A to B, we want B to depend on A
+    // So the data model edge should go from B to A
+    const dataSourceTitle = targetTitle;  // inverted: target becomes source
+    const dataTargetTitle = sourceTitle;  // inverted: source becomes target
+    
+    // Keep the automatically created edge and update it with proper data
     if ((added.data() !== undefined) && (this.mGraph !== undefined)) {
-      this.mGraph.remove('#' + added.data().id);
+      const edgeId = `${san(dataSourceTitle)}-to-${san(dataTargetTitle)}`;
+      
+      // Update the edge data to match our expected format (inverted)
+      added.data('id', edgeId);
+      added.data('source', san(dataSourceTitle));
+      added.data('target', san(dataTargetTitle));
+      
+      // Store sourceOrig/targetOrig as the inverted data model values
+      // This matches the inverted direction we're using for the data
+      added.data('sourceOrig', dataSourceTitle);
+      added.data('targetOrig', dataTargetTitle);
+      added.data('readonly', false);
+      
+      // Ensure it has the correct styling
+      added.addClass(this.props.className + '-edge');
+      
+      // Mark this edge as recently created to prevent accidental removal
+      this.mRecentlyCreatedEdges.add(edgeId);
+      
+      // Force a render to ensure the connection is visible
+      this.mGraph.forceRender();
     }
+    
+    // Clear the flag after a short delay to allow edge creation to complete
+    setTimeout(() => {
+      this.mIsHandlingEdgeCreation = false;
+      this.mRecentlyCreatedEdges.delete(`${san(dataSourceTitle)}-to-${san(dataTargetTitle)}`);
+    }, 100);
+    
+    // Notify parent component with inverted direction
+    this.props.onConnect(dataSourceTitle, dataTargetTitle);
   }
 
   private addElements(elements: { [id: string]: IGraphElement }) {
@@ -243,15 +323,15 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
               // invalid connection, are connections out of sync with the nodes?
               return;
             }
-            const from = san(id);
-            const to = san(conn);
+            const from = san(id);    // current element is the source
+            const to = san(conn);    // dependency is the target
             prev.push({
               data: {
                 id: `${from}-to-${to}`,
-                source: to,
-                sourceOrig: conn,
-                target: from,
-                targetOrig: id,
+                source: from,
+                sourceOrig: id,      // current element is the source original
+                target: to,
+                targetOrig: conn,    // dependency is the target original
                 readonly: ele.readonly,
               } as any,
               classes: connGroup.class,
