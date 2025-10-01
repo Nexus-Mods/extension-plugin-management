@@ -1,6 +1,6 @@
 {
   "name": "gamebryo-plugin-management",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Management for gamebryo plugins",
   "main": "./out/index.js",
   "repository": "",
@@ -53,5 +53,8 @@
     "vortex-api": "Nexus-Mods/vortex-api",
     "webpack": "^5.94.0",
     "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "redux-act": "^1.8.0"
   }
 }
