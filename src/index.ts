@@ -55,7 +55,7 @@ import { actions, fs, log, selectors, types, util } from 'vortex-api';
 import { getPluginFlags } from './views/PluginFlags';
 import { createSelector } from 'reselect';
 import { IESPFile } from './types/IESPFile';
-import { masterlistExists } from './util/masterlist';
+import { isMasterlistOutdated, masterlistExists, masterlistFilePath } from './util/masterlist';
 import { IExtensionApi } from 'vortex-api/lib/types/IExtensionContext';
 
 type TranslationFunction = typeof I18next.t;
@@ -527,6 +527,8 @@ function register(context: IExtensionContextExt,
     () => testMissingGroups(context.api.translate, context.api.store));
   context.registerTest('exceeded-plugin-limit', 'plugins-changed',
     () => testExceededPluginLimit(context.api, pluginInfoCache));
+  // context.registerTest('masterlist-outdated', 'collections-changed',
+  //   () => testMasterlistOutdated(context.api));
   context.registerDialog('plugin-dependencies-connector', Connector);
   context.registerDialog('userlist-editor', UserlistEditor);
   context.registerDialog('group-editor', GroupEditor);
@@ -895,6 +897,25 @@ function testUserlistInvalid(t: TranslationFunction,
     });
   }
   return Promise.resolve(undefined);
+}
+
+function testMasterlistOutdated(api: types.IExtensionApi,
+                                infoCache?: PluginInfoCache): Promise<types.ITestResult> {
+  const state = api.store.getState();
+  const gameMode = selectors.activeGameId(state);
+  if (!gameSupported(gameMode)) {
+    return Promise.resolve(undefined);
+  }
+  return new Promise<types.ITestResult>((resolve, reject) =>
+    isMasterlistOutdated(api, gameMode, masterlistFilePath(gameMode))
+      .then((isOutdated) => {
+        if (isOutdated) {
+          api.events.emit('restart-helpers');
+        }
+        return resolve(undefined);
+      })
+      .catch(reject)
+  );
 }
 
 function testExceededPluginLimit(api: types.IExtensionApi, infoCache: PluginInfoCache)
@@ -1289,7 +1310,7 @@ function onDidDeploy(api: types.IExtensionApi, profileId: string): Promise<void>
         api.events.emit('plugin-details', profile.gameId, Object.keys(pluginList ?? {}), resolve);
       }))
       .then(() => Promise.delay(1000)) // wait a bit for the plugin details to be updated
-      .then(() => api.events.emit('autosort-plugins', false))
+      .then(() => api.events.emit('autosort-plugins', true))
       .then(() => Promise.resolve())
     : Promise.resolve();
 }
@@ -1396,6 +1417,22 @@ function init(context: IExtensionContextExt) {
       loot = new LootInterface(context.api);
 
       let pluginsChangedQueued = false;
+
+      context.api.events.on('will-install-dependencies', (gameId: string, modId: string, recommendations: boolean, onCancel: () => void) => {
+        const state: types.IState = context.api.getState();
+        if (!gameSupported(gameId)) {
+          return;
+        }
+        const mod = state.persistent.mods[gameId][modId];
+        if (mod?.type === 'collection') {
+          // This is the perfect time to update the user's masterlist if it's needed as he
+          //  won't be allowed to sort or change plugins while the dependencies
+          //  are being installed - masterlist will be fully updated and persisted by the
+          //  time the dependencies are installed.
+          testMasterlistOutdated(context.api)
+            .catch(err => null);
+        }
+      });
 
       context.api.onAsync('will-deploy', () => {
         deploying = true;
