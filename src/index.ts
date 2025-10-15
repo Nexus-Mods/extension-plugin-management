@@ -527,8 +527,8 @@ function register(context: IExtensionContextExt,
     () => testMissingGroups(context.api.translate, context.api.store));
   context.registerTest('exceeded-plugin-limit', 'plugins-changed',
     () => testExceededPluginLimit(context.api, pluginInfoCache));
-  // context.registerTest('masterlist-outdated', 'collections-changed',
-  //   () => testMasterlistOutdated(context.api));
+  // context.registerTest('trigger-sort', 'collections-changed',
+  //    () => testTriggerSort(context.api));
   context.registerDialog('plugin-dependencies-connector', Connector);
   context.registerDialog('userlist-editor', UserlistEditor);
   context.registerDialog('group-editor', GroupEditor);
@@ -1025,6 +1025,14 @@ class PluginInfoCache {
     return path.basename(filePath).toUpperCase();
   }
 }
+
+// function testTriggerSort(api: types.IExtensionApi): Promise<types.ITestResult> {
+//   return new Promise<types.ITestResult>((resolve, reject) => {
+//     api.onAsync('did-deploy', async () => {
+//       api.events.emit('autosort-plugins', true, (err: Error) => resolve);
+//     });
+//   });
+// }
 
 function testMissingMasters(api: types.IExtensionApi,
                             infoCache: PluginInfoCache): Promise<types.ITestResult> {
