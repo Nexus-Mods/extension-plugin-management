@@ -527,8 +527,8 @@ function register(context: IExtensionContextExt,
     () => testMissingGroups(context.api.translate, context.api.store));
   context.registerTest('exceeded-plugin-limit', 'plugins-changed',
     () => testExceededPluginLimit(context.api, pluginInfoCache));
-  // context.registerTest('trigger-sort', 'collections-changed',
-  //    () => testTriggerSort(context.api));
+  context.registerTest('trigger-sort', 'collections-changed',
+     () => testTriggerSort(context.api));
   context.registerDialog('plugin-dependencies-connector', Connector);
   context.registerDialog('userlist-editor', UserlistEditor);
   context.registerDialog('group-editor', GroupEditor);
@@ -1026,13 +1026,14 @@ class PluginInfoCache {
   }
 }
 
-// function testTriggerSort(api: types.IExtensionApi): Promise<types.ITestResult> {
-//   return new Promise<types.ITestResult>((resolve, reject) => {
-//     api.onAsync('did-deploy', async () => {
-//       api.events.emit('autosort-plugins', true, (err: Error) => resolve);
-//     });
-//   });
-// }
+function testTriggerSort(api: types.IExtensionApi): Promise<types.ITestResult> {
+  return new Promise<types.ITestResult>((resolve, reject) => {
+    api.onAsync('did-deploy', async () => {
+      await new Promise(res => setTimeout(res, 2000));
+      api.events.emit('autosort-plugins', true, (err: Error) => resolve);
+    });
+  });
+}
 
 function testMissingMasters(api: types.IExtensionApi,
                             infoCache: PluginInfoCache): Promise<types.ITestResult> {
@@ -1318,7 +1319,7 @@ function onDidDeploy(api: types.IExtensionApi, profileId: string): Promise<void>
         api.events.emit('plugin-details', profile.gameId, Object.keys(pluginList ?? {}), resolve);
       }))
       .then(() => Promise.delay(1000)) // wait a bit for the plugin details to be updated
-      .then(() => api.events.emit('autosort-plugins', true))
+      .then(() => api.events.emit('autosort-plugins', false))
       .then(() => Promise.resolve())
     : Promise.resolve();
 }

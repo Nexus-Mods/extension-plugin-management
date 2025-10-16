@@ -2600,8 +2600,8 @@ void-elements@3.1.0:
   integrity sha1-YU9/v42AHwu18GYfWy9XhXUOTwk=
 
 vortex-api@Nexus-Mods/vortex-api:
-  version "1.9.1"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/26c68f37339ecd040e7009420a339718db07cb90"
+  version "1.9.1-r7"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/b896554fcd02b8384650377dc468e565117a608a"
 
 watchpack@^2.4.1:
   version "2.4.4"
