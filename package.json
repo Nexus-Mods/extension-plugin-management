@@ -6,10 +6,9 @@
   "repository": "",
   "scripts": {
     "webpack": "webpack --config webpack.config.js --progress --profile --color",
-    "webpack_async": "webpack --config webpack_async.config.js --entry ./node_modules/loot/async.js --output-filename async.js",
     "copy_esptk": "copyfiles -f ./node_modules/esptk/build/Release/esptk.node ./dist",
     "copy_loot": "copyfiles -f ./node_modules/loot/build/Release/node-loot.node ./dist && copyfiles -f ./node_modules/loot/loot_api/loot.dll ./dist && copyfiles -f ./src/loot_icon.png ./dist",
-    "copy_async": "npm run webpack_async && copyfiles -f ./node_modules/loot/bindings.js ./dist",
+    "copy_async": "copyfiles -f ./node_modules/loot/async.js ./dist && copyfiles -f ./node_modules/loot/bindings.js ./dist",
     "copy_assets": "copyfiles -f src/stylesheets/plugin_management.scss dist && copyfiles -f src/language.json dist",
     "build": "npm run webpack && npm run copy_esptk && npm run copy_loot && npm run copy_async && npm run copy_assets && extractInfo",
     "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/gamebryo-plugin-management",
