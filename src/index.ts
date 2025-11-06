@@ -1312,7 +1312,11 @@ function notifyMultiplePlugins(api: types.IExtensionApi, mod: types.IMod,
 function onDidDeploy(api: types.IExtensionApi, profileId: string): Promise<void> {
   const state: types.IState = api.getState();
   const profile = state.persistent.profiles[profileId];
-  return ((profile !== undefined) && gameSupported(profile.gameId))
+  const activeGameId = selectors.activeGameId(state);
+  const discovery = selectors.discoveryByGame(state, activeGameId);
+  return ((discovery?.path != null)
+    && (profile?.gameId === activeGameId)
+    && gameSupported(profile?.gameId))
     ? updatePluginList(api.store, profile.modState, profile.gameId)
       .then(() => new Promise((resolve, reject) => {
         const pluginList = util.getSafe(api.getState(), ['session', 'plugins', 'pluginList'], {});

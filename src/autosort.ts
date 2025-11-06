@@ -381,7 +381,7 @@ class LootInterface {
     const gamePath = this.gamePath;
     if (gameSupported(gameMode, true)) {
       try {
-        this.mInitPromise = this.init(gameMode, gamePath);
+        this.mInitPromise = this.init(gameMode);
       } catch (err) {
         api.showErrorNotification('Failed to initialize LOOT', {
           error: err,
@@ -663,7 +663,7 @@ class LootInterface {
   }
 
   // tslint:disable-next-line:member-ordering
-  private init = Bluebird.method(async (gameMode: string, gamePath: string) => {
+  private init = Bluebird.method(async (gameMode: string) => {
     const localPath = pluginPath(gameMode);
     try {
       await fs.ensureDirAsync(localPath);
@@ -677,7 +677,7 @@ class LootInterface {
 
     try {
       loot = Bluebird.promisifyAll(
-        await LootProm.createAsync(this.convertGameId(gameMode, false), gamePath,
+        await LootProm.createAsync(this.convertGameId(gameMode, false), this.gamePath,
                                    localPath, 'en', this.log, this.fork));
     } catch (err) {
       this.mExtensionApi.showErrorNotification('Failed to initialize LOOT', err, {
@@ -744,7 +744,7 @@ class LootInterface {
           const gameMode = selectors.activeGameId(this.mExtensionApi.store.getState());
           --this.mRestarts;
           if (gameSupported(gameMode, true)) {
-            this.mInitPromise = this.init(gameMode, this.gamePath);
+            this.mInitPromise = this.init(gameMode);
           }
         } else {
           this.mExtensionApi.showErrorNotification('LOOT process died', err);
