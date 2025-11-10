@@ -120,15 +120,34 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
             currentClasses.forEach(cls => existingEdge.removeClass(cls));
             existingEdge.addClass(connGroup.class);
           }
-        });
-      });
-      
-      // Remove edges that are no longer in the connections
-      // But be careful not to remove edges that were just created
-      existingEdges.forEach(edge => {
-        const edgeData = edge.data();
-        if (!currentConnections.has(edgeData.id) && !this.mRecentlyCreatedEdges.has(edgeData.id)) {
-          edge.remove();
+          // node content changed
+          Object.keys(changed[id]?.connections || {}).forEach((connGroupIdx: string) => {
+            const connGroup = changed[id].connections[connGroupIdx];
+            Object.keys(connGroup.connections)
+              .sort((lhs, rhs) => (lhs[0] !== rhs[0])
+                ? lhs[0] === '-' ? -1 : 1
+                : lhs.localeCompare(rhs))
+              .forEach(refId => {
+                const conn = connGroup.connections[refId];
+                const from = san(id);
+                const to = san(conn);
+                const connId = `${from}-to-${to}`;
+                if ((connGroupIdx[0] === '-') || (refId[0] === '-')) {
+                  this.mGraph.remove('#' + connId);
+                } else {
+                  this.mGraph.add({
+                    data: {
+                      id: connId,
+                      source: to,
+                      sourceOrig: conn,
+                      target: from,
+                      targetOrig: id,
+                    } as any,
+                    classes: newProps.elements[id].connections[parseInt(connGroupIdx, 10)]?.class,
+                  });
+                }
+              });
+          });
         }
       });
     });
