@@ -8,13 +8,23 @@ import * as React from 'react';
 import { Button, ListGroup, ListGroupItem, Modal, ModalHeader } from 'react-bootstrap';
 import { withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
-import Select from 'react-select';
+import Select, { SingleValue } from 'react-select';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { ComponentEx, Icon, tooltip, types } from 'vortex-api';
 import { IStateEx } from '../types/IStateEx';
 
 type RuleType = 'after' | 'requires' | 'incompatible';
+
+interface ISelectOption {
+  value: string;
+  label: string;
+}
+
+interface IRuleTypeOption {
+  value: RuleType;
+  label: string;
+}
 
 interface IRuleEntryProps {
   t: typeof I18next.t;
@@ -80,7 +90,7 @@ interface IActionProps {
 
 interface IComponentState {
   dialog: IDialog;
-  filter: string;
+  filter: ISelectOption;
 }
 
 type IProps = IConnectedProps & IActionProps;
@@ -108,7 +118,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     const { dialog, filter } = this.state;
 
     const pluginNames: string[] = Object.keys(plugins);
-    const pluginOptions = pluginNames.map(input => ({ value: input, label: input }));
+    const pluginOptions: ISelectOption[] = pluginNames.map(input => ({ value: input, label: input }));
 
     return (
       <Modal id='manage-plugin-rules-dialog' show={dialog !== undefined} onHide={this.close}>
@@ -118,43 +128,50 @@ class Editor extends ComponentEx<IProps, IComponentState> {
         {dialog !== undefined
           ? (
             <Modal.Body>
-              <Select
+              <Select<ISelectOption>
                 options={pluginOptions}
                 placeholder={<div><Icon name='filter' />{t('Filter by plugin')}</div>}
                 value={filter}
                 onChange={this.setFilter}
-                style={{ maxWidth: '50%' }}
+                styles={{ container: (provided) => ({ ...provided, maxWidth: '50%' }) }}
               />
               <ListGroup className='userlist-existing-rules'>
               {userlist.filter(this.filterList).map(this.renderRules)}
               </ListGroup>
               <hr />
                 <div className='userlist-add-controls'>
-                  <Select
+                  <Select<ISelectOption>
                     className='userlist-select-plugin'
                     options={pluginOptions}
-                    clearable={false}
+                    isClearable={false}
                     placeholder={t('Select Plugin...')}
-                    value={dialog.pluginId}
+                    value={pluginOptions.find(option => option.value === dialog.pluginId) || null}
                     onChange={this.selectPlugin}
                   />
-                  <Select
+                  <Select<IRuleTypeOption>
                     options={[
                       { value: 'after', label: t('Must Load After') },
                       { value: 'requires', label: t('Requires') },
                       { value: 'incompatible', label: t('Is Incompatible With') },
                     ]}
-                    value={dialog.type}
-                    clearable={false}
+                    value={dialog.type ? (() => {
+                      const typeLabels = {
+                        'after': t('Must Load After'),
+                        'requires': t('Requires'),
+                        'incompatible': t('Is Incompatible With')
+                      };
+                      return { value: dialog.type, label: typeLabels[dialog.type] };
+                    })() : null}
+                    isClearable={false}
                     onChange={this.selectType}
                   />
-                  <Select
+                  <Select<ISelectOption>
                     className='userlist-select-plugin select-pull-right'
                     options={pluginOptions}
-                    clearable={false}
+                    isClearable={false}
                     placeholder={t('Select Plugin...')}
-                    value={dialog.reference}
-                    onChange={this.selectReference}
+                    value={dialog.reference ? { value: dialog.reference, label: dialog.reference } : null}
+                    onChange={(newValue: ISelectOption | null) => this.selectReference(newValue)}
                   />
                   <tooltip.IconButton
                     icon='swap'
@@ -228,16 +245,16 @@ class Editor extends ComponentEx<IProps, IComponentState> {
       return true;
     }
 
-    return userlistItem.name === filter;
+    return userlistItem.name === filter.value;
   }
 
-  private setFilter = (newValue: { label: string, value: string }) => {
-    this.nextState.filter = (newValue === null)
-      ? undefined
-      : newValue.value;
+  private setFilter = (newValue: SingleValue<ISelectOption>) => {
+    this.nextState.filter = (newValue === null) 
+      ? undefined 
+      : newValue;
   }
 
-  private selectPlugin = (newValue: { label: string, value: string }) => {
+  private selectPlugin = (newValue: SingleValue<ISelectOption>) => {
     if (newValue === null) {
       return;
     }
@@ -251,7 +268,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     this.nextState.dialog.type = newValue.value as RuleType;
   }
 
-  private selectReference = (newValue: { label: string, value: string }) => {
+  private selectReference = (newValue: ISelectOption | null) => {
     if (newValue) {
       this.nextState.dialog.reference = newValue.value;
     }

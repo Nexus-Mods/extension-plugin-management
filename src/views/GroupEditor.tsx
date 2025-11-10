@@ -170,7 +170,10 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
       // TODO: Need to remove this groups from all after rules in plugins and other groups!
       this.props.onRemoveGroup(id);
     } else {
+      // Try to remove the connection in both directions to handle direction inconsistencies
+      // This ensures removal works regardless of how sourceOrig/targetOrig are stored
       this.props.onRemoveGroupRule(target, source);
+      this.props.onRemoveGroupRule(source, target);
     }
   }
 
@@ -178,23 +181,17 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
     const { onAddGroup, onShowDialog } = this.props;
     onShowDialog('question', 'Add Group', {
       input: [
-        { id: 'newGroup', value: '', label: 'Group Name' },
+        { id: 'newGroup', value: 'New group name', label: 'Group Name' },
       ],
-      condition: (content: types.IDialogContent): types.ConditionResults => {
-        const res = [];
-        if (content.input[0].value.length === 0) {
-          res.push({
-            id: 'newGroup',
-            errorText: 'Name can\'t be empty',
-            actions: ['Add'],
-          });
-        }
-        return res;
-      },
     }, [{ label: 'Cancel' }, { label: 'Add', default: true }])
     .then((result: types.IDialogResult) => {
         if (result.action === 'Add') {
-          onAddGroup(result.input.newGroup);
+          if (result.input.newGroup.trim().length === 0) {
+            log('error', 'Group name can\'t be empty');
+            return;
+          } else {
+            onAddGroup(result.input.newGroup);
+          }
         }
       });
   }
