@@ -120,34 +120,15 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
             currentClasses.forEach(cls => existingEdge.removeClass(cls));
             existingEdge.addClass(connGroup.class);
           }
-          // node content changed
-          Object.keys(changed[id]?.connections || {}).forEach((connGroupIdx: string) => {
-            const connGroup = changed[id].connections[connGroupIdx];
-            Object.keys(connGroup.connections)
-              .sort((lhs, rhs) => (lhs[0] !== rhs[0])
-                ? lhs[0] === '-' ? -1 : 1
-                : lhs.localeCompare(rhs))
-              .forEach(refId => {
-                const conn = connGroup.connections[refId];
-                const from = san(id);
-                const to = san(conn);
-                const connId = `${from}-to-${to}`;
-                if ((connGroupIdx[0] === '-') || (refId[0] === '-')) {
-                  this.mGraph.remove('#' + connId);
-                } else {
-                  this.mGraph.add({
-                    data: {
-                      id: connId,
-                      source: to,
-                      sourceOrig: conn,
-                      target: from,
-                      targetOrig: id,
-                    } as any,
-                    classes: newProps.elements[id].connections[parseInt(connGroupIdx, 10)]?.class,
-                  });
-                }
-              });
-          });
+        });
+      });
+
+      // Remove edges that no longer exist for this node
+      existingEdges.forEach(edge => {
+        const edgeId = edge.id();
+        if (!currentConnections.has(edgeId)) {
+          this.mGraph!.remove(edge);
+          needsLayout = true;
         }
       });
     });
