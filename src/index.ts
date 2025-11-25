@@ -56,7 +56,6 @@ import { getPluginFlags } from './views/PluginFlags';
 import { createSelector } from 'reselect';
 import { IESPFile } from './types/IESPFile';
 import { isMasterlistOutdated, masterlistExists, masterlistFilePath } from './util/masterlist';
-import { IExtensionApi } from 'vortex-api/lib/types/IExtensionContext';
 
 type TranslationFunction = typeof I18next.t;
 
@@ -570,7 +569,7 @@ function initPersistor(context: IExtensionContextExt) {
 /**
  * update the plugin list for the currently active profile
  */
-function updateCurrentProfile(api: IExtensionApi): Promise<void> {
+function updateCurrentProfile(api: types.IExtensionApi): Promise<void> {
   const gameId = selectors.activeGameId(api.getState());
 
   if (!gameSupported(gameId)) {
@@ -1322,7 +1321,7 @@ function onDidDeploy(api: types.IExtensionApi, profileId: string): Promise<void>
         const pluginList = util.getSafe(api.getState(), ['session', 'plugins', 'pluginList'], {});
         api.events.emit('plugin-details', profile.gameId, Object.keys(pluginList ?? {}), resolve);
       }))
-      .then(() => Promise.delay(1000)) // wait a bit for the plugin details to be updated
+      .then(() => util.delay(500)) // wait a bit for the plugin details to be updated
       .then(() => api.events.emit('autosort-plugins', false))
       .then(() => Promise.resolve())
     : Promise.resolve();
@@ -1452,12 +1451,28 @@ function init(context: IExtensionContextExt) {
         return Promise.resolve();
       });
 
+      context.api.events.on('collection-postprocess-complete', (gameId: string, collectionModId: string) => {
+        if (!gameSupported(gameId)) {
+          return;
+        }
+        const profileId = selectors.lastActiveProfileForGame(context.api.getState(), gameId);
+        if (!profileId) {
+          return;
+        }
+        // Yes - again - the stupid collection postprocess may change the plugins
+        onDidDeploy(context.api, profileId);
+      });
+
       // this handles the case that the content of a profile changes
-      context.api.onAsync('did-deploy', (profileId, deployment) => {
+      context.api.onAsync('did-deploy', (profileId, deployment, progressCB, deployOptions) => {
         deploying = false;
         if (pluginsChangedQueued) {
           pluginsChangedQueued = false;
           context.api.events.emit('trigger-test-run', 'plugins-changed', 500);
+        }
+        if (deployOptions?.isCollectionPostprocessCall) {
+          // handled in 'collection-postprocess-complete' event
+          return Promise.resolve();
         }
         return onDidDeploy(context.api, profileId);
       });
